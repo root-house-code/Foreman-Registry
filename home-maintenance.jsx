@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import data from "./data/maintenance.json";
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import MaintenanceTable from "./components/MaintenanceTable.jsx";
@@ -40,7 +40,18 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
   const [search, setSearch] = useState("");
   const [activeFrequencies, setActiveFrequencies] = useState(new Set());
   const [activeSeasons, setActiveSeasons] = useState(new Set());
-  const [navHovered, setNavHovered] = useState(false);
+  const [navHoveredTop, setNavHoveredTop] = useState(false);
+  const [navHoveredBottom, setNavHoveredBottom] = useState(false);
+  const pageHeaderRef = useRef(null);
+  const [pageHeaderHeight, setPageHeaderHeight] = useState(0);
+
+  useEffect(() => {
+    const el = pageHeaderRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(([entry]) => setPageHeaderHeight(entry.contentRect.height));
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   function handleToggleFrequency(color) {
     setActiveFrequencies(prev => {
@@ -158,6 +169,20 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
     ])
   );
 
+  const hiddenCount = data.filter(row => {
+    if (getEffectiveRowState(inventory, row) !== "excluded") return false;
+    const matchCat = activeCategory === "All" || row.category === activeCategory;
+    const matchFreq = activeFrequencies.size === 0 || activeFrequencies.has(getScheduleColor(row.schedule));
+    const matchSeason = activeSeasons.size === 0 || (row.season && activeSeasons.has(row.season));
+    const q = search.toLowerCase();
+    const matchSearch = !q ||
+      row.category.toLowerCase().includes(q) ||
+      row.item.toLowerCase().includes(q) ||
+      row.type.toLowerCase().includes(q) ||
+      row.schedule.toLowerCase().includes(q);
+    return matchCat && matchFreq && matchSeason && matchSearch;
+  }).length;
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -166,7 +191,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
       color: "#e8e0d0",
       padding: "0",
     }}>
-      <div style={{
+      <div ref={pageHeaderRef} style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
         borderBottom: "1px solid #2a2f3e",
         padding: "2rem 2rem 2rem",
@@ -198,13 +223,13 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
             </div>
             <button
               onClick={onNavigate}
-              onMouseEnter={() => setNavHovered(true)}
-              onMouseLeave={() => setNavHovered(false)}
+              onMouseEnter={() => setNavHoveredTop(true)}
+              onMouseLeave={() => setNavHoveredTop(false)}
               style={{
                 background: "transparent",
-                border: `1px solid ${navHovered ? "#c9a96e" : "#2e3448"}`,
+                border: `1px solid ${navHoveredTop ? "#c9a96e" : "#2e3448"}`,
                 borderRadius: "3px",
-                color: navHovered ? "#c9a96e" : "#8b7d6b",
+                color: navHoveredTop ? "#c9a96e" : "#8b7d6b",
                 cursor: "pointer",
                 fontFamily: "monospace",
                 fontSize: "0.72rem",
@@ -265,7 +290,33 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
           onNoteChange={handleNoteChange}
           rowStates={rowStates}
           onUnmute={handleUnmute}
+          stickyTop={pageHeaderHeight}
         />
+        <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginTop: "0.75rem" }}>
+          <span style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.72rem", visibility: hiddenCount > 0 ? "visible" : "hidden" }}>
+            {hiddenCount} hidden
+          </span>
+          <button
+            onClick={onNavigate}
+            onMouseEnter={() => setNavHoveredBottom(true)}
+            onMouseLeave={() => setNavHoveredBottom(false)}
+            style={{
+              background: "transparent",
+              border: `1px solid ${navHoveredBottom ? "#c9a96e" : "#2e3448"}`,
+              borderRadius: "3px",
+              color: navHoveredBottom ? "#c9a96e" : "#8b7d6b",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              fontSize: "0.72rem",
+              letterSpacing: "0.08em",
+              padding: "0.4rem 0.9rem",
+              transition: "all 0.15s",
+              whiteSpace: "nowrap",
+            }}
+          >
+            ← Inventory
+          </button>
+        </div>
       </div>
     </div>
   );

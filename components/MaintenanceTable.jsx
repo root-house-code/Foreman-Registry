@@ -24,16 +24,16 @@ export default function MaintenanceTable({
   followSchedule, onToggleFollow,
   notes, onNoteChange,
   rowStates, onUnmute,
+  stickyTop,
 }) {
   return (
     <div style={{
       background: "#13161f",
       border: "1px solid #1e2330",
       borderRadius: "6px",
-      overflow: "hidden",
     }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
-        <thead>
+        <thead style={{ position: "sticky", top: stickyTop ?? 0, zIndex: 10 }}>
           <tr style={{ background: "#1a1f2e", borderBottom: "2px solid #2a2f3e" }}>
             {COLUMNS.map(({ label, width }) => (
               <th key={label} style={{

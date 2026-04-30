@@ -74,7 +74,9 @@ function navBtnStyle(hovered) {
 }
 
 export default function InventoryPage({ inventory, onInventoryChange, onNavigate }) {
-  const [collapsed, setCollapsed] = useState({});
+  const [collapsed, setCollapsed] = useState(() =>
+    Object.fromEntries(CATEGORIES.map(cat => [cat, true]))
+  );
   const [navHovered, setNavHovered] = useState(false);
 
   function toggleCollapse(category) {
@@ -87,6 +89,13 @@ export default function InventoryPage({ inventory, onInventoryChange, onNavigate
 
   function handleItemChange(category, item, state) {
     onInventoryChange(setItemState(inventory, category, item, state));
+  }
+
+  const allCollapsed = CATEGORIES.every(cat => collapsed[cat]);
+
+  function toggleAll() {
+    const next = allCollapsed ? false : true;
+    setCollapsed(Object.fromEntries(CATEGORIES.map(cat => [cat, next])));
   }
 
   // Summary counts across all unique category+item pairs
@@ -152,19 +161,40 @@ export default function InventoryPage({ inventory, onInventoryChange, onNavigate
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 2rem 4rem" }}>
 
         {/* Summary bar */}
-        <div style={{ display: "flex", gap: "1.5rem", marginBottom: "2rem", fontFamily: "monospace", fontSize: "0.72rem" }}>
-          <span style={{ color: "#4ade80" }}>
-            {counts.included ?? 0} shown
-          </span>
-          <span style={{ color: "#f59e0b" }}>
-            {counts.muted ?? 0} dimmed
-          </span>
-          <span style={{ color: "#f87171" }}>
-            {counts.excluded ?? 0} hidden
-          </span>
-          <span style={{ color: "#5a5460" }}>
-            of {allPairs.length} items
-          </span>
+        <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "2rem" }}>
+          <div style={{ display: "flex", gap: "1.5rem", fontFamily: "monospace", fontSize: "0.72rem" }}>
+            <span style={{ color: "#4ade80" }}>
+              {counts.included ?? 0} shown
+            </span>
+            <span style={{ color: "#f59e0b" }}>
+              {counts.muted ?? 0} dimmed
+            </span>
+            <span style={{ color: "#f87171" }}>
+              {counts.excluded ?? 0} hidden
+            </span>
+            <span style={{ color: "#5a5460" }}>
+              of {allPairs.length} items
+            </span>
+          </div>
+          <button
+            onClick={toggleAll}
+            style={{
+              background: "transparent",
+              border: "1px solid #2e3448",
+              borderRadius: "3px",
+              color: "#8b7d6b",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              fontSize: "0.65rem",
+              letterSpacing: "0.08em",
+              padding: "0.3rem 0.7rem",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+          >
+            {allCollapsed ? "Expand All" : "Collapse All"}
+          </button>
         </div>
 
         {/* Category list */}

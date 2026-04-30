@@ -33,20 +33,25 @@ export default function MaintenanceTable({
       borderRadius: "6px",
     }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
-        <thead style={{ position: "sticky", top: stickyTop ?? 0, zIndex: 10 }}>
-          <tr style={{ background: "#1a1f2e", borderBottom: "2px solid #2a2f3e" }}>
+        <thead>
+          <tr>
             {COLUMNS.map(({ label, width }) => (
               <th key={label} style={{
+                background: "#1a1f2e",
+                borderBottom: "2px solid #2a2f3e",
                 color: "#c9a96e",
                 fontFamily: "monospace",
                 fontSize: "0.68rem",
                 fontWeight: "normal",
                 letterSpacing: "0.12em",
                 padding: "0.75rem 0.6rem",
+                position: "sticky",
                 textAlign: "left",
                 textTransform: "uppercase",
+                top: stickyTop ?? 0,
                 whiteSpace: "nowrap",
                 width,
+                zIndex: 10,
               }}>
                 {label}
               </th>

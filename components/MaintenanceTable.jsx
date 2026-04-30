@@ -33,6 +33,9 @@ export default function MaintenanceTable({
       borderRadius: "6px",
     }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
+        {/* TODO: sticky header not working — position:sticky on th requires no ancestor with overflow:hidden/auto
+            in the scroll chain. Audit parent containers (table wrapper div, page layout divs) and either
+            remove conflicting overflow, or switch to a CSS-only scroll container approach. */}
         <thead>
           <tr>
             {COLUMNS.map(({ label, width }) => (

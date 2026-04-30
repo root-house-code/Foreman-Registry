@@ -1,0 +1,83 @@
+const FREQ_ITEMS = [
+  { label: "Weekly / Monthly",   color: "#4ade80" },
+  { label: "Every 3–6 months",   color: "#34d399" },
+  { label: "Twice a year",       color: "#60a5fa" },
+  { label: "Annually",           color: "#f59e0b" },
+  { label: "Every 2–10 years",   color: "#c084fc" },
+  { label: "As needed",          color: "#94a3b8" },
+];
+
+const SEASON_ITEMS = ["Spring", "Summer", "Fall", "Winter"];
+
+const labelStyle = {
+  color: "#5a5460",
+  fontFamily: "monospace",
+  fontSize: "0.68rem",
+  letterSpacing: "0.1em",
+  textTransform: "uppercase",
+  marginRight: "0.25rem",
+};
+
+export default function Legend({ activeColors, onToggle, activeSeasons, onToggleSeason }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+
+      {/* Frequency filter — left */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
+        <span style={labelStyle}>Frequency:</span>
+        {FREQ_ITEMS.map(({ label, color }) => {
+          const active = activeColors.has(color);
+          return (
+            <div
+              key={label}
+              onClick={() => onToggle(color)}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#1a1f2e"; }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
+              style={{
+                alignItems: "center",
+                background: active ? `${color}18` : "transparent",
+                border: `1px solid ${active ? `${color}40` : "transparent"}`,
+                borderRadius: "3px",
+                cursor: "pointer",
+                display: "flex",
+                gap: "0.35rem",
+                padding: "0.2rem 0.5rem",
+                transition: "background 0.15s, border-color 0.15s",
+              }}
+            >
+              <div style={{ background: color, borderRadius: "50%", flexShrink: 0, height: 8, width: 8 }} />
+              <span style={{ color: active ? color : "#6a6070", fontFamily: "monospace", fontSize: "0.68rem", transition: "color 0.15s" }}>
+                {label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Season filter — right */}
+      <div style={{ display: "flex", gap: "0.1rem", alignItems: "center", flexShrink: 0 }}>
+        <span style={labelStyle}>Season:</span>
+        {SEASON_ITEMS.map(season => {
+          const active = activeSeasons.has(season.toLowerCase());
+          return (
+            <span
+              key={season}
+              onClick={() => onToggleSeason(season.toLowerCase())}
+              style={{
+                color: active ? "#c9a96e" : "#6a6070",
+                cursor: "pointer",
+                fontFamily: "monospace",
+                fontSize: "0.68rem",
+                padding: "0.2rem 0.3rem",
+                transition: "color 0.15s",
+              }}
+            >
+              {season}
+            </span>
+          );
+        })}
+      </div>
+
+    </div>
+  );
+}

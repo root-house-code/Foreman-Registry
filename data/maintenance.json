@@ -1,163 +1,1057 @@
 [
-  { "category": "HVAC", "item": "Furnace / Air Handler", "type": "Replace air filter", "schedule": "Every 1–3 months" },
-  { "category": "HVAC", "item": "Furnace", "type": "Professional inspection & tune-up", "schedule": "Annually (fall)", "season": "fall" },
-  { "category": "HVAC", "item": "Central Air Conditioner", "type": "Professional inspection & tune-up", "schedule": "Annually (spring)", "season": "spring" },
-  { "category": "HVAC", "item": "Central Air Conditioner", "type": "Clean condenser coils & fins", "schedule": "Annually (spring)", "season": "spring" },
-  { "category": "HVAC", "item": "Heat Pump", "type": "Professional inspection & tune-up", "schedule": "Twice a year" },
-  { "category": "HVAC", "item": "Ductwork", "type": "Inspect for leaks and seal", "schedule": "Every 3–5 years" },
-  { "category": "HVAC", "item": "Ductwork", "type": "Professional cleaning", "schedule": "Every 5–7 years" },
-  { "category": "HVAC", "item": "Thermostat", "type": "Test functionality / replace batteries", "schedule": "Annually" },
-  { "category": "HVAC", "item": "Humidifier (whole-home)", "type": "Clean and replace water panel/filter", "schedule": "Annually (fall)", "season": "fall" },
-  { "category": "HVAC", "item": "Air Exchanger / HRV", "type": "Clean filters and cores", "schedule": "Every 3–6 months" },
-  { "category": "HVAC", "item": "Registers & Vents", "type": "Vacuum and wipe clean", "schedule": "Every 6 months" },
-  { "category": "HVAC", "item": "Window / Portable A/C Unit", "type": "Clean filter", "schedule": "Monthly during use" },
-
-  { "category": "Plumbing", "item": "Water Heater (Tank)", "type": "Flush sediment from tank", "schedule": "Annually" },
-  { "category": "Plumbing", "item": "Water Heater (Tank)", "type": "Inspect anode rod", "schedule": "Every 2–3 years" },
-  { "category": "Plumbing", "item": "Water Heater (Tankless)", "type": "Descale / flush system", "schedule": "Annually" },
-  { "category": "Plumbing", "item": "Water Softener", "type": "Refill salt & clean brine tank", "schedule": "Every 2–3 months" },
-  { "category": "Plumbing", "item": "Whole-Home Water Filter", "type": "Replace filter cartridge", "schedule": "Per manufacturer (3–6 months)" },
-  { "category": "Plumbing", "item": "Reverse Osmosis Filter", "type": "Replace filters & membrane", "schedule": "Annually" },
-  { "category": "Plumbing", "item": "Sump Pump", "type": "Test operation & clean pit", "schedule": "Annually (spring)", "season": "spring" },
-  { "category": "Plumbing", "item": "Sump Pump", "type": "Replace battery backup", "schedule": "Every 2–3 years" },
-  { "category": "Plumbing", "item": "Shut-Off Valves", "type": "Exercise valves to prevent seizing", "schedule": "Annually" },
-  { "category": "Plumbing", "item": "Exposed Pipes", "type": "Inspect for leaks or corrosion", "schedule": "Annually" },
-  { "category": "Plumbing", "item": "Outdoor Hose Bibs", "type": "Winterize / shut off", "schedule": "Annually (fall)", "season": "fall" },
-  { "category": "Plumbing", "item": "Irrigation System", "type": "Winterize (blow out lines)", "schedule": "Annually (fall)", "season": "fall" },
-  { "category": "Plumbing", "item": "Irrigation System", "type": "Spring start-up & leak check", "schedule": "Annually (spring)", "season": "spring" },
-  { "category": "Plumbing", "item": "Septic System", "type": "Pump and inspect tank", "schedule": "Every 3–5 years" },
-  { "category": "Plumbing", "item": "Septic System", "type": "Inspect drain field", "schedule": "Annually" },
-
-  { "category": "Kitchen", "item": "Dishwasher", "type": "Clean filter and spray arms", "schedule": "Monthly" },
-  { "category": "Kitchen", "item": "Dishwasher", "type": "Run cleaning cycle with descaler", "schedule": "Every 3 months" },
-  { "category": "Kitchen", "item": "Refrigerator", "type": "Clean condenser coils", "schedule": "Every 6–12 months" },
-  { "category": "Kitchen", "item": "Refrigerator", "type": "Replace water filter", "schedule": "Every 6 months" },
-  { "category": "Kitchen", "item": "Refrigerator", "type": "Check door gaskets for seal", "schedule": "Annually" },
-  { "category": "Kitchen", "item": "Range Hood", "type": "Clean or replace grease filter", "schedule": "Monthly–quarterly" },
-  { "category": "Kitchen", "item": "Gas Range / Cooktop", "type": "Clean burner caps and ports", "schedule": "Monthly" },
-  { "category": "Kitchen", "item": "Gas Range / Cooktop", "type": "Inspect gas connections for leaks", "schedule": "Annually" },
-  { "category": "Kitchen", "item": "Oven", "type": "Self-clean cycle / deep clean", "schedule": "Every 3–6 months" },
-  { "category": "Kitchen", "item": "Garbage Disposal", "type": "Clean and deodorize", "schedule": "Monthly" },
-  { "category": "Kitchen", "item": "Garbage Disposal", "type": "Check for leaks under sink", "schedule": "Every 6 months" },
-  { "category": "Kitchen", "item": "Microwave (built-in)", "type": "Clean grease filter", "schedule": "Monthly" },
-  { "category": "Kitchen", "item": "Under-Sink Plumbing", "type": "Inspect for leaks", "schedule": "Every 6 months" },
-
-  { "category": "Bathrooms", "item": "Toilet", "type": "Inspect flapper, fill valve & supply line", "schedule": "Annually" },
-  { "category": "Bathrooms", "item": "Toilet", "type": "Check for base leaks / re-caulk", "schedule": "Annually" },
-  { "category": "Bathrooms", "item": "Showerhead", "type": "Descale/soak to remove mineral deposits", "schedule": "Every 6 months" },
-  { "category": "Bathrooms", "item": "Shower / Tub Caulk & Grout", "type": "Inspect and re-caulk/re-grout as needed", "schedule": "Annually" },
-  { "category": "Bathrooms", "item": "Exhaust Fan", "type": "Vacuum and clean fan blades/grille", "schedule": "Every 6 months" },
-  { "category": "Bathrooms", "item": "Drain", "type": "Clear hair and debris; pour drain cleaner", "schedule": "Monthly" },
-  { "category": "Bathrooms", "item": "Vanity Supply Lines", "type": "Inspect hoses for bulging or leaks", "schedule": "Annually" },
-
-  { "category": "Electrical", "item": "Smoke Detectors", "type": "Test all units", "schedule": "Monthly" },
-  { "category": "Electrical", "item": "Smoke Detectors", "type": "Replace batteries", "schedule": "Annually (or when alert sounds)" },
-  { "category": "Electrical", "item": "Smoke Detectors", "type": "Replace entire unit", "schedule": "Every 10 years" },
-  { "category": "Electrical", "item": "Carbon Monoxide Detectors", "type": "Test all units", "schedule": "Monthly" },
-  { "category": "Electrical", "item": "Carbon Monoxide Detectors", "type": "Replace batteries", "schedule": "Annually" },
-  { "category": "Electrical", "item": "Carbon Monoxide Detectors", "type": "Replace entire unit", "schedule": "Every 5–7 years" },
-  { "category": "Electrical", "item": "GFCI Outlets", "type": "Test and reset each outlet", "schedule": "Monthly" },
-  { "category": "Electrical", "item": "Electrical Panel", "type": "Visual inspection for corrosion/heat damage", "schedule": "Annually" },
-  { "category": "Electrical", "item": "Electrical Panel", "type": "Professional inspection", "schedule": "Every 10 years" },
-  { "category": "Electrical", "item": "Circuit Breakers", "type": "Exercise breakers to prevent seizing", "schedule": "Annually" },
-  { "category": "Electrical", "item": "Outlets & Switches", "type": "Check for loose covers; test functionality", "schedule": "Annually" },
-  { "category": "Electrical", "item": "Exterior Lighting", "type": "Replace bulbs; clean fixtures", "schedule": "As needed / annually" },
-  { "category": "Electrical", "item": "Surge Protectors", "type": "Replace units", "schedule": "Every 2–3 years" },
-  { "category": "Electrical", "item": "Backup Generator", "type": "Test run and oil change", "schedule": "Every 6 months" },
-
-  { "category": "Roof", "item": "Asphalt Shingles", "type": "Visual inspection for missing/damaged shingles", "schedule": "Twice a year" },
-  { "category": "Roof", "item": "Roof Flashing", "type": "Inspect for lifting, rust or gaps", "schedule": "Annually" },
-  { "category": "Roof", "item": "Roof Vents & Ridge Vents", "type": "Inspect for blockages", "schedule": "Annually" },
-  { "category": "Roof", "item": "Chimney", "type": "Inspect cap, crown, flashing & mortar", "schedule": "Annually" },
-  { "category": "Roof", "item": "Chimney", "type": "Professional sweep / cleaning", "schedule": "Annually (if used)" },
-  { "category": "Roof", "item": "Skylights", "type": "Inspect seals and clean glass", "schedule": "Annually" },
-  { "category": "Roof", "item": "Flat Roof / EPDM", "type": "Inspect membrane and seams", "schedule": "Twice a year" },
-
-  { "category": "Gutters & Drainage", "item": "Gutters", "type": "Clear leaves and debris", "schedule": "2–4 times/year" },
-  { "category": "Gutters & Drainage", "item": "Gutters", "type": "Inspect for sagging, cracks or leaks", "schedule": "Annually" },
-  { "category": "Gutters & Drainage", "item": "Downspouts", "type": "Flush and confirm clear flow", "schedule": "Annually" },
-  { "category": "Gutters & Drainage", "item": "Downspout Extensions", "type": "Direct water 4–6 ft from foundation", "schedule": "Annually" },
-  { "category": "Gutters & Drainage", "item": "Window Wells", "type": "Clear debris and check drainage", "schedule": "Annually" },
-  { "category": "Gutters & Drainage", "item": "Yard Grading", "type": "Inspect slope away from foundation", "schedule": "Annually" },
-  { "category": "Gutters & Drainage", "item": "French Drain / Drain Tile", "type": "Inspect outlets and flow", "schedule": "Annually" },
-
-  { "category": "Exterior", "item": "Exterior Paint / Siding", "type": "Inspect for peeling, cracking or rot", "schedule": "Annually" },
-  { "category": "Exterior", "item": "Wood Siding / Trim", "type": "Re-paint or re-stain as needed", "schedule": "Every 5–10 years" },
-  { "category": "Exterior", "item": "Fiber Cement / Vinyl Siding", "type": "Pressure wash and inspect", "schedule": "Annually" },
-  { "category": "Exterior", "item": "Brick / Mortar", "type": "Inspect for cracks and tuckpoint", "schedule": "Every 5–10 years" },
-  { "category": "Exterior", "item": "Foundation", "type": "Walk perimeter; inspect for cracks", "schedule": "Annually" },
-  { "category": "Exterior", "item": "Driveway (asphalt)", "type": "Seal coat", "schedule": "Every 2–5 years" },
-  { "category": "Exterior", "item": "Driveway (concrete)", "type": "Seal cracks and apply concrete sealer", "schedule": "Every 3–5 years" },
-  { "category": "Exterior", "item": "Walkways & Patio", "type": "Inspect for cracks and heaving", "schedule": "Annually" },
-  { "category": "Exterior", "item": "Deck / Wood Porch", "type": "Clean and re-stain or seal", "schedule": "Every 2–3 years" },
-  { "category": "Exterior", "item": "Deck / Wood Porch", "type": "Inspect boards and fasteners for rot", "schedule": "Annually" },
-  { "category": "Exterior", "item": "Composite Deck", "type": "Clean with deck cleaner", "schedule": "Annually" },
-  { "category": "Exterior", "item": "Fence (wood)", "type": "Inspect posts; re-stain or seal", "schedule": "Every 2–3 years" },
-  { "category": "Exterior", "item": "Retaining Walls", "type": "Inspect for bowing or drainage issues", "schedule": "Annually" },
-  { "category": "Exterior", "item": "Caulking (exterior seams/windows)", "type": "Inspect and re-caulk gaps", "schedule": "Annually" },
-
-  { "category": "Windows & Doors", "item": "Windows", "type": "Clean tracks, lubricate hardware", "schedule": "Annually" },
-  { "category": "Windows & Doors", "item": "Windows", "type": "Inspect weatherstripping and seals", "schedule": "Annually" },
-  { "category": "Windows & Doors", "item": "Window Screens", "type": "Inspect and repair tears", "schedule": "Annually (spring)", "season": "spring" },
-  { "category": "Windows & Doors", "item": "Exterior Doors", "type": "Inspect weatherstripping and threshold", "schedule": "Annually" },
-  { "category": "Windows & Doors", "item": "Exterior Doors", "type": "Lubricate hinges and deadbolts", "schedule": "Annually" },
-  { "category": "Windows & Doors", "item": "Storm Doors", "type": "Clean and adjust door closer", "schedule": "Annually" },
-  { "category": "Windows & Doors", "item": "Sliding Glass Doors", "type": "Clean and lubricate track", "schedule": "Every 6 months" },
-  { "category": "Windows & Doors", "item": "Garage Door", "type": "Lubricate springs, rollers and tracks", "schedule": "Every 6 months" },
-  { "category": "Windows & Doors", "item": "Garage Door", "type": "Test auto-reverse safety feature", "schedule": "Monthly" },
-  { "category": "Windows & Doors", "item": "Garage Door Opener", "type": "Replace backup battery", "schedule": "Annually" },
-  { "category": "Windows & Doors", "item": "Garage Door Weatherstripping", "type": "Inspect and replace bottom seal", "schedule": "Every 2–3 years" },
-
-  { "category": "Basement & Crawl Space", "item": "Basement Walls", "type": "Inspect for water intrusion or efflorescence", "schedule": "Annually" },
-  { "category": "Basement & Crawl Space", "item": "Crawl Space", "type": "Inspect vapor barrier and insulation", "schedule": "Annually" },
-  { "category": "Basement & Crawl Space", "item": "Dehumidifier", "type": "Empty reservoir; clean filter", "schedule": "Monthly during humid season" },
-  { "category": "Basement & Crawl Space", "item": "Floor Drain", "type": "Pour water to maintain trap seal", "schedule": "Every 3 months" },
-  { "category": "Basement & Crawl Space", "item": "Water Proofing System", "type": "Inspect drains and pump", "schedule": "Annually" },
-
-  { "category": "Garage", "item": "Garage Floor", "type": "Seal concrete or touch up epoxy", "schedule": "Every 3–5 years" },
-  { "category": "Garage", "item": "Garage Ventilation", "type": "Clear vents of obstructions", "schedule": "Annually" },
-
-  { "category": "Interior", "item": "Interior Caulking (tubs, windows)", "type": "Inspect and re-apply where needed", "schedule": "Annually" },
-  { "category": "Interior", "item": "Hardwood Floors", "type": "Clean and apply polish/refresh coat", "schedule": "Every 3–5 years (refinish)" },
-  { "category": "Interior", "item": "Tile Grout", "type": "Clean and re-seal grout lines", "schedule": "Every 1–2 years" },
-  { "category": "Interior", "item": "Carpet", "type": "Professional steam clean", "schedule": "Every 1–2 years" },
-  { "category": "Interior", "item": "Ceiling Fans", "type": "Reverse direction seasonally; clean blades", "schedule": "Twice a year" },
-  { "category": "Interior", "item": "Attic", "type": "Inspect insulation and ventilation for moisture", "schedule": "Annually" },
-  { "category": "Interior", "item": "Fireplace (wood-burning)", "type": "Sweep and inspect", "schedule": "Annually" },
-  { "category": "Interior", "item": "Gas Fireplace", "type": "Clean glass and test ignition", "schedule": "Annually" },
-  { "category": "Interior", "item": "Interior Paint", "type": "Touch up walls and trim", "schedule": "As needed" },
-  { "category": "Interior", "item": "Door Hinges & Hardware", "type": "Lubricate squeaky hinges", "schedule": "As needed" },
-  { "category": "Interior", "item": "Staircase", "type": "Tighten balusters and check treads", "schedule": "Annually" },
-  { "category": "Interior", "item": "Window Blinds / Shades", "type": "Dust and clean", "schedule": "Every 3 months" },
-
-  { "category": "Laundry", "item": "Dryer", "type": "Clean lint trap", "schedule": "Every load" },
-  { "category": "Laundry", "item": "Dryer Vent Duct", "type": "Clean full duct run", "schedule": "Annually" },
-  { "category": "Laundry", "item": "Washing Machine (front-load)", "type": "Run drum-clean cycle; wipe door seal", "schedule": "Monthly" },
-  { "category": "Laundry", "item": "Washing Machine (top-load)", "type": "Run self-clean cycle", "schedule": "Monthly" },
-  { "category": "Laundry", "item": "Washing Machine Hoses", "type": "Inspect hoses for bulging or cracks", "schedule": "Annually" },
-
-  { "category": "Safety & Security", "item": "Fire Extinguisher", "type": "Check pressure gauge", "schedule": "Monthly" },
-  { "category": "Safety & Security", "item": "Fire Extinguisher", "type": "Professional inspection / recharge", "schedule": "Annually" },
-  { "category": "Safety & Security", "item": "Security System", "type": "Test all sensors and keypad", "schedule": "Every 6 months" },
-  { "category": "Safety & Security", "item": "Door Locks", "type": "Lubricate lock cylinders", "schedule": "Annually" },
-  { "category": "Safety & Security", "item": "Outdoor Cameras", "type": "Clean lenses; check angles", "schedule": "Every 6 months" },
-  { "category": "Safety & Security", "item": "Motion-Sensor Lights", "type": "Test and replace bulbs", "schedule": "Every 6 months" },
-  { "category": "Safety & Security", "item": "Radon Detector", "type": "Test radon levels", "schedule": "Every 2 years" },
-  { "category": "Safety & Security", "item": "Emergency Escape Ladder", "type": "Inspect condition and practice use", "schedule": "Annually" },
-
-  { "category": "Pest Control", "item": "Foundation & Exterior Seams", "type": "Seal cracks and gaps (pest exclusion)", "schedule": "Annually" },
-  { "category": "Pest Control", "item": "Attic & Crawl Space", "type": "Inspect for rodent droppings or nests", "schedule": "Annually" },
-  { "category": "Pest Control", "item": "Termite Prevention", "type": "Professional termite inspection", "schedule": "Annually" },
-  { "category": "Pest Control", "item": "Perimeter Treatment", "type": "Apply pest control barrier", "schedule": "Every 3 months" },
-
-  { "category": "Yard & Landscaping", "item": "Lawn Mower", "type": "Sharpen blade, change oil & air filter", "schedule": "Annually (spring)", "season": "spring" },
-  { "category": "Yard & Landscaping", "item": "Lawn", "type": "Aerate and overseed", "schedule": "Annually (fall)", "season": "fall" },
-  { "category": "Yard & Landscaping", "item": "Lawn", "type": "Fertilize", "schedule": "2–4 times/year" },
-  { "category": "Yard & Landscaping", "item": "Trees", "type": "Inspect for dead/hazardous branches", "schedule": "Annually" },
-  { "category": "Yard & Landscaping", "item": "Trees & Shrubs", "type": "Professional trimming", "schedule": "Annually" },
-  { "category": "Yard & Landscaping", "item": "Garden Beds", "type": "Mulch refresh to 2–3 in depth", "schedule": "Annually (spring)", "season": "spring" },
-  { "category": "Yard & Landscaping", "item": "Outdoor Furniture", "type": "Clean and apply UV protector", "schedule": "Annually (spring)", "season": "spring" },
-  { "category": "Yard & Landscaping", "item": "Pool / Spa", "type": "Balance chemicals", "schedule": "Weekly during use" },
-  { "category": "Yard & Landscaping", "item": "Pool / Spa", "type": "Winterize", "schedule": "Annually (fall)", "season": "fall" },
-  { "category": "Yard & Landscaping", "item": "Outdoor Gas Grill", "type": "Clean burners and grates", "schedule": "Every 3 months or after heavy use" }
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Furnace / Air Handler",
+    "task": "Replace air filter",
+    "schedule": "Every 1–3 months"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Furnace",
+    "task": "Professional inspection & tune-up",
+    "schedule": "Annually",
+    "season": "fall"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Central Air Conditioner",
+    "task": "Professional inspection & tune-up",
+    "schedule": "Annually",
+    "season": "spring"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Central Air Conditioner",
+    "task": "Clean condenser coils & fins",
+    "schedule": "Annually",
+    "season": "spring"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Heat Pump",
+    "task": "Professional inspection & tune-up",
+    "schedule": "Twice a year"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Ductwork",
+    "task": "Inspect for leaks and seal",
+    "schedule": "Every 3–5 years"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Ductwork",
+    "task": "Professional cleaning",
+    "schedule": "Every 5–7 years"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Thermostat",
+    "task": "Test functionality / replace batteries",
+    "schedule": "Annually"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Humidifier (whole-home)",
+    "task": "Clean and replace water panel/filter",
+    "schedule": "Annually",
+    "season": "fall"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Air Exchanger / HRV",
+    "task": "Clean filters and cores",
+    "schedule": "Every 3–6 months"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Registers & Vents",
+    "task": "Vacuum and wipe clean",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Window / Portable A/C Unit",
+    "itemType": "appliance",
+    "task": "Clean filter",
+    "schedule": "Monthly during use"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Water Heater (Tank)",
+    "task": "Flush sediment from tank",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Water Heater (Tank)",
+    "task": "Inspect anode rod",
+    "schedule": "Every 2–3 years"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Water Heater (Tankless)",
+    "task": "Descale / flush system",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Water Softener",
+    "task": "Refill salt & clean brine tank",
+    "schedule": "Every 2–3 months"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Whole-Home Water Filter",
+    "task": "Replace filter cartridge",
+    "schedule": "Per manufacturer (3–6 months)"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Reverse Osmosis Filter",
+    "task": "Replace filters & membrane",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Sump Pump",
+    "task": "Test operation & clean pit",
+    "schedule": "Annually",
+    "season": "spring"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Sump Pump",
+    "task": "Replace battery backup",
+    "schedule": "Every 2–3 years"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Shut-Off Valves",
+    "task": "Exercise valves to prevent seizing",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Exposed Pipes",
+    "task": "Inspect for leaks or corrosion",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Outdoor Hose Bibs",
+    "task": "Winterize / shut off",
+    "schedule": "Annually",
+    "season": "fall"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Irrigation System",
+    "task": "Winterize (blow out lines)",
+    "schedule": "Annually",
+    "season": "fall"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Irrigation System",
+    "task": "Spring start-up & leak check",
+    "schedule": "Annually",
+    "season": "spring"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Septic System",
+    "task": "Pump and inspect tank",
+    "schedule": "Every 3–5 years"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Septic System",
+    "task": "Inspect drain field",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Dishwasher",
+    "itemType": "appliance",
+    "task": "Clean filter and spray arms",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Dishwasher",
+    "itemType": "appliance",
+    "task": "Run cleaning cycle with descaler",
+    "schedule": "Every 3 months"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Refrigerator",
+    "itemType": "appliance",
+    "task": "Clean condenser coils",
+    "schedule": "Every 6–12 months"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Refrigerator",
+    "itemType": "appliance",
+    "task": "Replace water filter",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Refrigerator",
+    "itemType": "appliance",
+    "task": "Check door gaskets for seal",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Range Hood",
+    "itemType": "appliance",
+    "task": "Clean or replace grease filter",
+    "schedule": "Monthly–quarterly"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Gas Range / Cooktop",
+    "itemType": "appliance",
+    "task": "Clean burner caps and ports",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Gas Range / Cooktop",
+    "itemType": "appliance",
+    "task": "Inspect gas connections for leaks",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Oven",
+    "itemType": "appliance",
+    "task": "Self-clean cycle / deep clean",
+    "schedule": "Every 3–6 months"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Garbage Disposal",
+    "itemType": "appliance",
+    "task": "Clean and deodorize",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Garbage Disposal",
+    "itemType": "appliance",
+    "task": "Check for leaks under sink",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Microwave (built-in)",
+    "itemType": "appliance",
+    "task": "Clean grease filter",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Kitchen",
+    "categoryType": "room",
+    "item": "Under-Sink Plumbing",
+    "task": "Inspect for leaks",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Bathrooms",
+    "categoryType": "room",
+    "item": "Toilet",
+    "task": "Inspect flapper, fill valve & supply line",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Bathrooms",
+    "categoryType": "room",
+    "item": "Toilet",
+    "task": "Check for base leaks / re-caulk",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Bathrooms",
+    "categoryType": "room",
+    "item": "Showerhead",
+    "task": "Descale/soak to remove mineral deposits",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Bathrooms",
+    "categoryType": "room",
+    "item": "Shower / Tub Caulk & Grout",
+    "task": "Inspect and re-caulk/re-grout as needed",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Bathrooms",
+    "categoryType": "room",
+    "item": "Exhaust Fan",
+    "task": "Vacuum and clean fan blades/grille",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Bathrooms",
+    "categoryType": "room",
+    "item": "Drain",
+    "task": "Clear hair and debris; pour drain cleaner",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Bathrooms",
+    "categoryType": "room",
+    "item": "Vanity Supply Lines",
+    "task": "Inspect hoses for bulging or leaks",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Smoke Detectors",
+    "task": "Test all units",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Smoke Detectors",
+    "task": "Replace batteries",
+    "schedule": "Annually (or when alert sounds)"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Smoke Detectors",
+    "task": "Replace entire unit",
+    "schedule": "Every 10 years"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Carbon Monoxide Detectors",
+    "task": "Test all units",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Carbon Monoxide Detectors",
+    "task": "Replace batteries",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Carbon Monoxide Detectors",
+    "task": "Replace entire unit",
+    "schedule": "Every 5–7 years"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "GFCI Outlets",
+    "task": "Test and reset each outlet",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Electrical Panel",
+    "task": "Visual inspection for corrosion/heat damage",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Electrical Panel",
+    "task": "Professional inspection",
+    "schedule": "Every 10 years"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Circuit Breakers",
+    "task": "Exercise breakers to prevent seizing",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Outlets & Switches",
+    "task": "Check for loose covers; test functionality",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Exterior Lighting",
+    "task": "Replace bulbs; clean fixtures",
+    "schedule": "As needed / annually"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Surge Protectors",
+    "task": "Replace units",
+    "schedule": "Every 2–3 years"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
+    "item": "Backup Generator",
+    "task": "Test run and oil change",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Roof",
+    "categoryType": "structure",
+    "item": "Asphalt Shingles",
+    "task": "Visual inspection for missing/damaged shingles",
+    "schedule": "Twice a year"
+  },
+  {
+    "category": "Roof",
+    "categoryType": "structure",
+    "item": "Roof Flashing",
+    "task": "Inspect for lifting, rust or gaps",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Roof",
+    "categoryType": "structure",
+    "item": "Roof Vents & Ridge Vents",
+    "task": "Inspect for blockages",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Roof",
+    "categoryType": "structure",
+    "item": "Chimney",
+    "task": "Inspect cap, crown, flashing & mortar",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Roof",
+    "categoryType": "structure",
+    "item": "Chimney",
+    "task": "Professional sweep / cleaning",
+    "schedule": "Annually (if used)"
+  },
+  {
+    "category": "Roof",
+    "categoryType": "structure",
+    "item": "Skylights",
+    "task": "Inspect seals and clean glass",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Roof",
+    "categoryType": "structure",
+    "item": "Flat Roof / EPDM",
+    "task": "Inspect membrane and seams",
+    "schedule": "Twice a year"
+  },
+  {
+    "category": "Gutters & Drainage",
+    "categoryType": "structure",
+    "item": "Gutters",
+    "task": "Clear leaves and debris",
+    "schedule": "2–4 times/year"
+  },
+  {
+    "category": "Gutters & Drainage",
+    "categoryType": "structure",
+    "item": "Gutters",
+    "task": "Inspect for sagging, cracks or leaks",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Gutters & Drainage",
+    "categoryType": "structure",
+    "item": "Downspouts",
+    "task": "Flush and confirm clear flow",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Gutters & Drainage",
+    "categoryType": "structure",
+    "item": "Downspout Extensions",
+    "task": "Direct water 4–6 ft from foundation",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Gutters & Drainage",
+    "categoryType": "structure",
+    "item": "Window Wells",
+    "task": "Clear debris and check drainage",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Gutters & Drainage",
+    "categoryType": "structure",
+    "item": "Yard Grading",
+    "task": "Inspect slope away from foundation",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Gutters & Drainage",
+    "categoryType": "structure",
+    "item": "French Drain / Drain Tile",
+    "task": "Inspect outlets and flow",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Exterior Paint / Siding",
+    "task": "Inspect for peeling, cracking or rot",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Wood Siding / Trim",
+    "task": "Re-paint or re-stain as needed",
+    "schedule": "Every 5–10 years"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Fiber Cement / Vinyl Siding",
+    "task": "Pressure wash and inspect",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Brick / Mortar",
+    "task": "Inspect for cracks and tuckpoint",
+    "schedule": "Every 5–10 years"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Foundation",
+    "task": "Walk perimeter; inspect for cracks",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Driveway (asphalt)",
+    "task": "Seal coat",
+    "schedule": "Every 2–5 years"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Driveway (concrete)",
+    "task": "Seal cracks and apply concrete sealer",
+    "schedule": "Every 3–5 years"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Walkways & Patio",
+    "task": "Inspect for cracks and heaving",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Deck / Wood Porch",
+    "task": "Clean and re-stain or seal",
+    "schedule": "Every 2–3 years"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Deck / Wood Porch",
+    "task": "Inspect boards and fasteners for rot",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Composite Deck",
+    "task": "Clean with deck cleaner",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Fence (wood)",
+    "task": "Inspect posts; re-stain or seal",
+    "schedule": "Every 2–3 years"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Retaining Walls",
+    "task": "Inspect for bowing or drainage issues",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Exterior",
+    "categoryType": "structure",
+    "item": "Caulking (exterior seams/windows)",
+    "task": "Inspect and re-caulk gaps",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Windows & Doors",
+    "categoryType": "structure",
+    "item": "Windows",
+    "task": "Clean tracks, lubricate hardware",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Windows & Doors",
+    "categoryType": "structure",
+    "item": "Windows",
+    "task": "Inspect weatherstripping and seals",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Windows & Doors",
+    "categoryType": "structure",
+    "item": "Window Screens",
+    "task": "Inspect and repair tears",
+    "schedule": "Annually",
+    "season": "spring"
+  },
+  {
+    "category": "Windows & Doors",
+    "categoryType": "structure",
+    "item": "Exterior Doors",
+    "task": "Inspect weatherstripping and threshold",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Windows & Doors",
+    "categoryType": "structure",
+    "item": "Exterior Doors",
+    "task": "Lubricate hinges and deadbolts",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Windows & Doors",
+    "categoryType": "structure",
+    "item": "Storm Doors",
+    "task": "Clean and adjust door closer",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Windows & Doors",
+    "categoryType": "structure",
+    "item": "Sliding Glass Doors",
+    "task": "Clean and lubricate track",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Windows & Doors",
+    "categoryType": "structure",
+    "item": "Garage Door",
+    "task": "Lubricate springs, rollers and tracks",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Windows & Doors",
+    "categoryType": "structure",
+    "item": "Garage Door",
+    "task": "Test auto-reverse safety feature",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Windows & Doors",
+    "categoryType": "structure",
+    "item": "Garage Door Opener",
+    "task": "Replace backup battery",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Windows & Doors",
+    "categoryType": "structure",
+    "item": "Garage Door Weatherstripping",
+    "task": "Inspect and replace bottom seal",
+    "schedule": "Every 2–3 years"
+  },
+  {
+    "category": "Basement & Crawl Space",
+    "categoryType": "room",
+    "item": "Basement Walls",
+    "task": "Inspect for water intrusion or efflorescence",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Basement & Crawl Space",
+    "categoryType": "room",
+    "item": "Crawl Space",
+    "task": "Inspect vapor barrier and insulation",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Basement & Crawl Space",
+    "categoryType": "room",
+    "item": "Dehumidifier",
+    "itemType": "appliance",
+    "task": "Empty reservoir; clean filter",
+    "schedule": "Monthly during humid season"
+  },
+  {
+    "category": "Basement & Crawl Space",
+    "categoryType": "room",
+    "item": "Floor Drain",
+    "task": "Pour water to maintain trap seal",
+    "schedule": "Every 3 months"
+  },
+  {
+    "category": "Basement & Crawl Space",
+    "categoryType": "room",
+    "item": "Water Proofing System",
+    "task": "Inspect drains and pump",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Garage",
+    "categoryType": "structure",
+    "item": "Garage Floor",
+    "task": "Seal concrete or touch up epoxy",
+    "schedule": "Every 3–5 years"
+  },
+  {
+    "category": "Garage",
+    "categoryType": "structure",
+    "item": "Garage Ventilation",
+    "task": "Clear vents of obstructions",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Interior Caulking (tubs, windows)",
+    "task": "Inspect and re-apply where needed",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Hardwood Floors",
+    "task": "Clean and apply polish/refresh coat",
+    "schedule": "Every 3–5 years (refinish)"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Tile Grout",
+    "task": "Clean and re-seal grout lines",
+    "schedule": "Every 1–2 years"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Carpet",
+    "task": "Professional steam clean",
+    "schedule": "Every 1–2 years"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Ceiling Fans",
+    "task": "Reverse direction seasonally; clean blades",
+    "schedule": "Twice a year"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Attic",
+    "task": "Inspect insulation and ventilation for moisture",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Fireplace (wood-burning)",
+    "task": "Sweep and inspect",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Gas Fireplace",
+    "task": "Clean glass and test ignition",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Interior Paint",
+    "task": "Touch up walls and trim",
+    "schedule": "As needed"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Door Hinges & Hardware",
+    "task": "Lubricate squeaky hinges",
+    "schedule": "As needed"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Staircase",
+    "task": "Tighten balusters and check treads",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Interior",
+    "categoryType": "general",
+    "item": "Window Blinds / Shades",
+    "task": "Dust and clean",
+    "schedule": "Every 3 months"
+  },
+  {
+    "category": "Laundry",
+    "categoryType": "room",
+    "item": "Dryer",
+    "itemType": "appliance",
+    "task": "Clean lint trap",
+    "schedule": "Every load"
+  },
+  {
+    "category": "Laundry",
+    "categoryType": "room",
+    "item": "Dryer Vent Duct",
+    "task": "Clean full duct run",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Laundry",
+    "categoryType": "room",
+    "item": "Washing Machine (front-load)",
+    "itemType": "appliance",
+    "task": "Run drum-clean cycle; wipe door seal",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Laundry",
+    "categoryType": "room",
+    "item": "Washing Machine (top-load)",
+    "itemType": "appliance",
+    "task": "Run self-clean cycle",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Laundry",
+    "categoryType": "room",
+    "item": "Washing Machine Hoses",
+    "task": "Inspect hoses for bulging or cracks",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Safety & Security",
+    "categoryType": "safety",
+    "item": "Fire Extinguisher",
+    "task": "Check pressure gauge",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Safety & Security",
+    "categoryType": "safety",
+    "item": "Fire Extinguisher",
+    "task": "Professional inspection / recharge",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Safety & Security",
+    "categoryType": "safety",
+    "item": "Security System",
+    "task": "Test all sensors and keypad",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Safety & Security",
+    "categoryType": "safety",
+    "item": "Door Locks",
+    "task": "Lubricate lock cylinders",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Safety & Security",
+    "categoryType": "safety",
+    "item": "Outdoor Cameras",
+    "task": "Clean lenses; check angles",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Safety & Security",
+    "categoryType": "safety",
+    "item": "Motion-Sensor Lights",
+    "task": "Test and replace bulbs",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Safety & Security",
+    "categoryType": "safety",
+    "item": "Radon Detector",
+    "task": "Test radon levels",
+    "schedule": "Every 2 years"
+  },
+  {
+    "category": "Safety & Security",
+    "categoryType": "safety",
+    "item": "Emergency Escape Ladder",
+    "task": "Inspect condition and practice use",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Pest Control",
+    "categoryType": "safety",
+    "item": "Foundation & Exterior Seams",
+    "task": "Seal cracks and gaps (pest exclusion)",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Pest Control",
+    "categoryType": "safety",
+    "item": "Attic & Crawl Space",
+    "task": "Inspect for rodent droppings or nests",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Pest Control",
+    "categoryType": "safety",
+    "item": "Termite Prevention",
+    "task": "Professional termite inspection",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Pest Control",
+    "categoryType": "safety",
+    "item": "Perimeter Treatment",
+    "task": "Apply pest control barrier",
+    "schedule": "Every 3 months"
+  },
+  {
+    "category": "Yard & Landscaping",
+    "categoryType": "exterior",
+    "item": "Lawn Mower",
+    "itemType": "tool",
+    "task": "Sharpen blade, change oil & air filter",
+    "schedule": "Annually",
+    "season": "spring"
+  },
+  {
+    "category": "Yard & Landscaping",
+    "categoryType": "exterior",
+    "item": "Lawn",
+    "task": "Aerate and overseed",
+    "schedule": "Annually",
+    "season": "fall"
+  },
+  {
+    "category": "Yard & Landscaping",
+    "categoryType": "exterior",
+    "item": "Lawn",
+    "task": "Fertilize",
+    "schedule": "2–4 times/year"
+  },
+  {
+    "category": "Yard & Landscaping",
+    "categoryType": "exterior",
+    "item": "Trees",
+    "task": "Inspect for dead/hazardous branches",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Yard & Landscaping",
+    "categoryType": "exterior",
+    "item": "Trees & Shrubs",
+    "task": "Professional trimming",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Yard & Landscaping",
+    "categoryType": "exterior",
+    "item": "Garden Beds",
+    "task": "Mulch refresh to 2–3 in depth",
+    "schedule": "Annually",
+    "season": "spring"
+  },
+  {
+    "category": "Yard & Landscaping",
+    "categoryType": "exterior",
+    "item": "Outdoor Furniture",
+    "task": "Clean and apply UV protector",
+    "schedule": "Annually",
+    "season": "spring"
+  },
+  {
+    "category": "Yard & Landscaping",
+    "categoryType": "exterior",
+    "item": "Pool / Spa",
+    "task": "Balance chemicals",
+    "schedule": "Weekly during use"
+  },
+  {
+    "category": "Yard & Landscaping",
+    "categoryType": "exterior",
+    "item": "Pool / Spa",
+    "task": "Winterize",
+    "schedule": "Annually",
+    "season": "fall"
+  },
+  {
+    "category": "Yard & Landscaping",
+    "categoryType": "exterior",
+    "item": "Outdoor Gas Grill",
+    "itemType": "outdoor_appliance",
+    "task": "Clean burners and grates",
+    "schedule": "Every 3 months or after heavy use"
+  }
 ]

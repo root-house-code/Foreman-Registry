@@ -63,13 +63,17 @@ export default function Legend({ activeColors, onToggle, activeSeasons, onToggle
             <span
               key={season}
               onClick={() => onToggleSeason(season.toLowerCase())}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#1a1f2e"; }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
               style={{
+                background: "transparent",
+                borderRadius: "3px",
                 color: active ? "#c9a96e" : "#6a6070",
                 cursor: "pointer",
                 fontFamily: "monospace",
                 fontSize: "0.68rem",
                 padding: "0.2rem 0.3rem",
-                transition: "color 0.15s",
+                transition: "background 0.15s, color 0.15s",
               }}
             >
               {season}

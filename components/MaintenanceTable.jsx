@@ -1,29 +1,97 @@
+import { useState } from "react";
 import ScheduleBadge from "./ScheduleBadge.jsx";
 import DateCell from "./DateCell.jsx";
 import FollowButton from "./FollowButton.jsx";
 import NoteCell from "./NoteCell.jsx";
+import ComboCell from "./ComboCell.jsx";
+import SelectCell from "./SelectCell.jsx";
+import { SCHEDULE_OPTIONS, SEASON_OPTIONS } from "../lib/scheduleOptions.js";
 
 const COLUMNS = [
-  { label: "Category",              width: "9%"  },
-  { label: "Item",                  width: "11%" },
-  { label: "Type of Maintenance",   width: "22%" },
-  { label: "Recommended Schedule",  width: "15%" },
-  { label: "Last Completed On",     width: "14%" },
-  { label: "Next Maintenance Date", width: "14%" },
-  { label: "Notes",                 width: "15%" },
+  { label: "Category",              width: "8%",  sortKey: "category"      },
+  { label: "Item",                  width: "10%", sortKey: "item"          },
+  { label: "Type of Maintenance",   width: "17%", sortKey: "task"          },
+  { label: "Recommended Schedule",  width: "12%", sortKey: "schedule"      },
+  { label: "Season",                width: "7%",  sortKey: "season"        },
+  { label: "Last Completed On",     width: "12%", sortKey: "lastCompleted" },
+  { label: "Next Maintenance Date", width: "13%", sortKey: "nextDate"      },
+  { label: "Notes",                 width: "9%",  sortKey: "notes"         },
+  { label: "",                      width: "4%",  sortKey: null            },
 ];
 
 function rowKey(row) {
-  return `${row.category}|${row.item}|${row.type}`;
+  return `${row.category}|${row.item}|${row.task}`;
+}
+
+function TaskCell({ value, onChange }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  function startEdit() {
+    setDraft(value || "");
+    setEditing(true);
+  }
+
+  function commit() {
+    setEditing(false);
+    onChange(draft);
+  }
+
+  if (!editing) {
+    return (
+      <span
+        onClick={startEdit}
+        style={{
+          color: value ? "#a89e8e" : "#3a3440",
+          cursor: "text",
+          display: "block",
+          fontFamily: "inherit",
+          fontSize: "inherit",
+          minHeight: "1.2em",
+        }}
+      >
+        {value || "Task"}
+      </span>
+    );
+  }
+
+  return (
+    <input
+      autoFocus
+      value={draft}
+      onChange={e => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={e => {
+        if (e.key === "Enter") { e.preventDefault(); commit(); }
+        if (e.key === "Escape") setEditing(false);
+      }}
+      style={{
+        background: "#1a1f2e",
+        border: "1px solid #2e3448",
+        borderRadius: "2px",
+        color: "#e8e0d0",
+        fontFamily: "inherit",
+        fontSize: "inherit",
+        outline: "none",
+        padding: "0.2rem 0.4rem",
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    />
+  );
 }
 
 export default function MaintenanceTable({
   rows,
+  allRows,
   completedDates, onDateChange,
   nextDates, onNextDateChange,
   followSchedule, onToggleFollow,
   notes, onNoteChange,
   rowStates, onUnmute,
+  onRowEdit,
+  isHiddenView, onHideRow, onUnhideRow,
+  sortCols, onHeaderClick,
   stickyTop,
 }) {
   return (
@@ -33,32 +101,45 @@ export default function MaintenanceTable({
       borderRadius: "6px",
     }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
-        {/* TODO: sticky header not working — position:sticky on th requires no ancestor with overflow:hidden/auto
-            in the scroll chain. Audit parent containers (table wrapper div, page layout divs) and either
-            remove conflicting overflow, or switch to a CSS-only scroll container approach. */}
         <thead>
           <tr>
-            {COLUMNS.map(({ label, width }) => (
-              <th key={label} style={{
-                background: "#1a1f2e",
-                borderBottom: "2px solid #2a2f3e",
-                color: "#c9a96e",
-                fontFamily: "monospace",
-                fontSize: "0.68rem",
-                fontWeight: "normal",
-                letterSpacing: "0.12em",
-                padding: "0.75rem 0.6rem",
-                position: "sticky",
-                textAlign: "left",
-                textTransform: "uppercase",
-                top: stickyTop ?? 0,
-                whiteSpace: "nowrap",
-                width,
-                zIndex: 10,
-              }}>
-                {label}
-              </th>
-            ))}
+            {COLUMNS.map(({ label, width, sortKey }) => {
+              const sortIdx = (sortCols || []).findIndex(s => s.col === sortKey);
+              const sortEntry = sortIdx !== -1 ? sortCols[sortIdx] : null;
+              const isPrimary = sortIdx === 0;
+              return (
+                <th
+                  key={label}
+                  onClick={e => onHeaderClick?.(sortKey, e.shiftKey)}
+                  style={{
+                    background: "#1a1f2e",
+                    borderBottom: "2px solid #2a2f3e",
+                    color: "#c9a96e",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                    fontSize: "0.68rem",
+                    fontWeight: "normal",
+                    letterSpacing: "0.12em",
+                    padding: "0.75rem 0.6rem",
+                    position: "sticky",
+                    textAlign: "left",
+                    textTransform: "uppercase",
+                    top: stickyTop ?? 0,
+                    userSelect: "none",
+                    whiteSpace: "nowrap",
+                    width,
+                    zIndex: 10,
+                  }}
+                >
+                  {label}
+                  {sortEntry && (
+                    <span style={{ color: isPrimary ? "#c9a96e" : "#5a5460", marginLeft: "0.3rem" }}>
+                      {sortEntry.dir === "asc" ? "↑" : "↓"}
+                    </span>
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
@@ -79,9 +160,14 @@ export default function MaintenanceTable({
               ) : null;
             }
 
+            const categoryOptions = [...new Set((allRows || []).map(r => r.category).filter(Boolean))];
+            const itemOptions = [...new Set((allRows || []).filter(r => r.category === row.category).map(r => r.item).filter(Boolean))];
+
+            const seasonLabel = SEASON_OPTIONS.find(o => o.value === (row.season ?? null))?.label ?? "—";
+
             return (
               <tr
-                key={key}
+                key={row._id || key}
                 style={{
                   background: baseBg,
                   borderBottom: "1px solid #1e2330",
@@ -92,16 +178,70 @@ export default function MaintenanceTable({
                 onMouseLeave={e => e.currentTarget.style.background = baseBg}
               >
                 <td style={{ padding: "0.5rem 0.6rem", color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.03em", verticalAlign: "middle" }}>
-                  {row.category}
+                  <div style={{ position: "relative" }}>
+                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
+                      <ComboCell
+                        value={row.category}
+                        options={categoryOptions}
+                        placeholder="Category"
+                        onChange={v => onRowEdit(row._id, "category", v)}
+                      />
+                    </div>
+                    <MutedOverlay />
+                  </div>
                 </td>
                 <td style={{ padding: "0.5rem 0.6rem", color: "#d4c9b8", verticalAlign: "middle" }}>
-                  {row.item}
+                  <div style={{ position: "relative" }}>
+                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
+                      <ComboCell
+                        value={row.item}
+                        options={itemOptions}
+                        placeholder="Item"
+                        onChange={v => onRowEdit(row._id, "item", v)}
+                      />
+                    </div>
+                    <MutedOverlay />
+                  </div>
                 </td>
                 <td style={{ padding: "0.5rem 0.6rem", color: "#a89e8e", verticalAlign: "middle" }}>
-                  {row.type}
+                  <div style={{ position: "relative" }}>
+                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
+                      <TaskCell
+                        value={row.task}
+                        onChange={v => onRowEdit(row._id, "task", v)}
+                      />
+                    </div>
+                    <MutedOverlay />
+                  </div>
                 </td>
                 <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <ScheduleBadge schedule={row.schedule} />
+                  <div style={{ position: "relative" }}>
+                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
+                      <SelectCell
+                        value={row.schedule || null}
+                        options={SCHEDULE_OPTIONS.map(s => ({ value: s, label: s }))}
+                        placeholder="Schedule"
+                        renderDisplay={v => v ? <ScheduleBadge schedule={v} /> : (
+                          <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.72rem" }}>Schedule</span>
+                        )}
+                        onChange={v => onRowEdit(row._id, "schedule", v)}
+                      />
+                    </div>
+                    <MutedOverlay />
+                  </div>
+                </td>
+                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                  <div style={{ position: "relative" }}>
+                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
+                      <SelectCell
+                        value={row.season ?? null}
+                        options={SEASON_OPTIONS}
+                        placeholder="—"
+                        onChange={v => onRowEdit(row._id, "season", v)}
+                      />
+                    </div>
+                    <MutedOverlay />
+                  </div>
                 </td>
                 <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
                   <div style={{ position: "relative" }}>
@@ -140,6 +280,47 @@ export default function MaintenanceTable({
                     </div>
                     <MutedOverlay />
                   </div>
+                </td>
+                <td style={{ padding: "0.5rem 0.4rem", textAlign: "center", verticalAlign: "middle" }}>
+                  {isHiddenView ? (
+                    <button
+                      onClick={() => onUnhideRow(key)}
+                      title="Unhide row"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#3a3440",
+                        cursor: "pointer",
+                        fontFamily: "monospace",
+                        fontSize: "0.72rem",
+                        padding: "0.1rem 0.3rem",
+                        transition: "color 0.15s",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.color = "#4ade80"}
+                      onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                    >
+                      ↩
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onHideRow(key)}
+                      title="Hide row"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#3a3440",
+                        cursor: "pointer",
+                        fontFamily: "monospace",
+                        fontSize: "0.72rem",
+                        padding: "0.1rem 0.3rem",
+                        transition: "color 0.15s",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
+                      onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                    >
+                      ×
+                    </button>
+                  )}
                 </td>
               </tr>
             );

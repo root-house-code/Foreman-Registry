@@ -1,5 +1,5 @@
-import { useState } from "react";
-import data from "./data/maintenance.json";
+import { useState, useMemo } from "react";
+import { loadData } from "./lib/data.js";
 import {
   getCategoryState,
   getOwnItemState,
@@ -8,21 +8,9 @@ import {
   setItemState,
 } from "./lib/inventory.js";
 
-// Build ordered category → unique items map from the data
-const CATEGORY_ITEMS = (() => {
-  const map = {};
-  data.forEach(row => {
-    if (!map[row.category]) map[row.category] = [];
-    if (!map[row.category].includes(row.item)) map[row.category].push(row.item);
-  });
-  return map;
-})();
-
-const CATEGORIES = Object.keys(CATEGORY_ITEMS);
-
 const STATE_OPTIONS = [
   { value: "included", label: "Show", color: "#4ade80" },
-  { value: "muted",    label: "Dim",  color: "#f59e0b" },
+  { value: "muted",    label: "Mute", color: "#f59e0b" },
   { value: "excluded", label: "Hide", color: "#f87171" },
 ];
 
@@ -74,6 +62,20 @@ function navBtnStyle(hovered) {
 }
 
 export default function InventoryPage({ inventory, onInventoryChange, onNavigate }) {
+  const data = useMemo(() => loadData(), []);
+
+  const CATEGORY_ITEMS = useMemo(() => {
+    const map = {};
+    data.forEach(row => {
+      if (!row.category || !row.item) return;
+      if (!map[row.category]) map[row.category] = [];
+      if (!map[row.category].includes(row.item)) map[row.category].push(row.item);
+    });
+    return map;
+  }, [data]);
+
+  const CATEGORIES = Object.keys(CATEGORY_ITEMS);
+
   const [collapsed, setCollapsed] = useState(() =>
     Object.fromEntries(CATEGORIES.map(cat => [cat, true]))
   );
@@ -98,7 +100,6 @@ export default function InventoryPage({ inventory, onInventoryChange, onNavigate
     setCollapsed(Object.fromEntries(CATEGORIES.map(cat => [cat, next])));
   }
 
-  // Summary counts across all unique category+item pairs
   const allPairs = CATEGORIES.flatMap(cat =>
     CATEGORY_ITEMS[cat].map(item => ({ category: cat, item }))
   );
@@ -116,7 +117,6 @@ export default function InventoryPage({ inventory, onInventoryChange, onNavigate
       fontFamily: "'Georgia', 'Times New Roman', serif",
       padding: "0",
     }}>
-      {/* Header */}
       <div style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
         borderBottom: "1px solid #2a2f3e",
@@ -157,17 +157,15 @@ export default function InventoryPage({ inventory, onInventoryChange, onNavigate
         </div>
       </div>
 
-      {/* Content */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 2rem 4rem" }}>
 
-        {/* Summary bar */}
         <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "2rem" }}>
           <div style={{ display: "flex", gap: "1.5rem", fontFamily: "monospace", fontSize: "0.72rem" }}>
             <span style={{ color: "#4ade80" }}>
               {counts.included ?? 0} shown
             </span>
             <span style={{ color: "#f59e0b" }}>
-              {counts.muted ?? 0} dimmed
+              {counts.muted ?? 0} muted
             </span>
             <span style={{ color: "#f87171" }}>
               {counts.excluded ?? 0} hidden
@@ -197,7 +195,6 @@ export default function InventoryPage({ inventory, onInventoryChange, onNavigate
           </button>
         </div>
 
-        {/* Category list */}
         {CATEGORIES.map(category => {
           const catState = getCategoryState(inventory, category);
           const items = CATEGORY_ITEMS[category];
@@ -207,7 +204,6 @@ export default function InventoryPage({ inventory, onInventoryChange, onNavigate
           return (
             <div key={category} style={{ marginBottom: "0.5rem" }}>
 
-              {/* Category row */}
               <div style={{
                 alignItems: "center",
                 background: "#13161f",
@@ -247,7 +243,6 @@ export default function InventoryPage({ inventory, onInventoryChange, onNavigate
                 />
               </div>
 
-              {/* Item rows */}
               {!isCollapsed && (
                 <div style={{ border: "1px solid #1e2330", borderTop: "none", borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
                   {items.map((item, idx) => {
@@ -277,7 +272,7 @@ export default function InventoryPage({ inventory, onInventoryChange, onNavigate
 
                         {parentOverrides && (
                           <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.65rem", fontStyle: "italic", whiteSpace: "nowrap" }}>
-                            ↑ {catState === "muted" ? "dimmed" : "hidden"} by category
+                            ↑ {catState === "muted" ? "muted" : "hidden"} by category
                           </span>
                         )}
 

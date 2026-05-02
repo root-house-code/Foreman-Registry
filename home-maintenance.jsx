@@ -1,20 +1,16 @@
-import { useState, useRef, useEffect } from "react";
-import data from "./data/maintenance.json";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { loadData, loadCustomData, saveCustomData, loadOverrides, saveOverrides, defaultData } from "./lib/data.js";
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import MaintenanceTable from "./components/MaintenanceTable.jsx";
 import Legend from "./components/Legend.jsx";
-import { computeNextDate } from "./lib/scheduleInterval.js";
+import { computeNextDate, parseMonths } from "./lib/scheduleInterval.js";
 import { getScheduleColor } from "./lib/scheduleColor.js";
 import { getEffectiveRowState, unmuteRow } from "./lib/inventory.js";
+import { loadHiddenRows, saveHiddenRows } from "./lib/hiddenRows.js";
 
-const CATEGORIES = ["All", ...Array.from(new Set(data.map(d => d.category)))];
-
-const rowDataByKey = Object.fromEntries(
-  data.map(row => [
-    `${row.category}|${row.item}|${row.type}`,
-    { schedule: row.schedule, season: row.season ?? null },
-  ])
-);
+const DEFAULT_CAT_SET = new Set(defaultData.map(d => d.category));
+const CATEGORY_TABS = ["All", "User", "Hidden", ...Array.from(new Set(defaultData.map(d => d.category)))];
+const DEFAULT_CAT_ORDER = Array.from(new Set(defaultData.map(r => r.category)));
 
 function loadDates(key) {
   try {
@@ -36,12 +32,16 @@ function saveDates(key, dates) {
 }
 
 export default function HomeMaintenanceTable({ inventory, onInventoryChange, onNavigate }) {
+  const [rows, setRows] = useState(() => loadData());
   const [activeCategory, setActiveCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [activeFrequencies, setActiveFrequencies] = useState(new Set());
   const [activeSeasons, setActiveSeasons] = useState(new Set());
   const [navHoveredTop, setNavHoveredTop] = useState(false);
   const [navHoveredBottom, setNavHoveredBottom] = useState(false);
+  const [addRowHovered, setAddRowHovered] = useState(false);
+  const [sortCols, setSortCols] = useState([]);
+  const [hiddenRows, setHiddenRows] = useState(() => loadHiddenRows());
   const pageHeaderRef = useRef(null);
   const [pageHeaderHeight, setPageHeaderHeight] = useState(0);
 
@@ -52,6 +52,13 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
+  const rowDataByKey = useMemo(() => Object.fromEntries(
+    rows.map(row => [
+      `${row.category}|${row.item}|${row.task}`,
+      { schedule: row.schedule, season: row.season ?? null },
+    ])
+  ), [rows]);
 
   function handleToggleFrequency(color) {
     setActiveFrequencies(prev => {
@@ -76,6 +83,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
       return next;
     });
   }
+
   const [completedDates, setCompletedDates] = useState(() => loadDates("maintenance-dates"));
   const [nextDates, setNextDates] = useState(() => loadDates("maintenance-next-dates"));
   const [notes, setNotes] = useState(() => {
@@ -87,6 +95,39 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
     catch { return {}; }
   });
 
+  function handleAddRow() {
+    const newRow = {
+      _id: `custom-${Date.now()}`,
+      _isCustom: true,
+      _defaultKey: null,
+      category: "",
+      item: "",
+      task: "",
+      schedule: "",
+      season: null,
+    };
+    const customs = loadCustomData();
+    saveCustomData([newRow, ...customs]);
+    setRows(prev => [newRow, ...prev]);
+  }
+
+  function handleRowEdit(rowId, field, value) {
+    setRows(prev => {
+      const updated = prev.map(r => r._id === rowId ? { ...r, [field]: value } : r);
+      const row = updated.find(r => r._id === rowId);
+      if (row._isCustom) {
+        const customs = updated.filter(r => r._isCustom);
+        saveCustomData(customs);
+      } else {
+        const overrides = loadOverrides();
+        const { _id, _isCustom, _defaultKey, ...fields } = row;
+        overrides[_defaultKey] = fields;
+        saveOverrides(overrides);
+      }
+      return updated;
+    });
+  }
+
   function handleDateChange(key, date) {
     setCompletedDates(prev => {
       const next = { ...prev, [key]: date };
@@ -95,14 +136,17 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
     });
 
     if (followSchedule[key]) {
-      const { schedule, season } = rowDataByKey[key];
-      const computed = computeNextDate(date ?? new Date(), schedule, season);
-      if (computed) {
-        setNextDates(prev => {
-          const next = { ...prev, [key]: computed };
-          saveDates("maintenance-next-dates", next);
-          return next;
-        });
+      const entry = rowDataByKey[key];
+      if (entry) {
+        const { schedule, season } = entry;
+        const computed = computeNextDate(date ?? new Date(), schedule, season);
+        if (computed) {
+          setNextDates(prev => {
+            const next = { ...prev, [key]: computed };
+            saveDates("maintenance-next-dates", next);
+            return next;
+          });
+        }
       }
     }
   }
@@ -132,14 +176,17 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
 
     if (turningOn) {
       const base = completedDates[key] ?? new Date();
-      const { schedule, season } = rowDataByKey[key];
-      const computed = computeNextDate(base, schedule, season);
-      if (computed) {
-        setNextDates(prev => {
-          const next = { ...prev, [key]: computed };
-          saveDates("maintenance-next-dates", next);
-          return next;
-        });
+      const entry = rowDataByKey[key];
+      if (entry) {
+        const { schedule, season } = entry;
+        const computed = computeNextDate(base, schedule, season);
+        if (computed) {
+          setNextDates(prev => {
+            const next = { ...prev, [key]: computed };
+            saveDates("maintenance-next-dates", next);
+            return next;
+          });
+        }
       }
     }
   }
@@ -148,40 +195,147 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
     onInventoryChange(unmuteRow(inventory, row));
   }
 
-  const filtered = data.filter(row => {
-    if (getEffectiveRowState(inventory, row) === "excluded") return false;
-    const matchCat = activeCategory === "All" || row.category === activeCategory;
-    const matchFreq = activeFrequencies.size === 0 || activeFrequencies.has(getScheduleColor(row.schedule));
-    const matchSeason = activeSeasons.size === 0 || (row.season && activeSeasons.has(row.season));
-    const q = search.toLowerCase();
-    const matchSearch = !q ||
-      row.category.toLowerCase().includes(q) ||
-      row.item.toLowerCase().includes(q) ||
-      row.type.toLowerCase().includes(q) ||
-      row.schedule.toLowerCase().includes(q);
-    return matchCat && matchFreq && matchSeason && matchSearch;
-  });
+  function handleHideRow(key) {
+    setHiddenRows(prev => {
+      const next = new Set(prev);
+      next.add(key);
+      saveHiddenRows(next);
+      return next;
+    });
+  }
 
-  const rowStates = Object.fromEntries(
+  function handleUnhideRow(key) {
+    setHiddenRows(prev => {
+      const next = new Set(prev);
+      next.delete(key);
+      saveHiddenRows(next);
+      return next;
+    });
+  }
+
+  function handleHeaderClick(col, shiftKey) {
+    setSortCols(prev => {
+      if (!shiftKey || prev.length === 0) {
+        const isPrimary = prev[0]?.col === col;
+        return [{ col, dir: isPrimary && prev[0].dir === "asc" ? "desc" : "asc" }];
+      }
+      const primary = prev[0];
+      if (primary?.col === col) return prev;
+      const existing = prev[1]?.col === col ? prev[1] : null;
+      return [primary, { col, dir: existing ? (existing.dir === "asc" ? "desc" : "asc") : "asc" }];
+    });
+  }
+
+  function getSortValue(row, col) {
+    const key = `${row.category}|${row.item}|${row.task}`;
+    switch (col) {
+      case "category":     return (row.category || "").toLowerCase();
+      case "item":         return (row.item || "").toLowerCase();
+      case "task":         return (row.task || "").toLowerCase();
+      case "schedule":     return parseMonths(row.schedule || "");
+      case "season":       return row.season || "";
+      case "lastCompleted": return completedDates[key] ?? null;
+      case "nextDate":     return nextDates[key] ?? null;
+      case "notes":        return (notes[key] || "").toLowerCase();
+      default:             return "";
+    }
+  }
+
+  function compareSortValues(av, bv, col, dir) {
+    const aEmpty = av === null || av === undefined || av === "";
+    const bEmpty = bv === null || bv === undefined || bv === "";
+    if (aEmpty && bEmpty) return 0;
+    if (aEmpty) return -1;
+    if (bEmpty) return 1;
+    let raw;
+    if (col === "schedule") raw = av - bv;
+    else if (col === "lastCompleted" || col === "nextDate") raw = av.getTime() - bv.getTime();
+    else raw = av.localeCompare(bv);
+    return dir === "asc" ? raw : -raw;
+  }
+
+  const isHiddenView = activeCategory === "Hidden";
+
+  const filtered = useMemo(() => {
+    const base = rows.filter(row => {
+      const key = `${row.category}|${row.item}|${row.task}`;
+
+      if (isHiddenView) {
+        return hiddenRows.has(key);
+      }
+
+      if (getEffectiveRowState(inventory, row) === "excluded") return false;
+      if (hiddenRows.has(key)) return false;
+
+      let matchCat;
+      if (activeCategory === "All") {
+        matchCat = true;
+      } else if (activeCategory === "User") {
+        matchCat = row._isCustom && row.category && !DEFAULT_CAT_SET.has(row.category);
+      } else {
+        matchCat = row.category === activeCategory;
+      }
+
+      const matchFreq = activeFrequencies.size === 0 || activeFrequencies.has(getScheduleColor(row.schedule));
+      const matchSeason = activeSeasons.size === 0 || (row.season && activeSeasons.has(row.season));
+      const q = search.toLowerCase();
+      const matchSearch = !q ||
+        (row.category || "").toLowerCase().includes(q) ||
+        (row.item || "").toLowerCase().includes(q) ||
+        (row.task || "").toLowerCase().includes(q) ||
+        (row.schedule || "").toLowerCase().includes(q);
+      return matchCat && matchFreq && matchSeason && matchSearch;
+    });
+
+    if (sortCols.length > 0) {
+      return base.sort((a, b) => {
+        for (const { col, dir } of sortCols) {
+          const cmp = compareSortValues(getSortValue(a, col), getSortValue(b, col), col, dir);
+          if (cmp !== 0) return cmp;
+        }
+        return 0;
+      });
+    }
+
+    return base.sort((a, b) => {
+      const rank = r => r.category === "" ? -1 : (DEFAULT_CAT_ORDER.indexOf(r.category) === -1 ? Infinity : DEFAULT_CAT_ORDER.indexOf(r.category));
+      const aRank = rank(a);
+      const bRank = rank(b);
+      if (aRank !== bRank) return aRank - bRank;
+      if (a._isCustom !== b._isCustom) return a._isCustom ? -1 : 1;
+      return 0;
+    });
+  }, [rows, activeCategory, isHiddenView, activeFrequencies, activeSeasons, search, inventory, hiddenRows, sortCols, completedDates, nextDates, notes]);
+
+  const rowStates = useMemo(() => Object.fromEntries(
     filtered.map(row => [
-      `${row.category}|${row.item}|${row.type}`,
+      `${row.category}|${row.item}|${row.task}`,
       getEffectiveRowState(inventory, row),
     ])
-  );
+  ), [filtered, inventory]);
 
-  const hiddenCount = data.filter(row => {
+  const hiddenCount = useMemo(() => rows.filter(row => {
     if (getEffectiveRowState(inventory, row) !== "excluded") return false;
-    const matchCat = activeCategory === "All" || row.category === activeCategory;
+
+    let matchCat;
+    if (activeCategory === "All") {
+      matchCat = true;
+    } else if (activeCategory === "User") {
+      matchCat = row._isCustom && row.category && !DEFAULT_CAT_SET.has(row.category);
+    } else {
+      matchCat = row.category === activeCategory;
+    }
+
     const matchFreq = activeFrequencies.size === 0 || activeFrequencies.has(getScheduleColor(row.schedule));
     const matchSeason = activeSeasons.size === 0 || (row.season && activeSeasons.has(row.season));
     const q = search.toLowerCase();
     const matchSearch = !q ||
-      row.category.toLowerCase().includes(q) ||
-      row.item.toLowerCase().includes(q) ||
-      row.type.toLowerCase().includes(q) ||
-      row.schedule.toLowerCase().includes(q);
+      (row.category || "").toLowerCase().includes(q) ||
+      (row.item || "").toLowerCase().includes(q) ||
+      (row.task || "").toLowerCase().includes(q) ||
+      (row.schedule || "").toLowerCase().includes(q);
     return matchCat && matchFreq && matchSeason && matchSearch;
-  }).length;
+  }).length, [rows, activeCategory, activeFrequencies, activeSeasons, search, inventory]);
 
   return (
     <div style={{
@@ -243,7 +397,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
             </button>
           </div>
           <p style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.85rem", margin: "0 0 1.5rem" }}>
-            {data.length} maintenance items across {CATEGORIES.length - 1} categories
+            {defaultData.length} maintenance items across {CATEGORY_TABS.length - 2} categories
           </p>
 
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
@@ -266,12 +420,33 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
             <span style={{ color: "#5a5460", fontSize: "0.78rem", fontFamily: "monospace" }}>
               {filtered.length} results
             </span>
+            <button
+              onClick={handleAddRow}
+              onMouseEnter={() => setAddRowHovered(true)}
+              onMouseLeave={() => setAddRowHovered(false)}
+              style={{
+                background: "transparent",
+                border: `1px solid ${addRowHovered ? "#c9a96e" : "#2e3448"}`,
+                borderRadius: "3px",
+                color: addRowHovered ? "#c9a96e" : "#8b7d6b",
+                cursor: "pointer",
+                fontFamily: "monospace",
+                fontSize: "0.72rem",
+                letterSpacing: "0.08em",
+                marginLeft: "auto",
+                padding: "0.4rem 0.9rem",
+                transition: "all 0.15s",
+                whiteSpace: "nowrap",
+              }}
+            >
+              + Add Row
+            </button>
           </div>
         </div>
       </div>
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem 2rem 4rem" }}>
-        <CategoryTabs categories={CATEGORIES} active={activeCategory} onSelect={setActiveCategory} />
+        <CategoryTabs categories={CATEGORY_TABS} active={activeCategory} onSelect={setActiveCategory} />
         <Legend
           activeColors={activeFrequencies}
           onToggle={handleToggleFrequency}
@@ -280,6 +455,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
         />
         <MaintenanceTable
           rows={filtered}
+          allRows={rows}
           completedDates={completedDates}
           onDateChange={handleDateChange}
           nextDates={nextDates}
@@ -290,6 +466,12 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
           onNoteChange={handleNoteChange}
           rowStates={rowStates}
           onUnmute={handleUnmute}
+          onRowEdit={handleRowEdit}
+          isHiddenView={isHiddenView}
+          onHideRow={handleHideRow}
+          onUnhideRow={handleUnhideRow}
+          sortCols={sortCols}
+          onHeaderClick={handleHeaderClick}
           stickyTop={pageHeaderHeight}
         />
         <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginTop: "0.75rem" }}>

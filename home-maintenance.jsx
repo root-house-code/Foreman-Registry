@@ -7,6 +7,9 @@ import { computeNextDate, parseMonths } from "./lib/scheduleInterval.js";
 import { getScheduleColor } from "./lib/scheduleColor.js";
 import { getEffectiveRowState, unmuteRow } from "./lib/inventory.js";
 import { loadHiddenRows, saveHiddenRows } from "./lib/hiddenRows.js";
+import { loadDeletedCategories } from "./lib/deletedCategories.js";
+import { loadDeletedItems } from "./lib/deletedItems.js";
+import { GROUP_ORDER, GROUP_LABELS, loadCategoryTypeOverrides } from "./lib/categoryTypes.js";
 
 const DEFAULT_CAT_SET = new Set(defaultData.map(d => d.category));
 const CATEGORY_TABS = ["All", "User", "Hidden", ...Array.from(new Set(defaultData.map(d => d.category)))];
@@ -31,17 +34,20 @@ function saveDates(key, dates) {
   ));
 }
 
-export default function HomeMaintenanceTable({ inventory, onInventoryChange, onNavigate }) {
+export default function HomeMaintenanceTable({ inventory, onInventoryChange, navigate }) {
   const [rows, setRows] = useState(() => loadData());
   const [activeCategory, setActiveCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [activeFrequencies, setActiveFrequencies] = useState(new Set());
   const [activeSeasons, setActiveSeasons] = useState(new Set());
-  const [navHoveredTop, setNavHoveredTop] = useState(false);
-  const [navHoveredBottom, setNavHoveredBottom] = useState(false);
+  const [navHoveredTop, setNavHoveredTop] = useState(null);
+  const [navHoveredBottom, setNavHoveredBottom] = useState(null);
   const [addRowHovered, setAddRowHovered] = useState(false);
   const [sortCols, setSortCols] = useState([]);
   const [hiddenRows, setHiddenRows] = useState(() => loadHiddenRows());
+  const [deletedCategories] = useState(() => loadDeletedCategories());
+  const [deletedItems] = useState(() => loadDeletedItems());
+  const [categoryTypeOverrides] = useState(() => loadCategoryTypeOverrides());
   const pageHeaderRef = useRef(null);
   const [pageHeaderHeight, setPageHeaderHeight] = useState(0);
 
@@ -52,6 +58,41 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
+  const categoryGroups = useMemo(() => {
+    // Scan ALL rows (including blank sentinels) so custom categories pick up
+    // the categoryType stored on their sentinel row.
+    const catTypeMap = {};
+    rows.forEach(row => {
+      if (!row.category) return;
+      if (deletedCategories.has(row.category)) return;
+      if (!catTypeMap[row.category] && row.categoryType) {
+        catTypeMap[row.category] = row.categoryType;
+      }
+    });
+
+    // Only show categories that have at least one real (non-sentinel) row.
+    const catsWithContent = new Set();
+    rows.forEach(row => {
+      if (!row.category || row._isBlankCategory) return;
+      if (deletedCategories.has(row.category)) return;
+      catsWithContent.add(row.category);
+    });
+
+    return GROUP_ORDER.map(type => ({
+      type,
+      label: GROUP_LABELS[type],
+      tabs: Array.from(catsWithContent)
+        .filter(cat => (categoryTypeOverrides[cat] ?? catTypeMap[cat] ?? "general") === type)
+        .sort((a, b) => {
+          const aDefault = DEFAULT_CAT_SET.has(a);
+          const bDefault = DEFAULT_CAT_SET.has(b);
+          if (aDefault !== bDefault) return aDefault ? -1 : 1;
+          if (aDefault) return DEFAULT_CAT_ORDER.indexOf(a) - DEFAULT_CAT_ORDER.indexOf(b);
+          return a.localeCompare(b);
+        }),
+    }));
+  }, [rows, deletedCategories, categoryTypeOverrides]);
 
   const rowDataByKey = useMemo(() => Object.fromEntries(
     rows.map(row => [
@@ -264,6 +305,13 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
         return hiddenRows.has(key);
       }
 
+      if (row._isBlankCategory) {
+        if (activeCategory !== "User") return false;
+        const q = search.toLowerCase();
+        return !q || (row.category || "").toLowerCase().includes(q);
+      }
+      if (deletedCategories.has(row.category)) return false;
+      if (deletedItems.has(`${row.category}|${row.item}`)) return false;
       if (getEffectiveRowState(inventory, row) === "excluded") return false;
       if (hiddenRows.has(key)) return false;
 
@@ -305,7 +353,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
       if (a._isCustom !== b._isCustom) return a._isCustom ? -1 : 1;
       return 0;
     });
-  }, [rows, activeCategory, isHiddenView, activeFrequencies, activeSeasons, search, inventory, hiddenRows, sortCols, completedDates, nextDates, notes]);
+  }, [rows, activeCategory, isHiddenView, activeFrequencies, activeSeasons, search, inventory, hiddenRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
 
   const rowStates = useMemo(() => Object.fromEntries(
     filtered.map(row => [
@@ -375,29 +423,51 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
                 </span>
               </div>
             </div>
-            <button
-              onClick={onNavigate}
-              onMouseEnter={() => setNavHoveredTop(true)}
-              onMouseLeave={() => setNavHoveredTop(false)}
-              style={{
-                background: "transparent",
-                border: `1px solid ${navHoveredTop ? "#c9a96e" : "#2e3448"}`,
-                borderRadius: "3px",
-                color: navHoveredTop ? "#c9a96e" : "#8b7d6b",
-                cursor: "pointer",
-                fontFamily: "monospace",
-                fontSize: "0.72rem",
-                letterSpacing: "0.08em",
-                padding: "0.4rem 0.9rem",
-                transition: "all 0.15s",
-                whiteSpace: "nowrap",
-              }}
-            >
-              ← Inventory
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+              <button
+                onClick={() => navigate("inventory")}
+                onMouseEnter={() => setNavHoveredTop("inv")}
+                onMouseLeave={() => setNavHoveredTop(null)}
+                style={{
+                  background: "transparent",
+                  border: `1px solid ${navHoveredTop === "inv" ? "#c9a96e" : "#2e3448"}`,
+                  borderRadius: "3px",
+                  color: navHoveredTop === "inv" ? "#c9a96e" : "#8b7d6b",
+                  cursor: "pointer",
+                  fontFamily: "monospace",
+                  fontSize: "0.72rem",
+                  letterSpacing: "0.08em",
+                  padding: "0.4rem 0.9rem",
+                  transition: "all 0.15s",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                INVENTORY
+              </button>
+              <button
+                onClick={() => navigate("board")}
+                onMouseEnter={() => setNavHoveredTop("board")}
+                onMouseLeave={() => setNavHoveredTop(null)}
+                style={{
+                  background: "transparent",
+                  border: `1px solid ${navHoveredTop === "board" ? "#c9a96e" : "#2e3448"}`,
+                  borderRadius: "3px",
+                  color: navHoveredTop === "board" ? "#c9a96e" : "#8b7d6b",
+                  cursor: "pointer",
+                  fontFamily: "monospace",
+                  fontSize: "0.72rem",
+                  letterSpacing: "0.08em",
+                  padding: "0.4rem 0.9rem",
+                  transition: "all 0.15s",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                BOARD
+              </button>
+            </div>
           </div>
           <p style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.85rem", margin: "0 0 1.5rem" }}>
-            {defaultData.length} maintenance items across {CATEGORY_TABS.length - 2} categories
+            {defaultData.length} maintenance items across {CATEGORY_TABS.filter(t => t !== "All" && t !== "User" && t !== "Hidden" && !deletedCategories.has(t)).length} categories
           </p>
 
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
@@ -439,14 +509,19 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
                 whiteSpace: "nowrap",
               }}
             >
-              + Add Row
+              + ADD TASK
             </button>
           </div>
         </div>
       </div>
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem 2rem 4rem" }}>
-        <CategoryTabs categories={CATEGORY_TABS} active={activeCategory} onSelect={setActiveCategory} />
+        <CategoryTabs
+          special={["All", "User", "Hidden"]}
+          groups={categoryGroups}
+          active={activeCategory}
+          onSelect={setActiveCategory}
+        />
         <Legend
           activeColors={activeFrequencies}
           onToggle={handleToggleFrequency}
@@ -478,26 +553,48 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, onN
           <span style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.72rem", visibility: hiddenCount > 0 ? "visible" : "hidden" }}>
             {hiddenCount} hidden
           </span>
-          <button
-            onClick={onNavigate}
-            onMouseEnter={() => setNavHoveredBottom(true)}
-            onMouseLeave={() => setNavHoveredBottom(false)}
-            style={{
-              background: "transparent",
-              border: `1px solid ${navHoveredBottom ? "#c9a96e" : "#2e3448"}`,
-              borderRadius: "3px",
-              color: navHoveredBottom ? "#c9a96e" : "#8b7d6b",
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "0.72rem",
-              letterSpacing: "0.08em",
-              padding: "0.4rem 0.9rem",
-              transition: "all 0.15s",
-              whiteSpace: "nowrap",
-            }}
-          >
-            ← Inventory
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+            <button
+              onClick={() => navigate("inventory")}
+              onMouseEnter={() => setNavHoveredBottom("inv")}
+              onMouseLeave={() => setNavHoveredBottom(null)}
+              style={{
+                background: "transparent",
+                border: `1px solid ${navHoveredBottom === "inv" ? "#c9a96e" : "#2e3448"}`,
+                borderRadius: "3px",
+                color: navHoveredBottom === "inv" ? "#c9a96e" : "#8b7d6b",
+                cursor: "pointer",
+                fontFamily: "monospace",
+                fontSize: "0.72rem",
+                letterSpacing: "0.08em",
+                padding: "0.4rem 0.9rem",
+                transition: "all 0.15s",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Inventory
+            </button>
+            <button
+              onClick={() => navigate("board")}
+              onMouseEnter={() => setNavHoveredBottom("board")}
+              onMouseLeave={() => setNavHoveredBottom(null)}
+              style={{
+                background: "transparent",
+                border: `1px solid ${navHoveredBottom === "board" ? "#c9a96e" : "#2e3448"}`,
+                borderRadius: "3px",
+                color: navHoveredBottom === "board" ? "#c9a96e" : "#8b7d6b",
+                cursor: "pointer",
+                fontFamily: "monospace",
+                fontSize: "0.72rem",
+                letterSpacing: "0.08em",
+                padding: "0.4rem 0.9rem",
+                transition: "all 0.15s",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Board
+            </button>
+          </div>
         </div>
       </div>
     </div>

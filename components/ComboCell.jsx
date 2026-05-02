@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
+import Tooltip from "./Tooltip.jsx";
 
-export default function ComboCell({ value, options, placeholder, onChange }) {
+export default function ComboCell({ value, options, placeholder, onChange, tooltip }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const inputRef = useRef(null);
@@ -30,19 +31,21 @@ export default function ComboCell({ value, options, placeholder, onChange }) {
 
   if (!editing) {
     return (
-      <span
-        onClick={startEdit}
-        style={{
-          color: value ? "#d4c9b8" : "#3a3440",
-          cursor: "text",
-          display: "block",
-          fontFamily: "monospace",
-          fontSize: "0.78rem",
-          minHeight: "1.2em",
-        }}
-      >
-        {value || placeholder}
-      </span>
+      <Tooltip text={tooltip}>
+        <span
+          onClick={startEdit}
+          style={{
+            color: value ? "#d4c9b8" : "#3a3440",
+            cursor: "text",
+            display: "block",
+            fontFamily: "monospace",
+            fontSize: "0.78rem",
+            minHeight: "1.2em",
+          }}
+        >
+          {value || placeholder}
+        </span>
+      </Tooltip>
     );
   }
 

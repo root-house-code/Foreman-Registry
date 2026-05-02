@@ -5,7 +5,9 @@ import FollowButton from "./FollowButton.jsx";
 import NoteCell from "./NoteCell.jsx";
 import ComboCell from "./ComboCell.jsx";
 import SelectCell from "./SelectCell.jsx";
+import Tooltip from "./Tooltip.jsx";
 import { SCHEDULE_OPTIONS, SEASON_OPTIONS } from "../lib/scheduleOptions.js";
+import { CATEGORY_TIPS, ITEM_TIPS, TASK_TIPS } from "../lib/tooltips.js";
 
 const COLUMNS = [
   { label: "Category",              width: "8%",  sortKey: "category"      },
@@ -23,7 +25,7 @@ function rowKey(row) {
   return `${row.category}|${row.item}|${row.task}`;
 }
 
-function TaskCell({ value, onChange }) {
+function TaskCell({ value, onChange, tooltip }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
@@ -39,19 +41,21 @@ function TaskCell({ value, onChange }) {
 
   if (!editing) {
     return (
-      <span
-        onClick={startEdit}
-        style={{
-          color: value ? "#a89e8e" : "#3a3440",
-          cursor: "text",
-          display: "block",
-          fontFamily: "inherit",
-          fontSize: "inherit",
-          minHeight: "1.2em",
-        }}
-      >
-        {value || "Task"}
-      </span>
+      <Tooltip text={tooltip}>
+        <span
+          onClick={startEdit}
+          style={{
+            color: value ? "#a89e8e" : "#3a3440",
+            cursor: "text",
+            display: "block",
+            fontFamily: "inherit",
+            fontSize: "inherit",
+            minHeight: "1.2em",
+          }}
+        >
+          {value || "Task"}
+        </span>
+      </Tooltip>
     );
   }
 
@@ -185,6 +189,7 @@ export default function MaintenanceTable({
                         options={categoryOptions}
                         placeholder="Category"
                         onChange={v => onRowEdit(row._id, "category", v)}
+                        tooltip={!row._isCustom ? CATEGORY_TIPS[row.category] : undefined}
                       />
                     </div>
                     <MutedOverlay />
@@ -198,6 +203,7 @@ export default function MaintenanceTable({
                         options={itemOptions}
                         placeholder="Item"
                         onChange={v => onRowEdit(row._id, "item", v)}
+                        tooltip={!row._isCustom ? ITEM_TIPS[row.item] : undefined}
                       />
                     </div>
                     <MutedOverlay />
@@ -209,6 +215,7 @@ export default function MaintenanceTable({
                       <TaskCell
                         value={row.task}
                         onChange={v => onRowEdit(row._id, "task", v)}
+                        tooltip={!row._isCustom ? TASK_TIPS[`${row.category}|${row.item}|${row.task}`] : undefined}
                       />
                     </div>
                     <MutedOverlay />

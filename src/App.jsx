@@ -6,7 +6,7 @@ import ProjectsPage from "../projects-page.jsx";
 import { loadInventory, saveInventory } from "../lib/inventory.js";
 
 export default function App() {
-  const [page, setPage] = useState("registry");
+  const [page, setPage] = useState("maintenance");
   const [inventory, setInventory] = useState(loadInventory);
 
   function handleInventoryChange(next) {

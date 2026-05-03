@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, Fragment, forwardRef } from "react";
 import { createPortal } from "react-dom";
 import DatePicker from "react-datepicker";
+import PageNav from "./components/PageNav.jsx";
 import Tooltip from "./components/Tooltip.jsx";
 import { loadTodos, saveTodos, createTodo } from "./lib/todos.js";
 import { CATEGORY_TIPS, ITEM_TIPS } from "./lib/tooltips.js";
@@ -1097,7 +1098,7 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
   function buildDeleteMessage({ item, itemCount, taskCount, isDefault }) {
     if (item) {
       const scope = taskCount > 0
-        ? `This will permanently remove ${taskCount} task${taskCount !== 1 ? "s" : ""} from your registry.`
+        ? `This will permanently remove ${taskCount} task${taskCount !== 1 ? "s" : ""} from your maintenance schedule.`
         : "This item has no tasks.";
       const recovery = isDefault
         ? " Default items can be restored by resetting to default."
@@ -1108,7 +1109,7 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
     if (itemCount > 0) parts.push(`${itemCount} item${itemCount !== 1 ? "s" : ""}`);
     if (taskCount > 0) parts.push(`${taskCount} task${taskCount !== 1 ? "s" : ""}`);
     const scope = parts.length > 0
-      ? `This will permanently remove ${parts.join(" and ")} from your registry.`
+      ? `This will permanently remove ${parts.join(" and ")} from your maintenance schedule.`
       : "This category has no items or tasks.";
     const recovery = isDefault
       ? " Default categories can be restored by resetting to default."
@@ -1279,7 +1280,7 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
         top: 0,
         zIndex: 50,
       }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
             <h1 style={{
               color: "#f0e6d3",
@@ -1300,24 +1301,7 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
               </span>
             </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-            <button
-              onClick={() => navigate("board")}
-              onMouseEnter={() => setNavHovered("board")}
-              onMouseLeave={() => setNavHovered(null)}
-              style={navBtnStyle(navHovered === "board")}
-            >
-              Board
-            </button>
-            <button
-              onClick={() => navigate("registry")}
-              onMouseEnter={() => setNavHovered("registry")}
-              onMouseLeave={() => setNavHovered(null)}
-              style={navBtnStyle(navHovered === "registry")}
-            >
-              Registry
-            </button>
-          </div>
+          <PageNav currentPage="inventory" navigate={navigate} />
         </div>
       </div>
 

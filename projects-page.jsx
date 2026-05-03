@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, forwardRef } from "react";
+import PageNav from "./components/PageNav.jsx";
 import DatePicker from "react-datepicker";
 import { loadTodos, saveTodos, createTodo } from "./lib/todos.js";
 import { loadProjects, saveProjects, createProject } from "./lib/projects.js";
@@ -280,7 +281,7 @@ export default function ProjectsPage({ navigate }) {
         padding: "2rem",
         zIndex: 50,
       }}>
-        <div style={{ alignItems: "flex-start", display: "flex", justifyContent: "space-between" }}>
+        <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
           <div>
             <h1 style={{
               color: "#f0e6d3",
@@ -301,11 +302,7 @@ export default function ProjectsPage({ navigate }) {
               </span>
             </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-            <button onClick={() => navigate("inventory")} onMouseEnter={() => setNavHovered("inv")} onMouseLeave={() => setNavHovered(null)} style={navBtnStyle(navHovered === "inv")}>Inventory</button>
-            <button onClick={() => navigate("registry")} onMouseEnter={() => setNavHovered("reg")} onMouseLeave={() => setNavHovered(null)} style={navBtnStyle(navHovered === "reg")}>Registry</button>
-            <button onClick={() => navigate("board")} onMouseEnter={() => setNavHovered("board")} onMouseLeave={() => setNavHovered(null)} style={navBtnStyle(navHovered === "board")}>Board</button>
-          </div>
+          <PageNav currentPage="projects" navigate={navigate} />
         </div>
       </div>
 

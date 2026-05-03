@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import PageNav from "./components/PageNav.jsx";
 import { loadData, loadCustomData, saveCustomData, loadOverrides, saveOverrides, defaultData } from "./lib/data.js";
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import MaintenanceTable from "./components/MaintenanceTable.jsx";
@@ -402,7 +403,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
         zIndex: 50,
       }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
             <div>
               <h1 style={{
                 color: "#f0e6d3",
@@ -414,7 +415,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
               }}>
                 Foreman
               </h1>
-              <div style={{ marginBottom: "0.6rem" }}>
+              <div>
                 <span style={{ color: "#8b7d6b", display: "block", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.25em", textTransform: "uppercase" }}>
                   THE COMPLETE
                 </span>
@@ -423,99 +424,57 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
                 </span>
               </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-              <button
-                onClick={() => navigate("inventory")}
-                onMouseEnter={() => setNavHoveredTop("inv")}
-                onMouseLeave={() => setNavHoveredTop(null)}
-                style={{
-                  background: "transparent",
-                  border: `1px solid ${navHoveredTop === "inv" ? "#c9a96e" : "#2e3448"}`,
-                  borderRadius: "3px",
-                  color: navHoveredTop === "inv" ? "#c9a96e" : "#8b7d6b",
-                  cursor: "pointer",
-                  fontFamily: "monospace",
-                  fontSize: "0.72rem",
-                  letterSpacing: "0.08em",
-                  padding: "0.4rem 0.9rem",
-                  transition: "all 0.15s",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                INVENTORY
-              </button>
-              <button
-                onClick={() => navigate("board")}
-                onMouseEnter={() => setNavHoveredTop("board")}
-                onMouseLeave={() => setNavHoveredTop(null)}
-                style={{
-                  background: "transparent",
-                  border: `1px solid ${navHoveredTop === "board" ? "#c9a96e" : "#2e3448"}`,
-                  borderRadius: "3px",
-                  color: navHoveredTop === "board" ? "#c9a96e" : "#8b7d6b",
-                  cursor: "pointer",
-                  fontFamily: "monospace",
-                  fontSize: "0.72rem",
-                  letterSpacing: "0.08em",
-                  padding: "0.4rem 0.9rem",
-                  transition: "all 0.15s",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                BOARD
-              </button>
-            </div>
-          </div>
-          <p style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.85rem", margin: "0 0 1.5rem" }}>
-            {defaultData.length} maintenance items across {CATEGORY_TABS.filter(t => t !== "All" && t !== "User" && t !== "Hidden" && !deletedCategories.has(t)).length} categories
-          </p>
-
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search items, types, schedules…"
-              style={{
-                background: "#1a1f2e",
-                border: "1px solid #2e3448",
-                borderRadius: "4px",
-                color: "#e8e0d0",
-                fontSize: "0.82rem",
-                padding: "0.5rem 0.85rem",
-                width: "260px",
-                fontFamily: "monospace",
-                outline: "none",
-              }}
-            />
-            <span style={{ color: "#5a5460", fontSize: "0.78rem", fontFamily: "monospace" }}>
-              {filtered.length} results
-            </span>
-            <button
-              onClick={handleAddRow}
-              onMouseEnter={() => setAddRowHovered(true)}
-              onMouseLeave={() => setAddRowHovered(false)}
-              style={{
-                background: "transparent",
-                border: `1px solid ${addRowHovered ? "#c9a96e" : "#2e3448"}`,
-                borderRadius: "3px",
-                color: addRowHovered ? "#c9a96e" : "#8b7d6b",
-                cursor: "pointer",
-                fontFamily: "monospace",
-                fontSize: "0.72rem",
-                letterSpacing: "0.08em",
-                marginLeft: "auto",
-                padding: "0.4rem 0.9rem",
-                transition: "all 0.15s",
-                whiteSpace: "nowrap",
-              }}
-            >
-              + ADD TASK
-            </button>
+            <PageNav currentPage="maintenance" navigate={navigate} />
           </div>
         </div>
       </div>
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem 2rem 4rem" }}>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", marginBottom: "1.25rem" }}>
+          <p style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.85rem", margin: 0 }}>
+            {defaultData.length} maintenance items across {CATEGORY_TABS.filter(t => t !== "All" && t !== "User" && t !== "Hidden" && !deletedCategories.has(t)).length} categories
+          </p>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search items, types, schedules…"
+            style={{
+              background: "#1a1f2e",
+              border: "1px solid #2e3448",
+              borderRadius: "4px",
+              color: "#e8e0d0",
+              fontSize: "0.82rem",
+              marginLeft: "auto",
+              padding: "0.5rem 0.85rem",
+              width: "260px",
+              fontFamily: "monospace",
+              outline: "none",
+            }}
+          />
+          <span style={{ color: "#5a5460", fontSize: "0.78rem", fontFamily: "monospace" }}>
+            {filtered.length} results
+          </span>
+          <button
+            onClick={handleAddRow}
+            onMouseEnter={() => setAddRowHovered(true)}
+            onMouseLeave={() => setAddRowHovered(false)}
+            style={{
+              background: "transparent",
+              border: `1px solid ${addRowHovered ? "#c9a96e" : "#2e3448"}`,
+              borderRadius: "3px",
+              color: addRowHovered ? "#c9a96e" : "#8b7d6b",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              fontSize: "0.72rem",
+              letterSpacing: "0.08em",
+              padding: "0.4rem 0.9rem",
+              transition: "all 0.15s",
+              whiteSpace: "nowrap",
+            }}
+          >
+            + ADD TASK
+          </button>
+        </div>
         <CategoryTabs
           special={["All", "User", "Hidden"]}
           groups={categoryGroups}
@@ -549,52 +508,10 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
           onHeaderClick={handleHeaderClick}
           stickyTop={pageHeaderHeight}
         />
-        <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginTop: "0.75rem" }}>
+        <div style={{ marginTop: "0.75rem" }}>
           <span style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.72rem", visibility: hiddenCount > 0 ? "visible" : "hidden" }}>
             {hiddenCount} hidden
           </span>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-            <button
-              onClick={() => navigate("inventory")}
-              onMouseEnter={() => setNavHoveredBottom("inv")}
-              onMouseLeave={() => setNavHoveredBottom(null)}
-              style={{
-                background: "transparent",
-                border: `1px solid ${navHoveredBottom === "inv" ? "#c9a96e" : "#2e3448"}`,
-                borderRadius: "3px",
-                color: navHoveredBottom === "inv" ? "#c9a96e" : "#8b7d6b",
-                cursor: "pointer",
-                fontFamily: "monospace",
-                fontSize: "0.72rem",
-                letterSpacing: "0.08em",
-                padding: "0.4rem 0.9rem",
-                transition: "all 0.15s",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Inventory
-            </button>
-            <button
-              onClick={() => navigate("board")}
-              onMouseEnter={() => setNavHoveredBottom("board")}
-              onMouseLeave={() => setNavHoveredBottom(null)}
-              style={{
-                background: "transparent",
-                border: `1px solid ${navHoveredBottom === "board" ? "#c9a96e" : "#2e3448"}`,
-                borderRadius: "3px",
-                color: navHoveredBottom === "board" ? "#c9a96e" : "#8b7d6b",
-                cursor: "pointer",
-                fontFamily: "monospace",
-                fontSize: "0.72rem",
-                letterSpacing: "0.08em",
-                padding: "0.4rem 0.9rem",
-                transition: "all 0.15s",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Board
-            </button>
-          </div>
         </div>
       </div>
     </div>

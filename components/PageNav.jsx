@@ -4,7 +4,7 @@ import { useState } from "react";
 // TODO: "+" button is cosmetic — revisit functionality in a future version (likely quick-add or new view)
 
 const TABS = [
-  { key: "dashboard", label: "Dashboard", cosmetic: true },
+  { key: "dashboard", label: "Dashboard" },
   { key: "inventory", label: "Inventory" },
   { key: "maintenance", label: "Maintenance" },
   { key: "board", label: "Board" },

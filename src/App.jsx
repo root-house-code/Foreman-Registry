@@ -3,10 +3,11 @@ import HomeMaintenanceTable from "../home-maintenance.jsx";
 import InventoryPage from "../inventory-page.jsx";
 import BoardPage from "../board-page.jsx";
 import ProjectsPage from "../projects-page.jsx";
+import DashboardPage from "../dashboard-page.jsx";
 import { loadInventory, saveInventory } from "../lib/inventory.js";
 
 export default function App() {
-  const [page, setPage] = useState("maintenance");
+  const [page, setPage] = useState("dashboard");
   const [inventory, setInventory] = useState(loadInventory);
 
   function handleInventoryChange(next) {
@@ -24,6 +25,10 @@ export default function App() {
         navigate={navigate}
       />
     );
+  }
+
+  if (page === "dashboard") {
+    return <DashboardPage navigate={navigate} />;
   }
 
   if (page === "board") {

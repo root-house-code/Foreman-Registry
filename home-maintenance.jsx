@@ -297,13 +297,27 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
   }
 
   const isHiddenView = activeCategory === "Hidden";
+  const isNext30View = activeCategory === "Next 30 Days";
 
   const filtered = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const in30Days = new Date(today); in30Days.setDate(in30Days.getDate() + 30);
+
     const base = rows.filter(row => {
       const key = `${row.category}|${row.item}|${row.task}`;
 
       if (isHiddenView) {
         return hiddenRows.has(key);
+      }
+
+      if (isNext30View) {
+        if (row._isBlankCategory) return false;
+        if (deletedCategories.has(row.category)) return false;
+        if (deletedItems.has(`${row.category}|${row.item}`)) return false;
+        if (getEffectiveRowState(inventory, row) === "excluded") return false;
+        if (hiddenRows.has(key)) return false;
+        const nd = nextDates[key];
+        return nd && nd >= today && nd <= in30Days;
       }
 
       if (row._isBlankCategory) {
@@ -354,7 +368,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
       if (a._isCustom !== b._isCustom) return a._isCustom ? -1 : 1;
       return 0;
     });
-  }, [rows, activeCategory, isHiddenView, activeFrequencies, activeSeasons, search, inventory, hiddenRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
+  }, [rows, activeCategory, isHiddenView, isNext30View, activeFrequencies, activeSeasons, search, inventory, hiddenRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
 
   const rowStates = useMemo(() => Object.fromEntries(
     filtered.map(row => [
@@ -476,7 +490,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
           </button>
         </div>
         <CategoryTabs
-          special={["All", "User", "Hidden"]}
+          special={["All", "User", "Hidden", "Next 30 Days"]}
           groups={categoryGroups}
           active={activeCategory}
           onSelect={setActiveCategory}

@@ -7,7 +7,7 @@ import Legend from "./components/Legend.jsx";
 import { computeNextDate, parseMonths } from "./lib/scheduleInterval.js";
 import { getScheduleColor } from "./lib/scheduleColor.js";
 import { getEffectiveRowState, unmuteRow } from "./lib/inventory.js";
-import { loadHiddenRows, saveHiddenRows } from "./lib/hiddenRows.js";
+import { loadDeletedRows, saveDeletedRows } from "./lib/deletedRows.js";
 import { loadDeletedCategories } from "./lib/deletedCategories.js";
 import { loadDeletedItems } from "./lib/deletedItems.js";
 import { GROUP_ORDER, GROUP_LABELS, loadCategoryTypeOverrides } from "./lib/categoryTypes.js";
@@ -45,7 +45,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
   const [navHoveredBottom, setNavHoveredBottom] = useState(null);
   const [addRowHovered, setAddRowHovered] = useState(false);
   const [sortCols, setSortCols] = useState([]);
-  const [hiddenRows, setHiddenRows] = useState(() => loadHiddenRows());
+  const [deletedRows, setDeletedRows] = useState(() => loadDeletedRows());
   const [deletedCategories] = useState(() => loadDeletedCategories());
   const [deletedItems] = useState(() => loadDeletedItems());
   const [categoryTypeOverrides] = useState(() => loadCategoryTypeOverrides());
@@ -237,22 +237,22 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
     onInventoryChange(unmuteRow(inventory, row));
   }
 
-  function handleHideRow(key) {
-    setHiddenRows(prev => {
-      const next = new Set(prev);
-      next.add(key);
-      saveHiddenRows(next);
-      return next;
-    });
-  }
-
-  function handleUnhideRow(key) {
-    setHiddenRows(prev => {
-      const next = new Set(prev);
-      next.delete(key);
-      saveHiddenRows(next);
-      return next;
-    });
+  function handleDeleteRow(row) {
+    const key = `${row.category}|${row.item}|${row.task}`;
+    if (row._isCustom) {
+      setRows(prev => {
+        const updated = prev.filter(r => r._id !== row._id);
+        saveCustomData(updated.filter(r => r._isCustom));
+        return updated;
+      });
+    } else {
+      setDeletedRows(prev => {
+        const next = new Set(prev);
+        next.add(key);
+        saveDeletedRows(next);
+        return next;
+      });
+    }
   }
 
   function handleHeaderClick(col, shiftKey) {
@@ -296,7 +296,6 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
     return dir === "asc" ? raw : -raw;
   }
 
-  const isHiddenView = activeCategory === "Hidden";
   const isNext30View = activeCategory === "Next 30 Days";
 
   const filtered = useMemo(() => {
@@ -306,16 +305,12 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
     const base = rows.filter(row => {
       const key = `${row.category}|${row.item}|${row.task}`;
 
-      if (isHiddenView) {
-        return hiddenRows.has(key);
-      }
-
       if (isNext30View) {
         if (row._isBlankCategory) return false;
         if (deletedCategories.has(row.category)) return false;
         if (deletedItems.has(`${row.category}|${row.item}`)) return false;
         if (getEffectiveRowState(inventory, row) === "excluded") return false;
-        if (hiddenRows.has(key)) return false;
+        if (deletedRows.has(key)) return false;
         const nd = nextDates[key];
         return nd && nd >= today && nd <= in30Days;
       }
@@ -328,7 +323,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
       if (deletedCategories.has(row.category)) return false;
       if (deletedItems.has(`${row.category}|${row.item}`)) return false;
       if (getEffectiveRowState(inventory, row) === "excluded") return false;
-      if (hiddenRows.has(key)) return false;
+      if (deletedRows.has(key)) return false;
 
       let matchCat;
       if (activeCategory === "All") {
@@ -368,7 +363,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
       if (a._isCustom !== b._isCustom) return a._isCustom ? -1 : 1;
       return 0;
     });
-  }, [rows, activeCategory, isHiddenView, isNext30View, activeFrequencies, activeSeasons, search, inventory, hiddenRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
+  }, [rows, activeCategory, isNext30View, activeFrequencies, activeSeasons, search, inventory, deletedRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
 
   const rowStates = useMemo(() => Object.fromEntries(
     filtered.map(row => [
@@ -377,28 +372,6 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
     ])
   ), [filtered, inventory]);
 
-  const hiddenCount = useMemo(() => rows.filter(row => {
-    if (getEffectiveRowState(inventory, row) !== "excluded") return false;
-
-    let matchCat;
-    if (activeCategory === "All") {
-      matchCat = true;
-    } else if (activeCategory === "User") {
-      matchCat = row._isCustom && row.category && !DEFAULT_CAT_SET.has(row.category);
-    } else {
-      matchCat = row.category === activeCategory;
-    }
-
-    const matchFreq = activeFrequencies.size === 0 || activeFrequencies.has(getScheduleColor(row.schedule));
-    const matchSeason = activeSeasons.size === 0 || (row.season && activeSeasons.has(row.season));
-    const q = search.toLowerCase();
-    const matchSearch = !q ||
-      (row.category || "").toLowerCase().includes(q) ||
-      (row.item || "").toLowerCase().includes(q) ||
-      (row.task || "").toLowerCase().includes(q) ||
-      (row.schedule || "").toLowerCase().includes(q);
-    return matchCat && matchFreq && matchSeason && matchSearch;
-  }).length, [rows, activeCategory, activeFrequencies, activeSeasons, search, inventory]);
 
   return (
     <div style={{
@@ -490,7 +463,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
           </button>
         </div>
         <CategoryTabs
-          special={["All", "User", "Hidden", "Next 30 Days"]}
+          special={["All", "User", "Next 30 Days"]}
           groups={categoryGroups}
           active={activeCategory}
           onSelect={setActiveCategory}
@@ -515,18 +488,11 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
           rowStates={rowStates}
           onUnmute={handleUnmute}
           onRowEdit={handleRowEdit}
-          isHiddenView={isHiddenView}
-          onHideRow={handleHideRow}
-          onUnhideRow={handleUnhideRow}
+          onDeleteRow={handleDeleteRow}
           sortCols={sortCols}
           onHeaderClick={handleHeaderClick}
           stickyTop={pageHeaderHeight}
         />
-        <div style={{ marginTop: "0.75rem" }}>
-          <span style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.72rem", visibility: hiddenCount > 0 ? "visible" : "hidden" }}>
-            {hiddenCount} hidden
-          </span>
-        </div>
       </div>
     </div>
   );

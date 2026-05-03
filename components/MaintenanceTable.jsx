@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import ScheduleBadge from "./ScheduleBadge.jsx";
 import DateCell from "./DateCell.jsx";
 import FollowButton from "./FollowButton.jsx";
@@ -94,10 +95,12 @@ export default function MaintenanceTable({
   notes, onNoteChange,
   rowStates, onUnmute,
   onRowEdit,
-  isHiddenView, onHideRow, onUnhideRow,
+  onDeleteRow,
   sortCols, onHeaderClick,
   stickyTop,
 }) {
+  const [confirmRow, setConfirmRow] = useState(null);
+
   return (
     <div style={{
       background: "#13161f",
@@ -289,45 +292,24 @@ export default function MaintenanceTable({
                   </div>
                 </td>
                 <td style={{ padding: "0.5rem 0.4rem", textAlign: "center", verticalAlign: "middle" }}>
-                  {isHiddenView ? (
-                    <button
-                      onClick={() => onUnhideRow(key)}
-                      title="Unhide row"
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#3a3440",
-                        cursor: "pointer",
-                        fontFamily: "monospace",
-                        fontSize: "0.72rem",
-                        padding: "0.1rem 0.3rem",
-                        transition: "color 0.15s",
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.color = "#4ade80"}
-                      onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
-                    >
-                      ↩
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => onHideRow(key)}
-                      title="Hide row"
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#3a3440",
-                        cursor: "pointer",
-                        fontFamily: "monospace",
-                        fontSize: "0.72rem",
-                        padding: "0.1rem 0.3rem",
-                        transition: "color 0.15s",
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                      onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
-                    >
-                      ×
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setConfirmRow(row)}
+                    title="Delete row"
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#3a3440",
+                      cursor: "pointer",
+                      fontFamily: "monospace",
+                      fontSize: "0.72rem",
+                      padding: "0.1rem 0.3rem",
+                      transition: "color 0.15s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
+                    onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                  >
+                    ×
+                  </button>
                 </td>
               </tr>
             );
@@ -340,6 +322,98 @@ export default function MaintenanceTable({
           No results found.
         </div>
       )}
+
+      {confirmRow && createPortal(
+        <DeleteConfirmModal
+          row={confirmRow}
+          onConfirm={() => { onDeleteRow(confirmRow); setConfirmRow(null); }}
+          onCancel={() => setConfirmRow(null)}
+        />,
+        document.body
+      )}
+    </div>
+  );
+}
+
+function DeleteConfirmModal({ row, onConfirm, onCancel }) {
+  const isCustom = row._isCustom;
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        alignItems: "center",
+        background: "rgba(0,0,0,0.6)",
+        bottom: 0,
+        display: "flex",
+        justifyContent: "center",
+        left: 0,
+        position: "fixed",
+        right: 0,
+        top: 0,
+        zIndex: 1000,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: "#0f1117",
+          border: "1px solid #2e3448",
+          borderRadius: "6px",
+          maxWidth: "420px",
+          padding: "1.75rem 2rem",
+          width: "90%",
+        }}
+      >
+        <div style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: "0.75rem", textTransform: "uppercase" }}>
+          {isCustom ? "Permanently Delete Task" : "Remove from Schedule"}
+        </div>
+        <p style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.78rem", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
+          <strong style={{ color: "#d4c9b8" }}>{row.task}</strong>
+        </p>
+        <p style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.6, margin: "0 0 1.5rem" }}>
+          {isCustom
+            ? "This will permanently delete this task. This cannot be undone."
+            : "This will remove this task from your maintenance schedule. You can restore it anytime from the Guide page."}
+        </p>
+        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+          <button
+            onClick={onCancel}
+            style={{
+              background: "transparent",
+              border: "1px solid #2e3448",
+              borderRadius: "4px",
+              color: "#5a5460",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              fontSize: "0.72rem",
+              padding: "0.4rem 1rem",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#4a4458"; e.currentTarget.style.color = "#8b7d6b"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#5a5460"; }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              background: "#f8717118",
+              border: "1px solid #f87171",
+              borderRadius: "4px",
+              color: "#f87171",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              fontSize: "0.72rem",
+              padding: "0.4rem 1rem",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#f8717130"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#f8717118"; }}
+          >
+            {isCustom ? "Delete" : "Remove"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

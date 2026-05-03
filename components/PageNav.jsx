@@ -9,6 +9,7 @@ const TABS = [
   { key: "maintenance", label: "Maintenance" },
   { key: "board", label: "Board" },
   { key: "projects", label: "Projects" },
+  { key: "guide", label: "Guide" },
 ];
 
 export default function PageNav({ currentPage, navigate }) {

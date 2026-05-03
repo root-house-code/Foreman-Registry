@@ -4,6 +4,7 @@ import InventoryPage from "../inventory-page.jsx";
 import BoardPage from "../board-page.jsx";
 import ProjectsPage from "../projects-page.jsx";
 import DashboardPage from "../dashboard-page.jsx";
+import GuidePage from "../guide-page.jsx";
 import { loadInventory, saveInventory } from "../lib/inventory.js";
 
 export default function App() {
@@ -37,6 +38,10 @@ export default function App() {
 
   if (page === "projects") {
     return <ProjectsPage navigate={navigate} />;
+  }
+
+  if (page === "guide") {
+    return <GuidePage navigate={navigate} />;
   }
 
   return (

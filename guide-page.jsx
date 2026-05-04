@@ -4,6 +4,8 @@ import ScheduleBadge from "./components/ScheduleBadge.jsx";
 import { defaultData } from "./lib/data.js";
 import { loadDeletedRows, saveDeletedRows } from "./lib/deletedRows.js";
 import { CATEGORY_TIPS, ITEM_TIPS, TASK_TIPS } from "./lib/tooltips.js";
+import { MANUFACTURERS_BY_ITEM } from "./lib/manufacturers.js";
+import { getModels } from "./lib/models.js";
 
 const SEASON_LABELS = { spring: "Spring", summer: "Summer", fall: "Fall", winter: "Winter" };
 
@@ -57,6 +59,11 @@ export default function GuidePage({ navigate }) {
     sectionRefs.current[category]?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  const coverageItems = useMemo(() =>
+    Object.keys(MANUFACTURERS_BY_ITEM).sort(),
+    []
+  );
+
   function handleScroll() {
     const container = contentRef.current;
     if (!container) return;
@@ -66,6 +73,8 @@ export default function GuidePage({ navigate }) {
       const el = sectionRefs.current[category];
       if (el && el.getBoundingClientRect().top - containerTop <= 40) current = category;
     }
+    const coverageEl = sectionRefs.current["__coverage__"];
+    if (coverageEl && coverageEl.getBoundingClientRect().top - containerTop <= 40) current = "__coverage__";
     setActiveCategory(current);
   }
 
@@ -138,6 +147,34 @@ export default function GuidePage({ navigate }) {
               </button>
             );
           })}
+          <div style={{ borderTop: "1px solid #1a1d26", margin: "0.75rem 0" }} />
+          {(() => {
+            const isActive = activeCategory === "__coverage__";
+            return (
+              <button
+                onClick={() => scrollTo("__coverage__")}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  borderLeft: `2px solid ${isActive ? "#c9a96e" : "transparent"}`,
+                  color: isActive ? "#c9a96e" : "#3a3548",
+                  cursor: "pointer",
+                  display: "block",
+                  fontFamily: "monospace",
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.05em",
+                  padding: "0.3rem 1rem",
+                  textAlign: "left",
+                  transition: "color 0.15s, border-color 0.15s",
+                  width: "100%",
+                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = "#6a6478"; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = "#3a3548"; }}
+              >
+                Model Coverage
+              </button>
+            );
+          })()}
         </div>
 
         {/* Content */}
@@ -207,6 +244,43 @@ export default function GuidePage({ navigate }) {
             ))}
           </div>
         ))}
+
+        {/* Model Coverage */}
+        <div ref={el => sectionRefs.current["__coverage__"] = el} style={{ marginBottom: "4rem" }}>
+          <h2 style={{ color: "#c9a96e", fontSize: "1rem", fontWeight: 400, letterSpacing: "0.08em", margin: "0 0 0.35rem" }}>
+            Model Coverage
+          </h2>
+          <p style={{ color: "#4a4458", fontSize: "0.7rem", lineHeight: 1.7, margin: "0 0 1.75rem", maxWidth: "780px" }}>
+            {coverageItems.length} appliance types · 1,420 models across 140 manufacturer pairings.
+          </p>
+
+          {coverageItems.map(item => {
+            const manufacturers = MANUFACTURERS_BY_ITEM[item];
+            return (
+              <div key={item} style={{ marginBottom: "1.5rem", paddingLeft: "1.25rem" }}>
+                <div style={{ color: "#c9a96e", fontSize: "0.75rem", letterSpacing: "0.04em", marginBottom: "0.4rem" }}>
+                  {item}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", paddingLeft: "1rem" }}>
+                  {manufacturers.map(mfr => {
+                    const models = getModels(mfr, item);
+                    return (
+                      <div key={mfr}>
+                        <span style={{ color: "#5a5460", fontSize: "0.7rem" }}>{mfr}</span>
+                        {models.length > 0 && (
+                          <div style={{ color: "#2e3040", fontSize: "0.62rem", letterSpacing: "0.02em", lineHeight: 1.6, marginTop: "0.05rem" }}>
+                            {models.join("  ·  ")}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
         </div>
 
       </div>

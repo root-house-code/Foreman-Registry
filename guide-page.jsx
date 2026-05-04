@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import PageNav from "./components/PageNav.jsx";
 import ScheduleBadge from "./components/ScheduleBadge.jsx";
 import { defaultData } from "./lib/data.js";
@@ -46,6 +46,13 @@ export default function GuidePage({ navigate }) {
     [deletedRows]
   );
 
+  useEffect(() => {
+    const raw = localStorage.getItem("foreman-deleted-rows");
+    console.log("[Guide] foreman-deleted-rows raw:", raw);
+    console.log("[Guide] deletedRows set size:", deletedRows.size);
+    console.log("[Guide] deleted keys:", [...deletedRows]);
+  }, []);
+
   function scrollTo(category) {
     sectionRefs.current[category]?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -89,11 +96,9 @@ export default function GuidePage({ navigate }) {
               <h1 style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "1.1rem", fontWeight: 400, letterSpacing: "0.1em", margin: 0 }}>
                 Guide
               </h1>
-              {deletedCount > 0 && (
-                <span style={{ color: "#f87171", fontSize: "0.6rem", letterSpacing: "0.1em" }}>
-                  {deletedCount} removed from schedule
-                </span>
-              )}
+              <span style={{ color: deletedCount > 0 ? "#f87171" : "#2e3448", fontSize: "0.6rem", letterSpacing: "0.1em" }}>
+                {deletedCount} removed from schedule
+              </span>
             </div>
           </div>
           <PageNav currentPage="guide" navigate={navigate} />
@@ -169,24 +174,30 @@ export default function GuidePage({ navigate }) {
                     const tip = TASK_TIPS[key];
 
                     return (
-                      <div key={key} style={{ opacity: isDeleted ? 0.4 : 1, transition: "opacity 0.2s" }}>
-                        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: tip ? "0.3rem" : 0 }}>
-                          <span style={{ color: isDeleted ? "#4a4458" : "#8b7d6b", fontSize: "0.75rem", textDecoration: isDeleted ? "line-through" : "none" }}>
-                            {row.task}
-                          </span>
-                          {row.schedule && <ScheduleBadge schedule={row.schedule} />}
-                          {row.season && (
-                            <span style={{ background: "#1a1f2e", border: "1px solid #2a2f3e", borderRadius: "3px", color: "#5a5460", fontSize: "0.6rem", letterSpacing: "0.08em", padding: "0.15rem 0.4rem" }}>
-                              {SEASON_LABELS[row.season] ?? row.season}
+                      <div key={key}>
+                        <div style={{ opacity: isDeleted ? 0.4 : 1, transition: "opacity 0.2s" }}>
+                          <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: tip ? "0.3rem" : 0 }}>
+                            <span style={{ color: isDeleted ? "#4a4458" : "#8b7d6b", fontSize: "0.75rem", textDecoration: isDeleted ? "line-through" : "none" }}>
+                              {row.task}
                             </span>
+                            {row.schedule && <ScheduleBadge schedule={row.schedule} />}
+                            {row.season && (
+                              <span style={{ background: "#1a1f2e", border: "1px solid #2a2f3e", borderRadius: "3px", color: "#5a5460", fontSize: "0.6rem", letterSpacing: "0.08em", padding: "0.15rem 0.4rem" }}>
+                                {SEASON_LABELS[row.season] ?? row.season}
+                              </span>
+                            )}
+                          </div>
+                          {tip && (
+                            <p style={{ color: "#2e3040", fontSize: "0.67rem", lineHeight: 1.7, margin: 0, maxWidth: "720px" }}>
+                              {tip}
+                            </p>
                           )}
-                          {isDeleted && <span style={{ color: "#f87171", fontSize: "0.6rem", letterSpacing: "0.08em" }}>removed</span>}
-                          {isDeleted && <RestoreButton onRestore={() => handleRestore(key)} />}
                         </div>
-                        {tip && (
-                          <p style={{ color: "#2e3040", fontSize: "0.67rem", lineHeight: 1.7, margin: 0, maxWidth: "720px" }}>
-                            {tip}
-                          </p>
+                        {isDeleted && (
+                          <div style={{ alignItems: "center", display: "flex", gap: "0.6rem", marginTop: "0.35rem" }}>
+                            <span style={{ color: "#f87171", fontSize: "0.6rem", letterSpacing: "0.08em" }}>removed from schedule</span>
+                            <RestoreButton onRestore={() => handleRestore(key)} />
+                          </div>
                         )}
                       </div>
                     );

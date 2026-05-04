@@ -44,11 +44,5 @@ export default function App() {
     return <GuidePage navigate={navigate} />;
   }
 
-  return (
-    <HomeMaintenanceTable
-      inventory={inventory}
-      onInventoryChange={handleInventoryChange}
-      navigate={navigate}
-    />
-  );
+  return <HomeMaintenanceTable navigate={navigate} />;
 }

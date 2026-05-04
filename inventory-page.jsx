@@ -26,6 +26,8 @@ import {
   GROUP_ORDER,
   GROUP_LABELS,
 } from "./lib/categoryTypes.js";
+import { getManufacturers } from "./lib/manufacturers.js";
+import { getModels } from "./lib/models.js";
 
 const PRIORITY_COLORS = {
   low:    "#4ade80",
@@ -36,7 +38,6 @@ const PRIORITY_COLORS = {
 
 const STATE_OPTIONS = [
   { value: "included", label: "Show", color: "#4ade80" },
-  { value: "muted",    label: "Mute", color: "#f59e0b" },
   { value: "excluded", label: "Hide", color: "#f87171" },
 ];
 
@@ -854,7 +855,7 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
                     </Tooltip>
                     {parentOverrides && (
                       <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.65rem", fontStyle: "italic", whiteSpace: "nowrap" }}>
-                        ↑ {catState === "muted" ? "muted" : "hidden"} by category
+                        ↑ hidden by category
                       </span>
                     )}
                     <StateToggle
@@ -915,42 +916,177 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
                       padding: "0.75rem 1.5rem 0.9rem 3rem",
                     }}>
                       <div style={{ display: "flex", gap: "1.25rem" }}>
-                        {[
-                          { field: "make",   label: "Make" },
-                          { field: "model",  label: "Model" },
-                          { field: "serial", label: "Serial No." },
-                        ].map(({ field, label }) => (
-                          <div key={field} style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
-                            <span style={{
-                              color: "#5a5460",
+                        {/* Manufacturer — dropdown when options exist, plain input otherwise */}
+                        <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
+                          <span style={{
+                            color: "#5a5460",
+                            fontFamily: "monospace",
+                            fontSize: "0.6rem",
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                          }}>
+                            Manufacturer
+                          </span>
+                          {(() => {
+                            const mfrs = getManufacturers(item);
+                            const fieldStyle = {
+                              background: "#13161f",
+                              border: "1px solid #2a2f3e",
+                              borderRadius: "3px",
+                              boxSizing: "border-box",
+                              color: "#d4c9b8",
                               fontFamily: "monospace",
-                              fontSize: "0.6rem",
-                              letterSpacing: "0.12em",
-                              textTransform: "uppercase",
-                            }}>
-                              {label}
-                            </span>
-                            <input
-                              value={details[field] || ""}
-                              onChange={e => handleItemDetailChange(category, item, field, e.target.value)}
-                              placeholder="—"
-                              style={{
-                                background: "#13161f",
-                                border: "1px solid #2a2f3e",
-                                borderRadius: "3px",
-                                boxSizing: "border-box",
-                                color: "#d4c9b8",
+                              fontSize: "0.75rem",
+                              outline: "none",
+                              padding: "0.3rem 0.5rem",
+                              width: "100%",
+                            };
+                            if (mfrs.length > 0) {
+                              return (
+                                <select
+                                  value={details.manufacturer || details.make || ""}
+                                  onChange={e => {
+                                    const key = `${category}|${item}`;
+                                    const next = {
+                                      ...itemDetails,
+                                      [key]: { ...(itemDetails[key] || {}), manufacturer: e.target.value, model: "" },
+                                    };
+                                    setItemDetails(next);
+                                    saveItemDetails(next);
+                                  }}
+                                  style={{
+                                    ...fieldStyle,
+                                    appearance: "none",
+                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`,
+                                    backgroundRepeat: "no-repeat",
+                                    backgroundPosition: "right 0.5rem center",
+                                    cursor: "pointer",
+                                    paddingRight: "1.5rem",
+                                  }}
+                                  onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                                >
+                                  <option value="">—</option>
+                                  {mfrs.map(m => (
+                                    <option key={m} value={m}>{m}</option>
+                                  ))}
+                                  <option value="Other">Other</option>
+                                </select>
+                              );
+                            }
+                            return (
+                              <input
+                                value={details.manufacturer || ""}
+                                onChange={e => handleItemDetailChange(category, item, "manufacturer", e.target.value)}
+                                placeholder="—"
+                                style={fieldStyle}
+                                onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                                onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                              />
+                            );
+                          })()}
+                        </div>
+
+                        {/* Model — dropdown when manufacturer+item has a list, locked if no manufacturer selected */}
+                        {(() => {
+                          const selectedMfr = details.manufacturer || details.make || "";
+                          const models = getModels(selectedMfr, item);
+                          const fieldStyle = {
+                            background: "#13161f",
+                            border: "1px solid #2a2f3e",
+                            borderRadius: "3px",
+                            boxSizing: "border-box",
+                            color: "#d4c9b8",
+                            fontFamily: "monospace",
+                            fontSize: "0.75rem",
+                            outline: "none",
+                            padding: "0.3rem 0.5rem",
+                            width: "100%",
+                          };
+                          const noMfr = !selectedMfr;
+                          return (
+                            <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
+                              <span style={{
+                                color: noMfr ? "#3a3440" : "#5a5460",
                                 fontFamily: "monospace",
-                                fontSize: "0.75rem",
-                                outline: "none",
-                                padding: "0.3rem 0.5rem",
-                                width: "100%",
-                              }}
-                              onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-                              onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
-                            />
-                          </div>
-                        ))}
+                                fontSize: "0.6rem",
+                                letterSpacing: "0.12em",
+                                textTransform: "uppercase",
+                              }}>
+                                Model
+                              </span>
+                              {models.length > 0 ? (
+                                <select
+                                  value={details.model || ""}
+                                  onChange={e => handleItemDetailChange(category, item, "model", e.target.value)}
+                                  style={{
+                                    ...fieldStyle,
+                                    appearance: "none",
+                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`,
+                                    backgroundRepeat: "no-repeat",
+                                    backgroundPosition: "right 0.5rem center",
+                                    cursor: "pointer",
+                                    paddingRight: "1.5rem",
+                                  }}
+                                  onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                                >
+                                  <option value="">—</option>
+                                  {models.map(m => (
+                                    <option key={m} value={m}>{m}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  value={details.model || ""}
+                                  onChange={e => handleItemDetailChange(category, item, "model", e.target.value)}
+                                  placeholder={noMfr ? "Select manufacturer" : "—"}
+                                  disabled={noMfr}
+                                  style={{
+                                    ...fieldStyle,
+                                    color: noMfr ? "#3a3440" : "#d4c9b8",
+                                    cursor: noMfr ? "default" : "text",
+                                    opacity: noMfr ? 0.5 : 1,
+                                  }}
+                                  onFocus={e => { if (!noMfr) e.currentTarget.style.borderColor = "#c9a96e"; }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                                />
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Serial No. — always plain text */}
+                        <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
+                          <span style={{
+                            color: "#5a5460",
+                            fontFamily: "monospace",
+                            fontSize: "0.6rem",
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                          }}>
+                            Serial No.
+                          </span>
+                          <input
+                            value={details.serial || ""}
+                            onChange={e => handleItemDetailChange(category, item, "serial", e.target.value)}
+                            placeholder="—"
+                            style={{
+                              background: "#13161f",
+                              border: "1px solid #2a2f3e",
+                              borderRadius: "3px",
+                              boxSizing: "border-box",
+                              color: "#d4c9b8",
+                              fontFamily: "monospace",
+                              fontSize: "0.75rem",
+                              outline: "none",
+                              padding: "0.3rem 0.5rem",
+                              width: "100%",
+                            }}
+                            onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                            onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                          />
+                        </div>
                         <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
                           <span style={{
                             color: "#5a5460",
@@ -1312,7 +1448,6 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
         <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "2rem" }}>
           <div style={{ display: "flex", gap: "1.5rem", fontFamily: "monospace", fontSize: "0.72rem" }}>
             <span style={{ color: "#4ade80" }}>{counts.included ?? 0} shown</span>
-            <span style={{ color: "#f59e0b" }}>{counts.muted ?? 0} muted</span>
             <span style={{ color: "#f87171" }}>{counts.excluded ?? 0} hidden</span>
             <span style={{ color: "#5a5460" }}>of {allPairs.length} items</span>
           </div>

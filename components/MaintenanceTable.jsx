@@ -93,7 +93,6 @@ export default function MaintenanceTable({
   nextDates, onNextDateChange,
   followSchedule, onToggleFollow,
   notes, onNoteChange,
-  rowStates, onUnmute,
   onRowEdit,
   onDeleteRow,
   sortCols, onHeaderClick,
@@ -154,142 +153,85 @@ export default function MaintenanceTable({
             const isEven = idx % 2 === 0;
             const baseBg = isEven ? "#13161f" : "#161920";
             const key = rowKey(row);
-            const isMuted = rowStates?.[key] === "muted";
-
-            function MutedOverlay() {
-              return isMuted ? (
-                <div
-                  onClick={() => onUnmute(row)}
-                  style={{
-                    bottom: 0, cursor: "pointer", left: 0, position: "absolute", right: 0, top: 0,
-                  }}
-                />
-              ) : null;
-            }
 
             const categoryOptions = [...new Set((allRows || []).map(r => r.category).filter(Boolean))];
             const itemOptions = [...new Set((allRows || []).filter(r => r.category === row.category).map(r => r.item).filter(Boolean))];
 
-            const seasonLabel = SEASON_OPTIONS.find(o => o.value === (row.season ?? null))?.label ?? "—";
-
             return (
               <tr
                 key={row._id || key}
-                style={{
-                  background: baseBg,
-                  borderBottom: "1px solid #1e2330",
-                  opacity: isMuted ? 0.35 : 1,
-                  transition: "background 0.1s, opacity 0.15s",
-                }}
-                onMouseEnter={e => { if (!isMuted) e.currentTarget.style.background = "#1e2430"; }}
+                style={{ background: baseBg, borderBottom: "1px solid #1e2330", transition: "background 0.1s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#1e2430"}
                 onMouseLeave={e => e.currentTarget.style.background = baseBg}
               >
                 <td style={{ padding: "0.5rem 0.6rem", color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.03em", verticalAlign: "middle" }}>
-                  <div style={{ position: "relative" }}>
-                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
-                      <ComboCell
-                        value={row.category}
-                        options={categoryOptions}
-                        placeholder="Category"
-                        onChange={v => onRowEdit(row._id, "category", v)}
-                        tooltip={!row._isCustom ? CATEGORY_TIPS[row.category] : undefined}
-                      />
-                    </div>
-                    <MutedOverlay />
-                  </div>
+                  <ComboCell
+                    value={row.category}
+                    options={categoryOptions}
+                    placeholder="Category"
+                    onChange={v => onRowEdit(row._id, "category", v)}
+                    tooltip={!row._isCustom ? CATEGORY_TIPS[row.category] : undefined}
+                  />
                 </td>
                 <td style={{ padding: "0.5rem 0.6rem", color: "#d4c9b8", verticalAlign: "middle" }}>
-                  <div style={{ position: "relative" }}>
-                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
-                      <ComboCell
-                        value={row.item}
-                        options={itemOptions}
-                        placeholder="Item"
-                        onChange={v => onRowEdit(row._id, "item", v)}
-                        tooltip={!row._isCustom ? ITEM_TIPS[row.item] : undefined}
-                      />
-                    </div>
-                    <MutedOverlay />
-                  </div>
+                  <ComboCell
+                    value={row.item}
+                    options={itemOptions}
+                    placeholder="Item"
+                    onChange={v => onRowEdit(row._id, "item", v)}
+                    tooltip={!row._isCustom ? ITEM_TIPS[row.item] : undefined}
+                  />
                 </td>
                 <td style={{ padding: "0.5rem 0.6rem", color: "#a89e8e", verticalAlign: "middle" }}>
-                  <div style={{ position: "relative" }}>
-                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
-                      <TaskCell
-                        value={row.task}
-                        onChange={v => onRowEdit(row._id, "task", v)}
-                        tooltip={!row._isCustom ? TASK_TIPS[`${row.category}|${row.item}|${row.task}`] : undefined}
-                      />
-                    </div>
-                    <MutedOverlay />
+                  <TaskCell
+                    value={row.task}
+                    onChange={v => onRowEdit(row._id, "task", v)}
+                    tooltip={!row._isCustom ? TASK_TIPS[`${row.category}|${row.item}|${row.task}`] : undefined}
+                  />
+                </td>
+                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                  <SelectCell
+                    value={row.schedule || null}
+                    options={SCHEDULE_OPTIONS.map(s => ({ value: s, label: s }))}
+                    placeholder="Schedule"
+                    renderDisplay={v => v ? <ScheduleBadge schedule={v} /> : (
+                      <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.72rem" }}>Schedule</span>
+                    )}
+                    onChange={v => onRowEdit(row._id, "schedule", v)}
+                  />
+                </td>
+                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                  <SelectCell
+                    value={row.season ?? null}
+                    options={SEASON_OPTIONS}
+                    placeholder="—"
+                    onChange={v => onRowEdit(row._id, "season", v)}
+                  />
+                </td>
+                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                  <DateCell
+                    date={completedDates[key] ?? null}
+                    onChange={(date) => onDateChange(key, date)}
+                  />
+                </td>
+                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                  <div style={{ alignItems: "center", display: "flex", gap: "0.4rem" }}>
+                    <DateCell
+                      date={nextDates[key] ?? null}
+                      onChange={(date) => onNextDateChange(key, date)}
+                    />
+                    <FollowButton
+                      schedule={row.schedule}
+                      checked={followSchedule[key] ?? false}
+                      onToggle={() => onToggleFollow(key, row.schedule)}
+                    />
                   </div>
                 </td>
                 <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <div style={{ position: "relative" }}>
-                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
-                      <SelectCell
-                        value={row.schedule || null}
-                        options={SCHEDULE_OPTIONS.map(s => ({ value: s, label: s }))}
-                        placeholder="Schedule"
-                        renderDisplay={v => v ? <ScheduleBadge schedule={v} /> : (
-                          <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.72rem" }}>Schedule</span>
-                        )}
-                        onChange={v => onRowEdit(row._id, "schedule", v)}
-                      />
-                    </div>
-                    <MutedOverlay />
-                  </div>
-                </td>
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <div style={{ position: "relative" }}>
-                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
-                      <SelectCell
-                        value={row.season ?? null}
-                        options={SEASON_OPTIONS}
-                        placeholder="—"
-                        onChange={v => onRowEdit(row._id, "season", v)}
-                      />
-                    </div>
-                    <MutedOverlay />
-                  </div>
-                </td>
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <div style={{ position: "relative" }}>
-                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
-                      <DateCell
-                        date={completedDates[key] ?? null}
-                        onChange={(date) => onDateChange(key, date)}
-                      />
-                    </div>
-                    <MutedOverlay />
-                  </div>
-                </td>
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", position: "relative" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", pointerEvents: isMuted ? "none" : "auto" }}>
-                      <DateCell
-                        date={nextDates[key] ?? null}
-                        onChange={(date) => onNextDateChange(key, date)}
-                      />
-                      <FollowButton
-                        schedule={row.schedule}
-                        checked={followSchedule[key] ?? false}
-                        onToggle={() => onToggleFollow(key, row.schedule)}
-                      />
-                    </div>
-                    <MutedOverlay />
-                  </div>
-                </td>
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <div style={{ position: "relative" }}>
-                    <div style={{ pointerEvents: isMuted ? "none" : "auto" }}>
-                      <NoteCell
-                        value={notes[key] ?? ""}
-                        onChange={(text) => onNoteChange(key, text)}
-                      />
-                    </div>
-                    <MutedOverlay />
-                  </div>
+                  <NoteCell
+                    value={notes[key] ?? ""}
+                    onChange={(text) => onNoteChange(key, text)}
+                  />
                 </td>
                 <td style={{ padding: "0.5rem 0.4rem", textAlign: "center", verticalAlign: "middle" }}>
                   <button

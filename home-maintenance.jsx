@@ -6,7 +6,6 @@ import MaintenanceTable from "./components/MaintenanceTable.jsx";
 import Legend from "./components/Legend.jsx";
 import { computeNextDate, parseMonths } from "./lib/scheduleInterval.js";
 import { getScheduleColor } from "./lib/scheduleColor.js";
-import { getEffectiveRowState, unmuteRow } from "./lib/inventory.js";
 import { loadDeletedRows, saveDeletedRows } from "./lib/deletedRows.js";
 import { loadDeletedCategories } from "./lib/deletedCategories.js";
 import { loadDeletedItems } from "./lib/deletedItems.js";
@@ -35,14 +34,12 @@ function saveDates(key, dates) {
   ));
 }
 
-export default function HomeMaintenanceTable({ inventory, onInventoryChange, navigate }) {
+export default function HomeMaintenanceTable({ navigate }) {
   const [rows, setRows] = useState(() => loadData());
   const [activeCategory, setActiveCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [activeFrequencies, setActiveFrequencies] = useState(new Set());
   const [activeSeasons, setActiveSeasons] = useState(new Set());
-  const [navHoveredTop, setNavHoveredTop] = useState(null);
-  const [navHoveredBottom, setNavHoveredBottom] = useState(null);
   const [addRowHovered, setAddRowHovered] = useState(false);
   const [sortCols, setSortCols] = useState([]);
   const [deletedRows, setDeletedRows] = useState(() => loadDeletedRows());
@@ -233,9 +230,6 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
     }
   }
 
-  function handleUnmute(row) {
-    onInventoryChange(unmuteRow(inventory, row));
-  }
 
   function handleDeleteRow(row) {
     const key = `${row.category}|${row.item}|${row.task}`;
@@ -309,7 +303,6 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
         if (row._isBlankCategory) return false;
         if (deletedCategories.has(row.category)) return false;
         if (deletedItems.has(`${row.category}|${row.item}`)) return false;
-        if (getEffectiveRowState(inventory, row) === "excluded") return false;
         if (deletedRows.has(key)) return false;
         const nd = nextDates[key];
         return nd && nd >= today && nd <= in30Days;
@@ -322,7 +315,6 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
       }
       if (deletedCategories.has(row.category)) return false;
       if (deletedItems.has(`${row.category}|${row.item}`)) return false;
-      if (getEffectiveRowState(inventory, row) === "excluded") return false;
       if (deletedRows.has(key)) return false;
 
       let matchCat;
@@ -363,14 +355,7 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
       if (a._isCustom !== b._isCustom) return a._isCustom ? -1 : 1;
       return 0;
     });
-  }, [rows, activeCategory, isNext30View, activeFrequencies, activeSeasons, search, inventory, deletedRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
-
-  const rowStates = useMemo(() => Object.fromEntries(
-    filtered.map(row => [
-      `${row.category}|${row.item}|${row.task}`,
-      getEffectiveRowState(inventory, row),
-    ])
-  ), [filtered, inventory]);
+  }, [rows, activeCategory, isNext30View, activeFrequencies, activeSeasons, search, deletedRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
 
 
   return (
@@ -485,8 +470,6 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
           onToggleFollow={handleToggleFollow}
           notes={notes}
           onNoteChange={handleNoteChange}
-          rowStates={rowStates}
-          onUnmute={handleUnmute}
           onRowEdit={handleRowEdit}
           onDeleteRow={handleDeleteRow}
           sortCols={sortCols}

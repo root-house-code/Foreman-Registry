@@ -6,8 +6,9 @@ import FollowButton from "./FollowButton.jsx";
 import NoteCell from "./NoteCell.jsx";
 import ComboCell from "./ComboCell.jsx";
 import SelectCell from "./SelectCell.jsx";
+import SchedulePicker from "./SchedulePicker.jsx";
 import Tooltip from "./Tooltip.jsx";
-import { SCHEDULE_OPTIONS, SEASON_OPTIONS } from "../lib/scheduleOptions.js";
+import { SEASON_OPTIONS } from "../lib/scheduleOptions.js";
 import { CATEGORY_TIPS, ITEM_TIPS, TASK_TIPS } from "../lib/tooltips.js";
 
 const COLUMNS = [
@@ -190,13 +191,8 @@ export default function MaintenanceTable({
                   />
                 </td>
                 <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <SelectCell
+                  <SchedulePicker
                     value={row.schedule || null}
-                    options={SCHEDULE_OPTIONS.map(s => ({ value: s, label: s }))}
-                    placeholder="Schedule"
-                    renderDisplay={v => v ? <ScheduleBadge schedule={v} /> : (
-                      <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.72rem" }}>Schedule</span>
-                    )}
                     onChange={v => onRowEdit(row._id, "schedule", v)}
                   />
                 </td>

@@ -5,6 +5,7 @@ import BoardPage from "../board-page.jsx";
 import ProjectsPage from "../projects-page.jsx";
 import DashboardPage from "../dashboard-page.jsx";
 import GuidePage from "../guide-page.jsx";
+import ChoresPage from "../chores-page.jsx";
 export default function App() {
   const [page, setPage] = useState("dashboard");
 
@@ -32,6 +33,10 @@ export default function App() {
 
   if (page === "guide") {
     return <GuidePage navigate={navigate} />;
+  }
+
+  if (page === "chores") {
+    return <ChoresPage navigate={navigate} />;
   }
 
   return <HomeMaintenanceTable navigate={navigate} />;

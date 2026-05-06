@@ -7,6 +7,7 @@ const TABS = [
   { key: "dashboard", label: "Dashboard" },
   { key: "inventory", label: "Inventory" },
   { key: "maintenance", label: "Maintenance" },
+  { key: "chores", label: "Chores" },
   { key: "board", label: "To Dos" },
   { key: "projects", label: "Projects" },
   { key: "guide", label: "Guide" },

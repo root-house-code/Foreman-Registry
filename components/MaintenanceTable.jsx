@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import ScheduleBadge from "./ScheduleBadge.jsx";
 import DateCell from "./DateCell.jsx";
 import FollowButton from "./FollowButton.jsx";
+import ReminderButton from "./ReminderButton.jsx";
 import NoteCell from "./NoteCell.jsx";
 import ComboCell from "./ComboCell.jsx";
 import SelectCell from "./SelectCell.jsx";
@@ -92,6 +93,7 @@ export default function MaintenanceTable({
   completedDates, onDateChange,
   nextDates, onNextDateChange,
   followSchedule, onToggleFollow,
+  reminderModes, onCycleReminderMode,
   notes, onNoteChange,
   rowStates, onUnmute,
   onRowEdit,
@@ -275,6 +277,11 @@ export default function MaintenanceTable({
                         schedule={row.schedule}
                         checked={followSchedule[key] ?? false}
                         onToggle={() => onToggleFollow(key, row.schedule)}
+                      />
+                      <ReminderButton
+                        schedule={row.schedule}
+                        mode={reminderModes?.[key] ?? "off"}
+                        onCycle={() => onCycleReminderMode?.(key)}
                       />
                     </div>
                     <MutedOverlay />

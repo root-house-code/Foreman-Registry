@@ -688,7 +688,7 @@ export default function BoardPage({ navigate }) {
                 PROJECT
               </span>
               <span style={{ color: "#c9a96e", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>
-                Board
+                To Dos
               </span>
             </div>
           </div>

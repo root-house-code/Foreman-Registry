@@ -1336,11 +1336,13 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
   return (
     <div style={{
-      minHeight: "100vh",
+      height: "100vh",
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
       background: "#0f1117",
       color: "#e8e0d0",
       fontFamily: "'Georgia', 'Times New Roman', serif",
-      padding: "0",
     }}>
 
       {duplicateItemPopup && createPortal(
@@ -1665,12 +1667,11 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
       <div ref={headerRef} style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
         borderBottom: "1px solid #2a2f3e",
-        padding: "2rem 2rem 2rem",
-        position: "sticky",
-        top: 0,
+        flexShrink: 0,
+        padding: "2rem",
         zIndex: 50,
       }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
             <h1 style={{
               color: "#f0e6d3",
@@ -1695,7 +1696,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
         </div>
       </div>
 
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "2rem 2rem 4rem" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "2rem 2rem 4rem" }}>
         <div style={{ alignItems: "flex-start", display: "flex", gap: "2rem" }}>
         <div style={{ flex: "0 0 58%", minWidth: 0 }}>
 
@@ -1840,7 +1841,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
           minWidth: 0,
           overflow: "hidden",
           position: "sticky",
-          top: headerHeight + 24,
+          top: 24,
         }}>
           <div style={{
             borderBottom: "1px solid #1e2330",
@@ -2177,7 +2178,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                     onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
                     onMouseLeave={e => { e.currentTarget.style.color = "#3a3440"; }}
                   >
-                    View all on Board →
+                    View all on To Dos →
                   </button>
                 </div>
               </>

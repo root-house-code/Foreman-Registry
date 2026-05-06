@@ -360,48 +360,47 @@ export default function HomeMaintenanceTable({ navigate }) {
 
   return (
     <div style={{
-      minHeight: "100vh",
+      height: "100vh",
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
       background: "#0f1117",
       fontFamily: "'Georgia', 'Times New Roman', serif",
       color: "#e8e0d0",
-      padding: "0",
     }}>
       <div ref={pageHeaderRef} style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
         borderBottom: "1px solid #2a2f3e",
-        padding: "2rem 2rem 2rem",
-        position: "sticky",
-        top: 0,
+        flexShrink: 0,
+        padding: "2rem",
         zIndex: 50,
       }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <div>
+            <h1 style={{
+              color: "#f0e6d3",
+              fontSize: "clamp(2rem, 5vw, 3rem)",
+              fontWeight: "normal",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.1,
+              margin: "0 0 0.5rem",
+            }}>
+              Foreman
+            </h1>
             <div>
-              <h1 style={{
-                color: "#f0e6d3",
-                fontSize: "clamp(2rem, 5vw, 3rem)",
-                fontWeight: "normal",
-                letterSpacing: "-0.02em",
-                lineHeight: 1.1,
-                margin: "0 0 0.5rem",
-              }}>
-                Foreman
-              </h1>
-              <div>
-                <span style={{ color: "#8b7d6b", display: "block", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.25em", textTransform: "uppercase" }}>
-                  THE COMPLETE
-                </span>
-                <span style={{ color: "#c9a96e", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>
-                  Home Maintenance Registry
-                </span>
-              </div>
+              <span style={{ color: "#8b7d6b", display: "block", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.25em", textTransform: "uppercase" }}>
+                THE COMPLETE
+              </span>
+              <span style={{ color: "#c9a96e", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>
+                Home Maintenance Registry
+              </span>
             </div>
-            <PageNav currentPage="maintenance" navigate={navigate} />
           </div>
+          <PageNav currentPage="maintenance" navigate={navigate} />
         </div>
       </div>
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem 2rem 4rem" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "2rem 2rem 4rem" }}>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", marginBottom: "1.25rem" }}>
           <p style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.85rem", margin: 0 }}>
             {defaultData.length} maintenance items across {CATEGORY_TABS.filter(t => t !== "All" && t !== "User" && t !== "Hidden" && !deletedCategories.has(t)).length} categories
@@ -474,7 +473,7 @@ export default function HomeMaintenanceTable({ navigate }) {
           onDeleteRow={handleDeleteRow}
           sortCols={sortCols}
           onHeaderClick={handleHeaderClick}
-          stickyTop={pageHeaderHeight}
+          stickyTop={0}
         />
       </div>
     </div>

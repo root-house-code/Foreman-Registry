@@ -186,20 +186,14 @@ export default function DashboardPage({ navigate }) {
   return (
     <div style={{ background: "#0f1117", color: "#d4c9b8", display: "flex", flexDirection: "column", fontFamily: "monospace", height: "100vh", overflow: "hidden" }}>
       {/* Header */}
-      <div style={{
-        background: "linear-gradient(180deg, #0a0c12 0%, #0d0f16 100%)",
-        borderBottom: "1px solid #1a1d26",
-        flexShrink: 0,
-        padding: "1.5rem 2rem 1rem",
-      }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #2a2f3e", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
         <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
           <div>
-            <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: "0.2rem", textTransform: "uppercase" }}>
-              YOUR HOME AT A GLANCE
+            <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
+            <div>
+              <span style={{ color: "#8b7d6b", display: "block", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.25em", textTransform: "uppercase" }}>YOUR HOME AT A GLANCE</span>
+              <span style={{ color: "#c9a96e", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>Dashboard</span>
             </div>
-            <h1 style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "1.1rem", fontWeight: 400, letterSpacing: "0.1em", margin: 0 }}>
-              Dashboard
-            </h1>
           </div>
           <PageNav currentPage="dashboard" navigate={navigate} />
         </div>
@@ -291,7 +285,7 @@ export default function DashboardPage({ navigate }) {
           <div style={card}>
             <div style={sectionHeader}>
               <span style={sectionTitle}>To Dos</span>
-              <button style={navLink} onClick={() => navigate("board")}>&rarr; Board</button>
+              <button style={navLink} onClick={() => navigate("board")}>&rarr; To Dos</button>
             </div>
             <div style={{ display: "flex", gap: "1.5rem", marginBottom: "0.75rem" }}>
               {[

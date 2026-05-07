@@ -12,20 +12,19 @@ import {
 } from "./lib/data.js";
 import { loadDeletedCategories, saveDeletedCategories } from "./lib/deletedCategories.js";
 import { loadDeletedItems, saveDeletedItems } from "./lib/deletedItems.js";
+import { loadDeletedRows, saveDeletedRows } from "./lib/deletedRows.js";
 import { loadItemDetails, saveItemDetails } from "./lib/itemDetails.js";
-import {
-  getCategoryState,
-  getOwnItemState,
-  getEffectiveRowState,
-  setCategoryState,
-  setItemState,
-} from "./lib/inventory.js";
 import {
   loadCategoryTypeOverrides,
   saveCategoryTypeOverrides,
   GROUP_ORDER,
   GROUP_LABELS,
 } from "./lib/categoryTypes.js";
+import { getManufacturers } from "./lib/manufacturers.js";
+import { getModels } from "./lib/models.js";
+import { SEASON_OPTIONS } from "./lib/scheduleOptions.js";
+import FollowButton from "./components/FollowButton.jsx";
+import SchedulePicker from "./components/SchedulePicker.jsx";
 
 const PRIORITY_COLORS = {
   low:    "#4ade80",
@@ -33,43 +32,6 @@ const PRIORITY_COLORS = {
   high:   "#f59e0b",
   urgent: "#f87171",
 };
-
-const STATE_OPTIONS = [
-  { value: "included", label: "Show", color: "#4ade80" },
-  { value: "muted",    label: "Mute", color: "#f59e0b" },
-  { value: "excluded", label: "Hide", color: "#f87171" },
-];
-
-function StateToggle({ state, onChange, disabled }) {
-  return (
-    <div style={{ display: "flex", gap: "0.2rem", flexShrink: 0 }}>
-      {STATE_OPTIONS.map(({ value, label, color }) => {
-        const active = state === value;
-        return (
-          <button
-            key={value}
-            onClick={() => !disabled && onChange(value)}
-            style={{
-              background: active ? `${color}18` : "transparent",
-              border: `1px solid ${active ? `${color}40` : "#2e3448"}`,
-              borderRadius: "3px",
-              color: active ? color : "#5a5460",
-              cursor: disabled ? "default" : "pointer",
-              fontFamily: "monospace",
-              fontSize: "0.65rem",
-              letterSpacing: "0.05em",
-              opacity: disabled ? 0.4 : 1,
-              padding: "0.2rem 0.5rem",
-              transition: "all 0.15s",
-            }}
-          >
-            {label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 function navBtnStyle(hovered) {
   return {
@@ -261,7 +223,7 @@ function InlineComboInput({ placeholder = "", onCommit, onCancel, options = [] }
   );
 }
 
-export default function InventoryPage({ inventory, onInventoryChange, navigate }) {
+export default function InventoryPage({ navigate }) {
   const [rows, setRows] = useState(() => loadData());
   const [deletedCategories, setDeletedCategories] = useState(() => loadDeletedCategories());
   const [deletedItems, setDeletedItems] = useState(() => loadDeletedItems());
@@ -349,6 +311,14 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
   const [todos, setTodos] = useState(() => loadTodos());
   const [addingTodo, setAddingTodo] = useState(false);
   const [newTodoTitle, setNewTodoTitle] = useState("");
+  const [addingTask, setAddingTask] = useState(false);
+  const [newTask, setNewTask] = useState({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" });
+  const [deleteTaskPrompt, setDeleteTaskPrompt] = useState(null);
+  const [deletedRows, setDeletedRows] = useState(() => loadDeletedRows());
+  const [suggestedTasks, setSuggestedTasks] = useState(null); // null | Array<{task,schedule,season,selected}>
+  const [suggestedFor, setSuggestedFor] = useState(null); // { category, item }
+  const [fetchingTasks, setFetchingTasks] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
 
   const itemTasks = useMemo(() => {
     if (!selectedItem) return [];
@@ -356,9 +326,10 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
       r.category === selectedItem.category &&
       r.item === selectedItem.item &&
       !r._isBlankCategory &&
-      r.task
+      r.task &&
+      !deletedRows.has(`${r.category}|${r.item}|${r.task}`)
     );
-  }, [rows, selectedItem]);
+  }, [rows, selectedItem, deletedRows]);
 
   const selectedTodos = useMemo(() => {
     if (!selectedItem) return [];
@@ -367,6 +338,127 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
       (t.linkedItem === selectedItem.item || t.linkedItem === null)
     );
   }, [todos, selectedItem]);
+
+  function handleAddTask() {
+    if (!newTask.task.trim() || !selectedItem) return;
+    const taskName = newTask.task.trim();
+    const key = `${selectedItem.category}|${selectedItem.item}|${taskName}`;
+    const newRow = {
+      _id: `custom-${Date.now()}`,
+      _isCustom: true,
+      _defaultKey: null,
+      category: selectedItem.category,
+      item: selectedItem.item,
+      task: taskName,
+      schedule: newTask.schedule || "",
+      season: newTask.season || null,
+    };
+    const customs = loadCustomData();
+    saveCustomData([...customs, newRow]);
+    if (newTask.lastCompleted) {
+      const dates = JSON.parse(localStorage.getItem("maintenance-dates") || "{}");
+      dates[key] = new Date(newTask.lastCompleted).toISOString();
+      localStorage.setItem("maintenance-dates", JSON.stringify(dates));
+    }
+    if (newTask.nextDate) {
+      const nextDates = JSON.parse(localStorage.getItem("maintenance-next-dates") || "{}");
+      nextDates[key] = new Date(newTask.nextDate).toISOString();
+      localStorage.setItem("maintenance-next-dates", JSON.stringify(nextDates));
+    }
+    if (newTask.notes) {
+      const notes = JSON.parse(localStorage.getItem("maintenance-notes") || "{}");
+      notes[key] = newTask.notes;
+      localStorage.setItem("maintenance-notes", JSON.stringify(notes));
+    }
+    if (newTask.followSchedule) {
+      const follow = JSON.parse(localStorage.getItem("maintenance-follow") || "{}");
+      follow[key] = true;
+      localStorage.setItem("maintenance-follow", JSON.stringify(follow));
+    }
+    reload();
+    setAddingTask(false);
+    setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" });
+  }
+
+  function handleDeleteTask(row) {
+    if (row._isCustom) {
+      const customs = loadCustomData();
+      saveCustomData(customs.filter(r => r._id !== row._id));
+      reload();
+    } else {
+      const key = `${row.category}|${row.item}|${row.task}`;
+      const next = new Set([...deletedRows, key]);
+      saveDeletedRows(next);
+      setDeletedRows(next);
+    }
+  }
+
+  async function handleFetchTasks(manufacturer, model, item, category) {
+    setFetchingTasks(true);
+    setFetchError(null);
+    setSuggestedTasks(null);
+    setSuggestedFor({ category, item });
+
+    const scheduleValues = "every 1 month, every 3 months, every 6 months, every 1 year, every 2 years, every 5 years, every 10 years, as needed, every load";
+    const prompt = `You are a home maintenance expert. List the manufacturer-recommended maintenance tasks for this appliance.
+
+Manufacturer: ${manufacturer}
+Model: ${model || "unknown"}
+Appliance type: ${item}
+
+Return ONLY a JSON array with no explanation or markdown. Each object must have exactly these fields:
+- "task": string — concise task name (e.g. "Replace water filter")
+- "schedule": string — use one of: ${scheduleValues}
+- "season": null or one of "spring", "summer", "fall", "winter" (only if the task is season-specific)
+
+Return 5–12 tasks. Include only tasks that are standard for this appliance type.`;
+
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.2,
+          max_tokens: 1024,
+        }),
+      });
+      if (!res.ok) throw new Error(`Groq API error ${res.status}`);
+      const data = await res.json();
+      const raw = data.choices[0].message.content.replace(/```json\n?|\n?```/g, "").trim();
+      const parsed = JSON.parse(raw);
+      setSuggestedTasks(parsed.map(t => ({ ...t, selected: true })));
+    } catch (err) {
+      setFetchError(err.message);
+    } finally {
+      setFetchingTasks(false);
+    }
+  }
+
+  function handleAddSuggestedTasks() {
+    if (!suggestedTasks || !suggestedFor) return;
+    const toAdd = suggestedTasks.filter(t => t.selected);
+    if (toAdd.length === 0) return;
+    const customs = loadCustomData();
+    const newRows = toAdd.map((t, i) => ({
+      _id: `custom-${Date.now()}-${i}`,
+      _isCustom: true,
+      _defaultKey: null,
+      category: suggestedFor.category,
+      item: suggestedFor.item,
+      task: t.task,
+      schedule: t.schedule || "",
+      season: t.season || null,
+    }));
+    saveCustomData([...customs, ...newRows]);
+    reload();
+    setSuggestedTasks(null);
+    setSuggestedFor(null);
+  }
 
   function handleAddTodo() {
     const title = newTodoTitle.trim();
@@ -399,14 +491,6 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
 
   function toggleGroup(groupType) {
     setCollapsedGroups(prev => ({ ...prev, [groupType]: !prev[groupType] }));
-  }
-
-  function handleCategoryChange(category, state) {
-    onInventoryChange(setCategoryState(inventory, category, state));
-  }
-
-  function handleItemChange(category, item, state) {
-    onInventoryChange(setItemState(inventory, category, item, state));
   }
 
   const allCollapsed = CATEGORIES.every(cat => collapsed[cat]) && GROUP_ORDER.every(g => collapsedGroups[g]);
@@ -652,20 +736,9 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
     reload();
   }
 
-  const allPairs = CATEGORIES.flatMap(cat =>
-    CATEGORY_ITEMS[cat].map(item => ({ category: cat, item }))
-  );
-  const counts = allPairs.reduce((acc, { category, item }) => {
-    const state = getEffectiveRowState(inventory, { category, item });
-    acc[state] = (acc[state] || 0) + 1;
-    return acc;
-  }, {});
-
   function renderCategory(category) {
-    const catState = getCategoryState(inventory, category);
     const items = CATEGORY_ITEMS[category];
     const isCollapsed = collapsed[category];
-    const parentOverrides = catState !== "included";
     const isDragging = dragging === category;
     const isEditing = editingCategoryName === category;
 
@@ -748,10 +821,6 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
               <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.68rem" }}>
                 {items.length} {items.length === 1 ? "item" : "items"}
               </span>
-              <StateToggle
-                state={catState}
-                onChange={state => handleCategoryChange(category, state)}
-              />
               <button
                 onClick={e => { e.stopPropagation(); handleDuplicateCategory(category); }}
                 title="Duplicate category"
@@ -795,7 +864,6 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
         {!isCollapsed && (
           <div style={{ border: "1px solid #1e2330", borderTop: "none", borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
             {items.map((item, idx) => {
-              const ownState = getOwnItemState(inventory, category, item);
               const isLast = idx === items.length - 1 && pendingItems.length === 0;
               const isItemDragging = draggingItem?.item === item && draggingItem?.fromCategory === category;
               const itemKey = `${category}|${item}`;
@@ -842,7 +910,7 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
                       <span
                         onClick={e => { e.stopPropagation(); setSelectedItem({ category, item }); }}
                         style={{
-                          color: isSelected ? "#c9a96e" : (parentOverrides ? "#3a3440" : "#a89e8e"),
+                          color: isSelected ? "#c9a96e" : "#a89e8e",
                           cursor: "pointer",
                           flex: 1,
                           fontFamily: "monospace",
@@ -852,16 +920,6 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
                         {item}
                       </span>
                     </Tooltip>
-                    {parentOverrides && (
-                      <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.65rem", fontStyle: "italic", whiteSpace: "nowrap" }}>
-                        ↑ {catState === "muted" ? "muted" : "hidden"} by category
-                      </span>
-                    )}
-                    <StateToggle
-                      state={ownState}
-                      onChange={state => handleItemChange(category, item, state)}
-                      disabled={parentOverrides}
-                    />
                     <button
                       onClick={e => {
                         e.stopPropagation();
@@ -915,42 +973,177 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
                       padding: "0.75rem 1.5rem 0.9rem 3rem",
                     }}>
                       <div style={{ display: "flex", gap: "1.25rem" }}>
-                        {[
-                          { field: "make",   label: "Make" },
-                          { field: "model",  label: "Model" },
-                          { field: "serial", label: "Serial No." },
-                        ].map(({ field, label }) => (
-                          <div key={field} style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
-                            <span style={{
-                              color: "#5a5460",
+                        {/* Manufacturer — dropdown when options exist, plain input otherwise */}
+                        <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
+                          <span style={{
+                            color: "#5a5460",
+                            fontFamily: "monospace",
+                            fontSize: "0.6rem",
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                          }}>
+                            Manufacturer
+                          </span>
+                          {(() => {
+                            const mfrs = getManufacturers(item);
+                            const fieldStyle = {
+                              background: "#13161f",
+                              border: "1px solid #2a2f3e",
+                              borderRadius: "3px",
+                              boxSizing: "border-box",
+                              color: "#d4c9b8",
                               fontFamily: "monospace",
-                              fontSize: "0.6rem",
-                              letterSpacing: "0.12em",
-                              textTransform: "uppercase",
-                            }}>
-                              {label}
-                            </span>
-                            <input
-                              value={details[field] || ""}
-                              onChange={e => handleItemDetailChange(category, item, field, e.target.value)}
-                              placeholder="—"
-                              style={{
-                                background: "#13161f",
-                                border: "1px solid #2a2f3e",
-                                borderRadius: "3px",
-                                boxSizing: "border-box",
-                                color: "#d4c9b8",
+                              fontSize: "0.75rem",
+                              outline: "none",
+                              padding: "0.3rem 0.5rem",
+                              width: "100%",
+                            };
+                            if (mfrs.length > 0) {
+                              return (
+                                <select
+                                  value={details.manufacturer || details.make || ""}
+                                  onChange={e => {
+                                    const key = `${category}|${item}`;
+                                    const next = {
+                                      ...itemDetails,
+                                      [key]: { ...(itemDetails[key] || {}), manufacturer: e.target.value, model: "" },
+                                    };
+                                    setItemDetails(next);
+                                    saveItemDetails(next);
+                                  }}
+                                  style={{
+                                    ...fieldStyle,
+                                    appearance: "none",
+                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`,
+                                    backgroundRepeat: "no-repeat",
+                                    backgroundPosition: "right 0.5rem center",
+                                    cursor: "pointer",
+                                    paddingRight: "1.5rem",
+                                  }}
+                                  onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                                >
+                                  <option value="">—</option>
+                                  {mfrs.map(m => (
+                                    <option key={m} value={m}>{m}</option>
+                                  ))}
+                                  <option value="Other">Other</option>
+                                </select>
+                              );
+                            }
+                            return (
+                              <input
+                                value={details.manufacturer || ""}
+                                onChange={e => handleItemDetailChange(category, item, "manufacturer", e.target.value)}
+                                placeholder="—"
+                                style={fieldStyle}
+                                onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                                onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                              />
+                            );
+                          })()}
+                        </div>
+
+                        {/* Model — dropdown when manufacturer+item has a list, locked if no manufacturer selected */}
+                        {(() => {
+                          const selectedMfr = details.manufacturer || details.make || "";
+                          const models = getModels(selectedMfr, item);
+                          const fieldStyle = {
+                            background: "#13161f",
+                            border: "1px solid #2a2f3e",
+                            borderRadius: "3px",
+                            boxSizing: "border-box",
+                            color: "#d4c9b8",
+                            fontFamily: "monospace",
+                            fontSize: "0.75rem",
+                            outline: "none",
+                            padding: "0.3rem 0.5rem",
+                            width: "100%",
+                          };
+                          const noMfr = !selectedMfr;
+                          return (
+                            <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
+                              <span style={{
+                                color: noMfr ? "#3a3440" : "#5a5460",
                                 fontFamily: "monospace",
-                                fontSize: "0.75rem",
-                                outline: "none",
-                                padding: "0.3rem 0.5rem",
-                                width: "100%",
-                              }}
-                              onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-                              onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
-                            />
-                          </div>
-                        ))}
+                                fontSize: "0.6rem",
+                                letterSpacing: "0.12em",
+                                textTransform: "uppercase",
+                              }}>
+                                Model
+                              </span>
+                              {models.length > 0 ? (
+                                <select
+                                  value={details.model || ""}
+                                  onChange={e => handleItemDetailChange(category, item, "model", e.target.value)}
+                                  style={{
+                                    ...fieldStyle,
+                                    appearance: "none",
+                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`,
+                                    backgroundRepeat: "no-repeat",
+                                    backgroundPosition: "right 0.5rem center",
+                                    cursor: "pointer",
+                                    paddingRight: "1.5rem",
+                                  }}
+                                  onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                                >
+                                  <option value="">—</option>
+                                  {models.map(m => (
+                                    <option key={m} value={m}>{m}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  value={details.model || ""}
+                                  onChange={e => handleItemDetailChange(category, item, "model", e.target.value)}
+                                  placeholder={noMfr ? "Select manufacturer" : "—"}
+                                  disabled={noMfr}
+                                  style={{
+                                    ...fieldStyle,
+                                    color: noMfr ? "#3a3440" : "#d4c9b8",
+                                    cursor: noMfr ? "default" : "text",
+                                    opacity: noMfr ? 0.5 : 1,
+                                  }}
+                                  onFocus={e => { if (!noMfr) e.currentTarget.style.borderColor = "#c9a96e"; }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                                />
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Serial No. — always plain text */}
+                        <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
+                          <span style={{
+                            color: "#5a5460",
+                            fontFamily: "monospace",
+                            fontSize: "0.6rem",
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                          }}>
+                            Serial No.
+                          </span>
+                          <input
+                            value={details.serial || ""}
+                            onChange={e => handleItemDetailChange(category, item, "serial", e.target.value)}
+                            placeholder="—"
+                            style={{
+                              background: "#13161f",
+                              border: "1px solid #2a2f3e",
+                              borderRadius: "3px",
+                              boxSizing: "border-box",
+                              color: "#d4c9b8",
+                              fontFamily: "monospace",
+                              fontSize: "0.75rem",
+                              outline: "none",
+                              padding: "0.3rem 0.5rem",
+                              width: "100%",
+                            }}
+                            onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                            onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                          />
+                        </div>
                         <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
                           <span style={{
                             color: "#5a5460",
@@ -1045,6 +1238,30 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
                             </span>
                           </label>
                         )}
+                        {details.manufacturer && details.manufacturer !== "Other" && (
+                          <button
+                            onClick={() => handleFetchTasks(details.manufacturer, details.model || "", item, category)}
+                            disabled={fetchingTasks && suggestedFor?.category === category && suggestedFor?.item === item}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: fetchingTasks && suggestedFor?.category === category && suggestedFor?.item === item ? "#5a5460" : "#3a3440",
+                              cursor: "pointer",
+                              fontFamily: "monospace",
+                              fontSize: "0.7rem",
+                              letterSpacing: "0.05em",
+                              marginLeft: "auto",
+                              padding: 0,
+                              transition: "color 0.15s",
+                            }}
+                            onMouseEnter={e => { if (!fetchingTasks) e.currentTarget.style.color = "#c9a96e"; }}
+                            onMouseLeave={e => { if (!fetchingTasks) e.currentTarget.style.color = "#3a3440"; }}
+                          >
+                            {fetchingTasks && suggestedFor?.category === category && suggestedFor?.item === item
+                              ? "Fetching…"
+                              : "Fetch Maintenance Tasks →"}
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1119,11 +1336,13 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
 
   return (
     <div style={{
-      minHeight: "100vh",
+      height: "100vh",
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
       background: "#0f1117",
       color: "#e8e0d0",
       fontFamily: "'Georgia', 'Times New Roman', serif",
-      padding: "0",
     }}>
 
       {duplicateItemPopup && createPortal(
@@ -1272,15 +1491,187 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
         </div>
       )}
 
+      {addingTask && selectedItem && createPortal(
+        <div
+          onClick={() => { setAddingTask(false); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }}
+          style={{ alignItems: "center", background: "rgba(0,0,0,0.75)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 1000 }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: "#0f1117", border: "1px solid #2a2f3e", borderRadius: "8px", maxWidth: "min(95vw, 1120px)", overflow: "hidden", width: "95vw" }}
+          >
+            <div style={{ alignItems: "center", borderBottom: "1px solid #1e2330", display: "flex", justifyContent: "space-between", padding: "0.85rem 1.25rem" }}>
+              <div>
+                <span style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>Add Maintenance Task</span>
+                <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.65rem", marginLeft: "0.75rem" }}>{selectedItem.item} — {selectedItem.category}</span>
+              </div>
+              <button
+                onClick={() => { setAddingTask(false); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }}
+                style={{ background: "none", border: "none", color: "#5a5460", cursor: "pointer", fontFamily: "monospace", fontSize: "1rem", padding: "0.1rem 0.3rem", transition: "color 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
+                onMouseLeave={e => e.currentTarget.style.color = "#5a5460"}
+              >×</button>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ borderCollapse: "collapse", fontSize: "0.82rem", width: "100%" }}>
+                <thead>
+                  <tr>
+                    {[
+                      { label: "Category", width: "8%" },
+                      { label: "Item", width: "10%" },
+                      { label: "Type of Maintenance", width: "17%" },
+                      { label: "Recommended Schedule", width: "12%" },
+                      { label: "Season", width: "7%" },
+                      { label: "Last Completed On", width: "12%" },
+                      { label: "Next Maintenance Date", width: "13%" },
+                      { label: "Notes", width: "9%" },
+                    ].map(({ label, width }) => (
+                      <th key={label} style={{ background: "#1a1f2e", borderBottom: "2px solid #2a2f3e", color: "#c9a96e", fontFamily: "monospace", fontSize: "0.68rem", fontWeight: "normal", letterSpacing: "0.12em", padding: "0.75rem 0.6rem", textAlign: "left", textTransform: "uppercase", whiteSpace: "nowrap", width }}>
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ background: "#13161f" }}>
+                    <td style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.72rem", padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>{selectedItem.category}</td>
+                    <td style={{ color: "#d4c9b8", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>{selectedItem.item}</td>
+                    <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                      <input
+                        autoFocus
+                        value={newTask.task}
+                        placeholder="Task name"
+                        onChange={e => setNewTask(t => ({ ...t, task: e.target.value }))}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" && newTask.task.trim()) { e.preventDefault(); handleAddTask(); }
+                          if (e.key === "Escape") { e.preventDefault(); setAddingTask(false); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }
+                        }}
+                        style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", fontFamily: "monospace", fontSize: "0.8rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
+                        onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"}
+                        onBlur={e => e.currentTarget.style.borderColor = "#2e3448"}
+                      />
+                    </td>
+                    <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                      <SchedulePicker
+                        value={newTask.schedule || null}
+                        onChange={v => setNewTask(t => ({ ...t, schedule: v || "" }))}
+                      />
+                    </td>
+                    <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                      <select
+                        value={newTask.season ?? ""}
+                        onChange={e => setNewTask(t => ({ ...t, season: e.target.value || null }))}
+                        style={{ appearance: "none", background: "#1a1f2e", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.4rem center", border: "1px solid #2e3448", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", outline: "none", padding: "0.25rem 1.5rem 0.25rem 0.4rem", width: "100%" }}
+                        onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"}
+                        onBlur={e => e.currentTarget.style.borderColor = "#2e3448"}
+                      >
+                        {SEASON_OPTIONS.map(({ value, label }) => <option key={label} value={value ?? ""}>{label}</option>)}
+                      </select>
+                    </td>
+                    <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                      <input
+                        type="date"
+                        value={newTask.lastCompleted || ""}
+                        onChange={e => setNewTask(t => ({ ...t, lastCompleted: e.target.value || null }))}
+                        style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "2px", boxSizing: "border-box", color: newTask.lastCompleted ? "#e8e0d0" : "#5a5460", colorScheme: "dark", fontFamily: "monospace", fontSize: "0.72rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
+                        onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"}
+                        onBlur={e => e.currentTarget.style.borderColor = "#2e3448"}
+                      />
+                    </td>
+                    <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                      <div style={{ alignItems: "center", display: "flex", gap: "0.4rem" }}>
+                        <input
+                          type="date"
+                          value={newTask.nextDate || ""}
+                          onChange={e => setNewTask(t => ({ ...t, nextDate: e.target.value || null }))}
+                          style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "2px", boxSizing: "border-box", color: newTask.nextDate ? "#e8e0d0" : "#5a5460", colorScheme: "dark", fontFamily: "monospace", fontSize: "0.72rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
+                          onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"}
+                          onBlur={e => e.currentTarget.style.borderColor = "#2e3448"}
+                        />
+                        <FollowButton
+                          schedule={newTask.schedule}
+                          checked={newTask.followSchedule}
+                          onToggle={() => setNewTask(t => ({ ...t, followSchedule: !t.followSchedule }))}
+                        />
+                      </div>
+                    </td>
+                    <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                      <input
+                        value={newTask.notes}
+                        placeholder="—"
+                        onChange={e => setNewTask(t => ({ ...t, notes: e.target.value }))}
+                        style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", fontFamily: "monospace", fontSize: "0.75rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
+                        onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"}
+                        onBlur={e => e.currentTarget.style.borderColor = "#2e3448"}
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ borderTop: "1px solid #1e2330", display: "flex", gap: "0.75rem", justifyContent: "flex-end", padding: "1rem 1.25rem" }}>
+              <button
+                onClick={() => { setAddingTask(false); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }}
+                style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#d4c9b8"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+              >Cancel</button>
+              <button
+                onClick={handleAddTask}
+                disabled={!newTask.task.trim()}
+                style={{ background: newTask.task.trim() ? "#c9a96e18" : "transparent", border: `1px solid ${newTask.task.trim() ? "#c9a96e40" : "#2e3448"}`, borderRadius: "3px", color: newTask.task.trim() ? "#c9a96e" : "#5a5460", cursor: newTask.task.trim() ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { if (newTask.task.trim()) { e.currentTarget.style.background = "#c9a96e30"; e.currentTarget.style.borderColor = "#c9a96e"; } }}
+                onMouseLeave={e => { if (newTask.task.trim()) { e.currentTarget.style.background = "#c9a96e18"; e.currentTarget.style.borderColor = "#c9a96e40"; } }}
+              >Add Task</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {deleteTaskPrompt && createPortal(
+        <div
+          onClick={() => setDeleteTaskPrompt(null)}
+          style={{ alignItems: "center", background: "rgba(0,0,0,0.7)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 1000 }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "8px", maxWidth: 440, padding: "2rem", width: "90%" }}>
+            <div style={{ color: "#f0e6d3", fontSize: "1.05rem", marginBottom: "0.75rem" }}>
+              Delete "{deleteTaskPrompt.task}"?
+            </div>
+            <p style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.8rem", lineHeight: 1.7, margin: "0 0 1.75rem" }}>
+              {deleteTaskPrompt?._isCustom
+                ? "This will permanently remove this task from the maintenance schedule. This action cannot be undone."
+                : "This will remove this task from your maintenance schedule. It can be restored from the Guide page."}
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setDeleteTaskPrompt(null)}
+                style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#d4c9b8"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+              >Cancel</button>
+              <button
+                onClick={() => { handleDeleteTask(deleteTaskPrompt); setDeleteTaskPrompt(null); }}
+                style={{ background: "#f8717118", border: "1px solid #f8717140", borderRadius: "3px", color: "#f87171", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f8717130"; e.currentTarget.style.borderColor = "#f87171"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#f8717118"; e.currentTarget.style.borderColor = "#f8717140"; }}
+              >Delete</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       <div ref={headerRef} style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
         borderBottom: "1px solid #2a2f3e",
-        padding: "2rem 2rem 2rem",
-        position: "sticky",
-        top: 0,
+        flexShrink: 0,
+        padding: "2rem",
         zIndex: 50,
       }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
             <h1 style={{
               color: "#f0e6d3",
@@ -1305,17 +1696,11 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
         </div>
       </div>
 
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "2rem 2rem 4rem" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "2rem 2rem 4rem" }}>
         <div style={{ alignItems: "flex-start", display: "flex", gap: "2rem" }}>
         <div style={{ flex: "0 0 58%", minWidth: 0 }}>
 
-        <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "2rem" }}>
-          <div style={{ display: "flex", gap: "1.5rem", fontFamily: "monospace", fontSize: "0.72rem" }}>
-            <span style={{ color: "#4ade80" }}>{counts.included ?? 0} shown</span>
-            <span style={{ color: "#f59e0b" }}>{counts.muted ?? 0} muted</span>
-            <span style={{ color: "#f87171" }}>{counts.excluded ?? 0} hidden</span>
-            <span style={{ color: "#5a5460" }}>of {allPairs.length} items</span>
-          </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "2rem" }}>
           <button
             onClick={toggleAll}
             style={{
@@ -1456,7 +1841,7 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
           minWidth: 0,
           overflow: "hidden",
           position: "sticky",
-          top: headerHeight + 24,
+          top: 24,
         }}>
           <div style={{
             borderBottom: "1px solid #1e2330",
@@ -1490,50 +1875,166 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
             }}>
               Select an item to view its tasks
             </div>
-          ) : itemTasks.length === 0 ? (
-            <div style={{
-              color: "#3a3440",
-              fontFamily: "monospace",
-              fontSize: "0.72rem",
-              padding: "2.5rem 1rem",
-              textAlign: "center",
-            }}>
-              No tasks for this item
-            </div>
           ) : (
-            <div>
-              {itemTasks.map((row, idx) => (
-                <div
-                  key={row._id || `${row.task}-${idx}`}
-                  style={{
-                    background: idx % 2 === 0 ? "#13161f" : "#161920",
-                    borderBottom: idx < itemTasks.length - 1 ? "1px solid #1e2330" : "none",
-                    padding: "0.65rem 1rem",
-                  }}
-                >
-                  <div style={{
-                    color: "#d4c9b8",
-                    fontFamily: "monospace",
-                    fontSize: "0.78rem",
-                    marginBottom: "0.2rem",
-                  }}>
-                    {row.task}
+            <>
+              {itemTasks.length === 0 ? (
+                <div style={{
+                  color: "#3a3440",
+                  fontFamily: "monospace",
+                  fontSize: "0.72rem",
+                  padding: "2rem 1rem 0.5rem",
+                  textAlign: "center",
+                }}>
+                  No tasks for this item
+                </div>
+              ) : (
+                <div>
+                  {itemTasks.map((row, idx) => (
+                    <div
+                      key={row._id || `${row.task}-${idx}`}
+                      style={{
+                        alignItems: "flex-start",
+                        background: idx % 2 === 0 ? "#13161f" : "#161920",
+                        borderBottom: idx < itemTasks.length - 1 ? "1px solid #1e2330" : "none",
+                        display: "flex",
+                        gap: "0.5rem",
+                        padding: "0.65rem 1rem",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          color: "#d4c9b8",
+                          fontFamily: "monospace",
+                          fontSize: "0.78rem",
+                          marginBottom: "0.2rem",
+                        }}>
+                          {row.task}
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
+                          {row.schedule && (
+                            <span style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.65rem" }}>
+                              {row.schedule}
+                            </span>
+                          )}
+                          {row.season && (
+                            <span style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.65rem" }}>
+                              {row.season}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                          onClick={() => setDeleteTaskPrompt(row)}
+                          title="Delete task"
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#3a3440",
+                            cursor: "pointer",
+                            flexShrink: 0,
+                            fontFamily: "monospace",
+                            fontSize: "0.72rem",
+                            padding: "0.1rem 0.3rem",
+                            transition: "color 0.15s",
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
+                          onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                        >×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Groq suggested tasks */}
+              {fetchingTasks && suggestedFor?.category === selectedItem?.category && suggestedFor?.item === selectedItem?.item && (
+                <div style={{ borderTop: "1px solid #1e2330", padding: "1.25rem 1rem", textAlign: "center" }}>
+                  <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.05em" }}>Fetching tasks…</span>
+                </div>
+              )}
+              {fetchError && suggestedFor?.category === selectedItem?.category && suggestedFor?.item === selectedItem?.item && (
+                <div style={{ borderTop: "1px solid #1e2330", padding: "0.75rem 1rem" }}>
+                  <span style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.68rem" }}>{fetchError}</span>
+                </div>
+              )}
+              {suggestedTasks && suggestedFor?.category === selectedItem?.category && suggestedFor?.item === selectedItem?.item && (
+                <div style={{ borderTop: "1px solid #1e2330" }}>
+                  <div style={{ alignItems: "center", borderBottom: "1px solid #1e2330", display: "flex", justifyContent: "space-between", padding: "0.5rem 1rem 0.4rem" }}>
+                    <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                      Suggested by AI
+                    </span>
+                    <button
+                      onClick={() => { setSuggestedTasks(null); setSuggestedFor(null); setFetchError(null); }}
+                      style={{ background: "none", border: "none", color: "#3a3440", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", padding: "0.1rem 0.3rem", transition: "color 0.15s" }}
+                      onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
+                      onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                    >×</button>
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
-                    {row.schedule && (
-                      <span style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.65rem" }}>
-                        {row.schedule}
-                      </span>
-                    )}
-                    {row.season && (
-                      <span style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.65rem" }}>
-                        {row.season}
-                      </span>
-                    )}
+                  {suggestedTasks.map((t, idx) => (
+                    <label
+                      key={idx}
+                      style={{ alignItems: "flex-start", background: idx % 2 === 0 ? "#13161f" : "#161920", borderBottom: "1px solid #1e2330", cursor: "pointer", display: "flex", gap: "0.6rem", padding: "0.55rem 1rem" }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={t.selected}
+                        onChange={() => setSuggestedTasks(prev => prev.map((s, i) => i === idx ? { ...s, selected: !s.selected } : s))}
+                        style={{ accentColor: "#c9a96e", cursor: "pointer", flexShrink: 0, marginTop: "0.15rem" }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: t.selected ? "#d4c9b8" : "#5a5460", fontFamily: "monospace", fontSize: "0.75rem", transition: "color 0.15s" }}>
+                          {t.task}
+                        </div>
+                        {t.schedule && (
+                          <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.63rem", marginTop: "0.1rem" }}>
+                            {t.schedule}{t.season ? ` · ${t.season}` : ""}
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                  <div style={{ padding: "0.6rem 1rem" }}>
+                    <button
+                      onClick={handleAddSuggestedTasks}
+                      disabled={!suggestedTasks.some(t => t.selected)}
+                      style={{
+                        background: suggestedTasks.some(t => t.selected) ? "#c9a96e18" : "transparent",
+                        border: `1px solid ${suggestedTasks.some(t => t.selected) ? "#c9a96e40" : "#2e3448"}`,
+                        borderRadius: "3px",
+                        color: suggestedTasks.some(t => t.selected) ? "#c9a96e" : "#5a5460",
+                        cursor: suggestedTasks.some(t => t.selected) ? "pointer" : "default",
+                        fontFamily: "monospace",
+                        fontSize: "0.68rem",
+                        letterSpacing: "0.06em",
+                        padding: "0.35rem 0.75rem",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseEnter={e => { if (suggestedTasks.some(t => t.selected)) { e.currentTarget.style.background = "#c9a96e30"; e.currentTarget.style.borderColor = "#c9a96e"; } }}
+                      onMouseLeave={e => { if (suggestedTasks.some(t => t.selected)) { e.currentTarget.style.background = "#c9a96e18"; e.currentTarget.style.borderColor = "#c9a96e40"; } }}
+                    >
+                      Add {suggestedTasks.filter(t => t.selected).length} to Schedule
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+
+              <div style={{ borderTop: itemTasks.length > 0 || suggestedTasks ? "1px solid #1e2330" : "none", padding: "0.5rem 1rem" }}>
+                <button
+                  onClick={() => { setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); setAddingTask(true); }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#3a3440",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                    fontSize: "0.7rem",
+                    letterSpacing: "0.05em",
+                    padding: "0.2rem 0",
+                    transition: "color 0.15s",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
+                  onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                >+ Add Task</button>
+              </div>
+            </>
           )}
 
           <div style={{ borderTop: "1px solid #1e2330" }}>
@@ -1677,7 +2178,7 @@ export default function InventoryPage({ inventory, onInventoryChange, navigate }
                     onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
                     onMouseLeave={e => { e.currentTarget.style.color = "#3a3440"; }}
                   >
-                    View all on Board →
+                    View all on To Dos →
                   </button>
                 </div>
               </>

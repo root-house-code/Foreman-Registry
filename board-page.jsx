@@ -8,6 +8,10 @@ import { loadData } from "./lib/data.js";
 import { loadDeletedCategories } from "./lib/deletedCategories.js";
 import { loadDeletedItems } from "./lib/deletedItems.js";
 import { computeNextDate } from "./lib/scheduleInterval.js";
+import {
+  loadChores, loadChoreNextDates, saveChoreNextDates,
+  loadChoreCompletedDates, saveChoreCompletedDates, computeChoreNextDate,
+} from "./lib/chores.js";
 
 const PRIORITY_COLORS = {
   low:    "#4ade80",
@@ -464,6 +468,9 @@ export default function BoardPage({ navigate }) {
   const [activeCategory, setActiveCategory] = useState("All");
   const [addingProject, setAddingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
+  const [chores] = useState(() => loadChores());
+  const [choreNextDates, setChoreNextDates] = useState(() => loadChoreNextDates());
+  const [choreCompletedDates, setChoreCompletedDates] = useState(() => loadChoreCompletedDates());
 
   const rows = useMemo(() => loadData(), []);
   const deletedCategories = useMemo(() => loadDeletedCategories(), []);
@@ -532,8 +539,54 @@ export default function BoardPage({ navigate }) {
     setTodos(merged);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-generate overdue chore To Dos on mount
+  useEffect(() => {
+    const nextDatesRaw = loadChoreNextDates();
+    const currentTodos = loadTodos();
+    const now = new Date();
+
+    const newTodos = [];
+    chores.forEach(chore => {
+      const nextDateStr = nextDatesRaw[chore.id];
+      const nextDate = nextDateStr ? new Date(nextDateStr) : null;
+
+      // No next date = newly created chore, treat as immediately due
+      if (nextDate && nextDate >= now) return;
+
+      // Already has an active (non-done) todo for this chore
+      if (currentTodos.some(t => t._choreId === chore.id && t.status !== "done")) return;
+
+      newTodos.push(createTodo({
+        title: chore.title,
+        linkedCategory: chore.room,
+        status: "not-started",
+        priority: "medium",
+        _choreId: chore.id,
+        _isOverdueChore: true,
+      }));
+    });
+
+    if (newTodos.length === 0) return;
+    const merged = [...currentTodos, ...newTodos];
+    saveTodos(merged);
+    setTodos(merged);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   function persistTodos(next) { setTodos(next); saveTodos(next); }
   function persistProjects(next) { setProjects(next); saveProjects(next); }
+
+  function advanceChoreDate(todo) {
+    const chore = chores.find(c => c.id === todo._choreId);
+    if (!chore) return;
+    const today = new Date();
+    const updatedCompleted = { ...choreCompletedDates, [chore.id]: today.toISOString() };
+    const nextDate = computeChoreNextDate(today, chore.schedule, chore.dayOfWeek, chore.timeOfDay);
+    const updatedNext = { ...choreNextDates, [chore.id]: nextDate.toISOString() };
+    saveChoreCompletedDates(updatedCompleted);
+    saveChoreNextDates(updatedNext);
+    setChoreCompletedDates(updatedCompleted);
+    setChoreNextDates(updatedNext);
+  }
 
   function handleCreateProject() {
     const name = newProjectName.trim();
@@ -554,6 +607,9 @@ export default function BoardPage({ navigate }) {
         setMaintenanceCompletionTodo({ ...existing, ...form });
         setModalState(null);
         return;
+      }
+      if (form.status === "done" && existing?.status !== "done" && existing?._isOverdueChore) {
+        advanceChoreDate(existing);
       }
       persistTodos(todos.map(t => t.id === prev.id ? {
         ...t, ...form,
@@ -584,6 +640,9 @@ export default function BoardPage({ navigate }) {
         setMaintenanceCompletionTodo(todo);
         return;
       }
+      if (todo?._isOverdueChore && todo.status !== "done") {
+        advanceChoreDate(todo);
+      }
     }
     const now = new Date().toISOString();
     persistTodos(todos.map(t => t.id === id ? {
@@ -601,6 +660,9 @@ export default function BoardPage({ navigate }) {
         setDragging(null);
         setDragOverCol(null);
         return;
+      }
+      if (todo?._isOverdueChore && todo.status !== "done") {
+        advanceChoreDate(todo);
       }
     }
     handleStatusChange(dragging, colKey);
@@ -688,7 +750,7 @@ export default function BoardPage({ navigate }) {
                 PROJECT
               </span>
               <span style={{ color: "#c9a96e", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>
-                Board
+                To Dos
               </span>
             </div>
           </div>
@@ -825,11 +887,14 @@ export default function BoardPage({ navigate }) {
         <div style={{ display: "flex", flex: 1, flexDirection: "column", overflow: "hidden" }}>
           <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem 2rem 4rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.75rem" }}>
-              <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.72rem" }}>
-                {filteredTodos.length} {filteredTodos.length === 1 ? "to do" : "to dos"}
-                {selectedProjectId && projects.find(p => p.id === selectedProjectId) && ` · ${projects.find(p => p.id === selectedProjectId).name}`}
-                {activeCategory !== "All" && ` · ${activeCategory}`}
-              </span>
+              <div style={{ alignItems: "center", display: "flex", gap: "1.25rem" }}>
+                <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.72rem" }}>
+                  {filteredTodos.length} {filteredTodos.length === 1 ? "to do" : "to dos"}
+                  {selectedProjectId && projects.find(p => p.id === selectedProjectId) && ` · ${projects.find(p => p.id === selectedProjectId).name}`}
+                  {activeCategory !== "All" && ` · ${activeCategory}`}
+                </span>
+                <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.65rem" }}>Overdue maintenance tasks and chores are automatically added here.</span>
+              </div>
               <button
                 onClick={() => setModalState("new")}
                 style={{

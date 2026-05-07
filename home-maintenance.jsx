@@ -11,7 +11,6 @@ import {
 } from "./lib/reminders.js";
 import { computeNextDate, parseMonths } from "./lib/scheduleInterval.js";
 import { getScheduleColor } from "./lib/scheduleColor.js";
-import { getEffectiveRowState, unmuteRow } from "./lib/inventory.js";
 import { loadDeletedRows, saveDeletedRows } from "./lib/deletedRows.js";
 import { loadDeletedCategories } from "./lib/deletedCategories.js";
 import { loadDeletedItems } from "./lib/deletedItems.js";
@@ -40,14 +39,12 @@ function saveDates(key, dates) {
   ));
 }
 
-export default function HomeMaintenanceTable({ inventory, onInventoryChange, navigate }) {
+export default function HomeMaintenanceTable({ navigate }) {
   const [rows, setRows] = useState(() => loadData());
   const [activeCategory, setActiveCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [activeFrequencies, setActiveFrequencies] = useState(new Set());
   const [activeSeasons, setActiveSeasons] = useState(new Set());
-  const [navHoveredTop, setNavHoveredTop] = useState(null);
-  const [navHoveredBottom, setNavHoveredBottom] = useState(null);
   const [addRowHovered, setAddRowHovered] = useState(false);
   const [sortCols, setSortCols] = useState([]);
   const [deletedRows, setDeletedRows] = useState(() => loadDeletedRows());
@@ -254,9 +251,6 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
     }
   }
 
-  function handleUnmute(row) {
-    onInventoryChange(unmuteRow(inventory, row));
-  }
 
   function handleDeleteRow(row) {
     const key = `${row.category}|${row.item}|${row.task}`;
@@ -330,7 +324,6 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
         if (row._isBlankCategory) return false;
         if (deletedCategories.has(row.category)) return false;
         if (deletedItems.has(`${row.category}|${row.item}`)) return false;
-        if (getEffectiveRowState(inventory, row) === "excluded") return false;
         if (deletedRows.has(key)) return false;
         const nd = nextDates[key];
         return nd && nd >= today && nd <= in30Days;
@@ -343,7 +336,6 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
       }
       if (deletedCategories.has(row.category)) return false;
       if (deletedItems.has(`${row.category}|${row.item}`)) return false;
-      if (getEffectiveRowState(inventory, row) === "excluded") return false;
       if (deletedRows.has(key)) return false;
 
       let matchCat;
@@ -384,60 +376,52 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
       if (a._isCustom !== b._isCustom) return a._isCustom ? -1 : 1;
       return 0;
     });
-  }, [rows, activeCategory, isNext30View, activeFrequencies, activeSeasons, search, inventory, deletedRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
-
-  const rowStates = useMemo(() => Object.fromEntries(
-    filtered.map(row => [
-      `${row.category}|${row.item}|${row.task}`,
-      getEffectiveRowState(inventory, row),
-    ])
-  ), [filtered, inventory]);
+  }, [rows, activeCategory, isNext30View, activeFrequencies, activeSeasons, search, deletedRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
 
 
   return (
     <div style={{
-      minHeight: "100vh",
+      height: "100vh",
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
       background: "#0f1117",
       fontFamily: "'Georgia', 'Times New Roman', serif",
       color: "#e8e0d0",
-      padding: "0",
     }}>
       <div ref={pageHeaderRef} style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
         borderBottom: "1px solid #2a2f3e",
-        padding: "2rem 2rem 2rem",
-        position: "sticky",
-        top: 0,
+        flexShrink: 0,
+        padding: "2rem",
         zIndex: 50,
       }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <div>
+            <h1 style={{
+              color: "#f0e6d3",
+              fontSize: "clamp(2rem, 5vw, 3rem)",
+              fontWeight: "normal",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.1,
+              margin: "0 0 0.5rem",
+            }}>
+              Foreman
+            </h1>
             <div>
-              <h1 style={{
-                color: "#f0e6d3",
-                fontSize: "clamp(2rem, 5vw, 3rem)",
-                fontWeight: "normal",
-                letterSpacing: "-0.02em",
-                lineHeight: 1.1,
-                margin: "0 0 0.5rem",
-              }}>
-                Foreman
-              </h1>
-              <div>
-                <span style={{ color: "#8b7d6b", display: "block", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.25em", textTransform: "uppercase" }}>
-                  THE COMPLETE
-                </span>
-                <span style={{ color: "#c9a96e", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>
-                  Home Maintenance Registry
-                </span>
-              </div>
+              <span style={{ color: "#8b7d6b", display: "block", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.25em", textTransform: "uppercase" }}>
+                THE COMPLETE
+              </span>
+              <span style={{ color: "#c9a96e", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>
+                Home Maintenance Registry
+              </span>
             </div>
-            <PageNav currentPage="maintenance" navigate={navigate} />
           </div>
+          <PageNav currentPage="maintenance" navigate={navigate} />
         </div>
       </div>
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem 2rem 4rem" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "2rem 2rem 4rem" }}>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", marginBottom: "1.25rem" }}>
           <p style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.85rem", margin: 0 }}>
             {defaultData.length} maintenance items across {CATEGORY_TABS.filter(t => t !== "All" && t !== "User" && t !== "Hidden" && !deletedCategories.has(t)).length} categories
@@ -529,13 +513,11 @@ export default function HomeMaintenanceTable({ inventory, onInventoryChange, nav
           onCycleReminderMode={handleCycleReminderMode}
           notes={notes}
           onNoteChange={handleNoteChange}
-          rowStates={rowStates}
-          onUnmute={handleUnmute}
           onRowEdit={handleRowEdit}
           onDeleteRow={handleDeleteRow}
           sortCols={sortCols}
           onHeaderClick={handleHeaderClick}
-          stickyTop={pageHeaderHeight}
+          stickyTop={0}
         />
       </div>
 

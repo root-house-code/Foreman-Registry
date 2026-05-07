@@ -5,24 +5,15 @@ import BoardPage from "../board-page.jsx";
 import ProjectsPage from "../projects-page.jsx";
 import DashboardPage from "../dashboard-page.jsx";
 import GuidePage from "../guide-page.jsx";
-import { loadInventory, saveInventory } from "../lib/inventory.js";
-
+import ChoresPage from "../chores-page.jsx";
 export default function App() {
   const [page, setPage] = useState("dashboard");
-  const [inventory, setInventory] = useState(loadInventory);
-
-  function handleInventoryChange(next) {
-    setInventory(next);
-    saveInventory(next);
-  }
 
   const navigate = (p) => setPage(p);
 
   if (page === "inventory") {
     return (
       <InventoryPage
-        inventory={inventory}
-        onInventoryChange={handleInventoryChange}
         navigate={navigate}
       />
     );
@@ -44,11 +35,9 @@ export default function App() {
     return <GuidePage navigate={navigate} />;
   }
 
-  return (
-    <HomeMaintenanceTable
-      inventory={inventory}
-      onInventoryChange={handleInventoryChange}
-      navigate={navigate}
-    />
-  );
+  if (page === "chores") {
+    return <ChoresPage navigate={navigate} />;
+  }
+
+  return <HomeMaintenanceTable navigate={navigate} />;
 }

@@ -1,0 +1,26 @@
+{
+  "LG|Refrigerator|LF21G6200S": {
+    "source": "https://www.manualslib.com/manual/3240605/lg-lf21g6200s.html",
+    "fetched": "2026-05-03",
+    "tasks": [
+      { "task": "Replace air filter", "schedule": "Every 6 months", "notes": "Part: LT120F — hold Air Filter button 3 sec to reset indicator" },
+      { "task": "Replace water filter", "schedule": "Every 6 months", "notes": "Parts: LT1000P / LT1000PC / ADQ747935 — expect ~1oz drainage on removal" },
+      { "task": "Clean interior", "schedule": "Monthly", "notes": "Unplug first; baking soda + water (2 tbsp/qt); remove shelves before cleaning" },
+      { "task": "Clean door gaskets", "schedule": "Monthly", "notes": "Mild detergent only — no bleach, waxes, or petroleum-based cleaners" },
+      { "task": "Clean condenser coils", "schedule": "Every 6–12 months", "notes": "Vacuum with brush/crevice attachment on condenser cover" },
+      { "task": "Clean exterior", "schedule": "As needed", "notes": "Stainless: microfiber cloth with grain; dry immediately to prevent streaks" }
+    ]
+  },
+  "Whirlpool|Dishwasher|WDT750SAKZ": {
+    "source": "https://www.manualslib.com/manual/1966772/whirlpool-wdt750sakw.html",
+    "fetched": "2026-05-03",
+    "notes": "Manual is for WDT750SAKW (white); same hardware generation as WDT750SAKZ (stainless)",
+    "tasks": [
+      { "task": "Clean filter assembly", "schedule": "Every 2 months", "notes": "Heavy use (8–12 loads/wk) may need monthly; 1/4 turn counterclockwise to remove; rinse under running water; no wire brushes" },
+      { "task": "Run cleaning cycle", "schedule": "Monthly", "notes": "affresh® Dishwasher Cleaner tablet, or 2 cups white vinegar on bottom rack — run without detergent or dishes" },
+      { "task": "Check drain air gap", "schedule": "As needed", "notes": "Clean if dishwasher is draining slowly" },
+      { "task": "Clean exterior", "schedule": "As needed", "notes": "Soft damp cloth + mild detergent only; avoid abrasives and scouring pads" },
+      { "task": "Winterize", "schedule": "Seasonally", "notes": "Turn off water supply and power for extended storage periods" }
+    ]
+  }
+}

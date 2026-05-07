@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import PageNav from "./components/PageNav.jsx";
+import CategoryTabs from "./components/CategoryTabs.jsx";
 import SelectCell from "./components/SelectCell.jsx";
 import NoteCell from "./components/NoteCell.jsx";
 import SchedulePicker from "./components/SchedulePicker.jsx";
@@ -11,15 +12,33 @@ import {
   loadChoreCompletedDates, saveChoreCompletedDates,
   loadChoreNotes, saveChoreNotes,
 } from "./lib/chores.js";
+import { loadRoomCategories } from "./lib/categoryTypes.js";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
+// Preferred display order for rooms — used for tab sorting and dropdown ordering.
+// Rooms from inventory that aren't listed here appear at the end alphabetically.
 const ROOM_ORDER = [
   "Whole House", "Kitchen", "Bathrooms", "Bedroom", "Living Room",
   "Dining Room", "Office", "Laundry", "Garage", "Basement",
 ];
 
-const ROOM_OPTIONS = ROOM_ORDER.map(r => ({ value: r, label: r }));
+function buildRoomOptions() {
+  const fromInventory = loadRoomCategories();
+  const all = ["Whole House", ...fromInventory.filter(r => r !== "Whole House")];
+  return all
+    .sort((a, b) => {
+      if (a === "Whole House") return -1;
+      if (b === "Whole House") return 1;
+      const aRank = ROOM_ORDER.indexOf(a);
+      const bRank = ROOM_ORDER.indexOf(b);
+      if (aRank !== -1 && bRank !== -1) return aRank - bRank;
+      if (aRank !== -1) return -1;
+      if (bRank !== -1) return 1;
+      return a.localeCompare(b);
+    })
+    .map(r => ({ value: r, label: r }));
+}
 
 const DAY_OPTIONS = [
   { value: null, label: "Any" },
@@ -72,30 +91,6 @@ const COLUMNS = [
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-function TabButton({ label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        background: active ? "#c9a96e" : "transparent",
-        border: `1px solid ${active ? "#c9a96e" : "#2e3448"}`,
-        borderRadius: "3px",
-        color: active ? "#0f1117" : "#8b7d6b",
-        cursor: "pointer",
-        fontFamily: "monospace",
-        fontSize: "0.7rem",
-        fontWeight: active ? 600 : 400,
-        letterSpacing: "0.05em",
-        padding: "0.3rem 0.65rem",
-        transition: "all 0.15s",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {label}
-    </button>
-  );
-}
 
 function TitleCell({ value, onChange }) {
   const [editing, setEditing] = useState(false);
@@ -165,7 +160,7 @@ function DeleteConfirmModal({ chore, onConfirm, onClose }) {
   );
 }
 
-function ChoresTable({ rows, notes, onChoreEdit, onNoteChange, onDelete, sortCols, onHeaderClick }) {
+function ChoresTable({ rows, notes, roomOptions, onChoreEdit, onNoteChange, onDelete, sortCols, onHeaderClick }) {
   return (
     <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", overflowX: "auto" }}>
       <table style={{ borderCollapse: "collapse", fontSize: "0.82rem", width: "100%" }}>
@@ -185,6 +180,7 @@ function ChoresTable({ rows, notes, onChoreEdit, onNoteChange, onDelete, sortCol
                     cursor: sortKey ? "pointer" : "default",
                     fontFamily: "monospace",
                     fontSize: "0.68rem",
+                    fontWeight: "normal",
                     letterSpacing: "0.12em",
                     padding: "0.75rem 0.6rem",
                     position: "sticky",
@@ -229,7 +225,7 @@ function ChoresTable({ rows, notes, onChoreEdit, onNoteChange, onDelete, sortCol
                 <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
                   <SelectCell
                     value={chore.room}
-                    options={ROOM_OPTIONS}
+                    options={roomOptions}
                     placeholder="Room"
                     onChange={v => onChoreEdit(chore.id, "room", v)}
                   />
@@ -304,6 +300,7 @@ function ChoresTable({ rows, notes, onChoreEdit, onNoteChange, onDelete, sortCol
 export default function ChoresPage({ navigate }) {
   const [chores, setChores]               = useState(() => loadChores());
   const [notes, setNotes]                 = useState(() => loadChoreNotes());
+  const [roomOptions]                     = useState(() => buildRoomOptions());
   const [activeRoom, setActiveRoom]       = useState("All");
   const [activeFrequencies, setActiveFrequencies] = useState(new Set());
   const [search, setSearch]               = useState("");
@@ -485,12 +482,12 @@ export default function ChoresPage({ navigate }) {
         </div>
 
         {/* Room tabs */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: "1.5rem" }}>
-          <TabButton label="All" active={activeRoom === "All"} onClick={() => setActiveRoom("All")} />
-          {rooms.map(room => (
-            <TabButton key={room} label={room} active={activeRoom === room} onClick={() => setActiveRoom(room)} />
-          ))}
-        </div>
+        <CategoryTabs
+          special={["All"]}
+          groups={[{ type: "room", label: "Rooms", tabs: rooms }]}
+          active={activeRoom}
+          onSelect={setActiveRoom}
+        />
 
         {/* Frequency filter */}
         <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: "1.25rem" }}>
@@ -516,6 +513,7 @@ export default function ChoresPage({ navigate }) {
         <ChoresTable
           rows={filtered}
           notes={notes}
+          roomOptions={roomOptions}
           onChoreEdit={handleChoreEdit}
           onNoteChange={handleNoteChange}
           onDelete={chore => setConfirmChore(chore)}

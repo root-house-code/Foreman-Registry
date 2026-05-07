@@ -1,0 +1,31 @@
+/* Accessibility styles for the reminder agent UI.
+ * Scoped via class names so we don't disturb the rest of Foreman.
+ *
+ * Why a CSS file in a project that mostly uses inline styles?
+ *   - Inline styles can't express :focus-visible.
+ *   - Inline styles can't express @media (prefers-reduced-motion).
+ * Both are required for WCAG 2.1 AA. We keep the surface area tiny
+ * and class-scoped so this never bleeds into other pages.
+ */
+
+.foreman-reminder-modal button:focus-visible,
+.foreman-reminder-modal input:focus-visible,
+.foreman-reminder-modal select:focus-visible,
+.foreman-reminder-modal summary:focus-visible,
+.foreman-bell-button:focus-visible,
+.foreman-reminders-header-btn:focus-visible {
+  outline: 2px solid #c9a96e;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Respect motion preferences. The transitions we set are all under 200ms
+ * so simply zeroing them is the right call (no jarring animation changes). */
+@media (prefers-reduced-motion: reduce) {
+  .foreman-reminder-modal *,
+  .foreman-bell-button,
+  .foreman-reminders-header-btn {
+    transition: none !important;
+    animation: none !important;
+  }
+}

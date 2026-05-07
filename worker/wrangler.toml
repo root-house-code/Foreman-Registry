@@ -1,0 +1,22 @@
+name = "foreman-reminders"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Cron fires hourly. The scheduled handler dispatches only to households whose
+# stored sendHourUtc matches the current UTC hour, so each household effectively
+# gets a daily digest at their chosen time.
+[triggers]
+crons = ["0 * * * *"]
+
+# KV namespace binding — the actual ID is filled in after running:
+#   wrangler kv namespace create FOREMAN_KV
+# Wrangler will print the id; paste it below.
+[[kv_namespaces]]
+binding = "FOREMAN_KV"
+id = "beed51afb913446fa5723cd64d989925"
+
+# CORS-allowed origins for /sync. In dev, vite runs on 5173.
+# Set FOREMAN_ALLOWED_ORIGINS to a comma-separated list (e.g. "http://localhost:5173,https://foreman.example.com")
+# via `wrangler secret put` for production.
+[vars]
+FOREMAN_ALLOWED_ORIGINS = "http://localhost:5173"

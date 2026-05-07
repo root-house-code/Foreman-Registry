@@ -4,6 +4,11 @@ import { loadData, loadCustomData, saveCustomData, loadOverrides, saveOverrides,
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import MaintenanceTable from "./components/MaintenanceTable.jsx";
 import Legend from "./components/Legend.jsx";
+import ReminderSettings from "./components/ReminderSettings.jsx";
+import {
+  loadReminderModes, saveReminderModes,
+  REMINDER_MODES, syncReminders,
+} from "./lib/reminders.js";
 import { computeNextDate, parseMonths } from "./lib/scheduleInterval.js";
 import { getScheduleColor } from "./lib/scheduleColor.js";
 import { loadDeletedRows, saveDeletedRows } from "./lib/deletedRows.js";
@@ -133,6 +138,22 @@ export default function HomeMaintenanceTable({ navigate }) {
     try { return JSON.parse(localStorage.getItem("maintenance-follow") || "{}"); }
     catch { return {}; }
   });
+  const [reminderModes, setReminderModes] = useState(() => loadReminderModes());
+  const [remindersOpen, setRemindersOpen] = useState(false);
+
+  function handleCycleReminderMode(key) {
+    setReminderModes(prev => {
+      const cur = REMINDER_MODES.includes(prev[key]) ? prev[key] : "off";
+      const nextIdx = (REMINDER_MODES.indexOf(cur) + 1) % REMINDER_MODES.length;
+      const next = { ...prev, [key]: REMINDER_MODES[nextIdx] };
+      saveReminderModes(next);
+      return next;
+    });
+  }
+
+  async function handleSyncReminders() {
+    return syncReminders({ rows, nextDates, modes: reminderModes });
+  }
 
   function handleAddRow() {
     const newRow = {
@@ -445,6 +466,27 @@ export default function HomeMaintenanceTable({ navigate }) {
           >
             + ADD TASK
           </button>
+          <button
+            onClick={() => setRemindersOpen(true)}
+            className="foreman-reminders-header-btn"
+            style={{
+              background: "transparent",
+              border: "1px solid #2e3448",
+              borderRadius: "3px",
+              color: "#8b7d6b",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              fontSize: "0.72rem",
+              letterSpacing: "0.08em",
+              padding: "0.4rem 0.9rem",
+              transition: "all 0.15s",
+              whiteSpace: "nowrap",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+          >
+            REMINDERS
+          </button>
         </div>
         <CategoryTabs
           special={["All", "User", "Next 30 Days"]}
@@ -467,6 +509,8 @@ export default function HomeMaintenanceTable({ navigate }) {
           onNextDateChange={handleNextDateChange}
           followSchedule={followSchedule}
           onToggleFollow={handleToggleFollow}
+          reminderModes={reminderModes}
+          onCycleReminderMode={handleCycleReminderMode}
           notes={notes}
           onNoteChange={handleNoteChange}
           onRowEdit={handleRowEdit}
@@ -476,6 +520,13 @@ export default function HomeMaintenanceTable({ navigate }) {
           stickyTop={0}
         />
       </div>
+
+      <ReminderSettings
+        open={remindersOpen}
+        onClose={() => setRemindersOpen(false)}
+        onSync={handleSyncReminders}
+        enabledCount={Object.values(reminderModes).filter(m => m && m !== "off").length}
+      />
     </div>
   );
 }

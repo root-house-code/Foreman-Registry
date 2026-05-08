@@ -1,9 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import PageNav from "./components/PageNav.jsx";
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import SelectCell from "./components/SelectCell.jsx";
 import NoteCell from "./components/NoteCell.jsx";
 import SchedulePicker from "./components/SchedulePicker.jsx";
+import ReminderButton from "./components/ReminderButton.jsx";
+import ReminderSettings from "./components/ReminderSettings.jsx";
 import { getScheduleColor } from "./lib/scheduleColor.js";
 import { parseMonths } from "./lib/scheduleInterval.js";
 import {
@@ -11,8 +13,14 @@ import {
   loadChoreNextDates, saveChoreNextDates,
   loadChoreCompletedDates, saveChoreCompletedDates,
   loadChoreNotes, saveChoreNotes,
+  computeNextOccurrenceFromStart,
 } from "./lib/chores.js";
+import { loadData } from "./lib/data.js";
 import { loadRoomCategories } from "./lib/categoryTypes.js";
+import {
+  loadChoreReminderModes, saveChoreReminderModes,
+  loadReminderModes, REMINDER_MODES, syncReminders,
+} from "./lib/reminders.js";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -82,17 +90,19 @@ const FREQ_ITEMS = [
 
 const COLUMNS = [
   { label: "Room",     width: "9%",  sortKey: "room"      },
-  { label: "Chore",    width: "26%", sortKey: "title"     },
+  { label: "Chore",    width: "22%", sortKey: "title"     },
   { label: "Schedule", width: "13%", sortKey: "schedule"  },
   { label: "Day",      width: "7%",  sortKey: "dayOfWeek" },
-  { label: "Time",     width: "9%",  sortKey: "timeOfDay" },
-  { label: "Notes",    width: "32%", sortKey: "notes"     },
-  { label: "",         width: "4%",  sortKey: null        },
+  { label: "Time",     width: "8%",  sortKey: "timeOfDay" },
+  { label: "",         width: "4%",  sortKey: null        },  // bell
+  { label: "Notes",    width: "24%", sortKey: "notes"     },
+  { label: "Assignee", width: "9%",  sortKey: "assignee"  },
+  { label: "",         width: "4%",  sortKey: null        },  // delete
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function TitleCell({ value, onChange }) {
+function TitleCell({ value, onChange, placeholder = "Chore name" }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
@@ -105,7 +115,7 @@ function TitleCell({ value, onChange }) {
         onClick={startEdit}
         style={{ color: value ? "#a89e8e" : "#3a3440", cursor: "text", display: "block", fontFamily: "inherit", fontSize: "inherit", minHeight: "1.2em" }}
       >
-        {value || "Chore name"}
+        {value || placeholder}
       </span>
     );
   }
@@ -160,18 +170,173 @@ function DeleteConfirmModal({ chore, onConfirm, onClose }) {
   );
 }
 
-function ChoresTable({ rows, notes, roomOptions, onChoreEdit, onNoteChange, onDelete, sortCols, onHeaderClick }) {
+const CAL_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const CAL_DOWS   = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+function CalendarWidget({ chores, selectedChoreId, onSelectDate }) {
+  const todayRaw = new Date();
+  const todayYear = todayRaw.getFullYear();
+  const todayMonth = todayRaw.getMonth();
+  const todayDay = todayRaw.getDate();
+
+  const selectedChore = chores.find(c => c.id === selectedChoreId) ?? null;
+
+  const [view, setView] = useState({ y: todayYear, m: todayMonth });
+
+  // Navigate to the selected chore's start month whenever the selection changes.
+  useEffect(() => {
+    if (selectedChore?.startDate) {
+      const d = new Date(selectedChore.startDate);
+      setView({ y: d.getFullYear(), m: d.getMonth() });
+    }
+  }, [selectedChoreId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function prevMonth() {
+    setView(v => v.m === 0 ? { y: v.y - 1, m: 11 } : { y: v.y, m: v.m - 1 });
+  }
+  function nextMonth() {
+    setView(v => v.m === 11 ? { y: v.y + 1, m: 0 } : { y: v.y, m: v.m + 1 });
+  }
+
+  const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
+  const firstDow    = new Date(view.y, view.m, 1).getDay();
+
+  // Map day-of-month → chores whose startDate falls on it this month.
+  const startDatesByDay = {};
+  for (const chore of chores) {
+    if (!chore.startDate) continue;
+    const d = new Date(chore.startDate);
+    if (d.getFullYear() === view.y && d.getMonth() === view.m) {
+      const day = d.getDate();
+      if (!startDatesByDay[day]) startDatesByDay[day] = [];
+      startDatesByDay[day].push(chore);
+    }
+  }
+
+  const selectedStartDay = (() => {
+    if (!selectedChore?.startDate) return null;
+    const d = new Date(selectedChore.startDate);
+    return d.getFullYear() === view.y && d.getMonth() === view.m ? d.getDate() : null;
+  })();
+
+  const canClick = !!selectedChoreId;
+
+  const navBtnStyle = {
+    background: "transparent", border: "none", color: "#8b7d6b",
+    cursor: "pointer", fontFamily: "monospace", fontSize: "1rem",
+    lineHeight: 1, padding: "0 0.4rem", transition: "color 0.15s",
+  };
+
+  return (
+    <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", padding: "1.25rem", position: "sticky", top: 0 }}>
+      {/* Section label */}
+      <div style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.65rem", letterSpacing: "0.15em", marginBottom: "1rem", textTransform: "uppercase" }}>
+        Start Dates
+      </div>
+
+      {/* Month nav */}
+      <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "0.6rem" }}>
+        <button style={navBtnStyle} onClick={prevMonth}
+          onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
+          onMouseLeave={e => e.currentTarget.style.color = "#8b7d6b"}
+        >‹</button>
+        <span style={{ color: "#d4c9b8", fontFamily: "monospace", fontSize: "0.8rem" }}>
+          {CAL_MONTHS[view.m]} {view.y}
+        </span>
+        <button style={navBtnStyle} onClick={nextMonth}
+          onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
+          onMouseLeave={e => e.currentTarget.style.color = "#8b7d6b"}
+        >›</button>
+      </div>
+
+      {/* Day-of-week headers */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "2px", marginBottom: "2px" }}>
+        {CAL_DOWS.map(d => (
+          <div key={d} style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.05em", padding: "0.15rem 0", textAlign: "center" }}>
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* Day grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "2px" }}>
+        {Array.from({ length: firstDow }, (_, i) => <div key={`e${i}`} />)}
+        {Array.from({ length: daysInMonth }, (_, i) => {
+          const day = i + 1;
+          const isToday    = view.y === todayYear && view.m === todayMonth && day === todayDay;
+          const isSelected = day === selectedStartDay;
+          const dots       = startDatesByDay[day] ?? [];
+          const hasDot     = dots.length > 0 && !isSelected;
+
+          return (
+            <div
+              key={day}
+              onClick={() => canClick && onSelectDate(selectedChoreId, new Date(view.y, view.m, day))}
+              style={{
+                alignItems: "center",
+                aspectRatio: "1",
+                background: isSelected ? "#c9a96e" : isToday ? "#c9a96e18" : "transparent",
+                border: isToday && !isSelected ? "1px solid #c9a96e50" : "1px solid transparent",
+                borderRadius: "3px",
+                color: isSelected ? "#0f1117" : isToday ? "#c9a96e" : canClick ? "#8b7d6b" : "#3a3440",
+                cursor: canClick ? "pointer" : "default",
+                display: "flex",
+                flexDirection: "column",
+                fontFamily: "monospace",
+                fontSize: "0.72rem",
+                gap: "1px",
+                justifyContent: "center",
+                position: "relative",
+                textAlign: "center",
+                transition: "background 0.1s, color 0.1s",
+              }}
+              onMouseEnter={e => { if (canClick && !isSelected) e.currentTarget.style.background = "#c9a96e22"; }}
+              onMouseLeave={e => { if (canClick && !isSelected) e.currentTarget.style.background = isToday ? "#c9a96e18" : "transparent"; }}
+            >
+              {day}
+              {hasDot && (
+                <div style={{ background: isSelected ? "#0f1117" : "#c9a96e", borderRadius: "50%", height: 3, left: "50%", position: "absolute", bottom: 2, transform: "translateX(-50%)", width: 3 }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Selected chore info */}
+      <div style={{ borderTop: "1px solid #2a2f3e", marginTop: "0.85rem", paddingTop: "0.75rem" }}>
+        {!selectedChore ? (
+          <p style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.72rem", margin: 0 }}>
+            Select a chore row to set its start date.
+          </p>
+        ) : (
+          <div>
+            <p style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.06em", margin: "0 0 0.3rem", overflow: "hidden", textOverflow: "ellipsis", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+              {selectedChore.title || "Unnamed chore"}
+            </p>
+            <p style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.7rem", margin: 0 }}>
+              {selectedChore.startDate
+                ? `Starts ${new Date(selectedChore.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+                : "No start date — click a day above"}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChoresTable({ rows, notes, roomOptions, reminderModes, selectedChoreId, onChoreEdit, onNoteChange, onCycleReminderMode, onDelete, onChoreSelect, sortCols, onHeaderClick }) {
   return (
     <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", overflowX: "auto" }}>
       <table style={{ borderCollapse: "collapse", fontSize: "0.82rem", width: "100%" }}>
         <thead>
           <tr>
-            {COLUMNS.map(({ label, width, sortKey }) => {
+            {COLUMNS.map(({ label, width, sortKey }, i) => {
               const sort = sortCols.find(s => s.col === sortKey);
               const isPrimary = sort && sortCols[0]?.col === sortKey;
               return (
                 <th
-                  key={label || "__del"}
+                  key={label || `__col${i}`}
                   onClick={e => sortKey && onHeaderClick(sortKey, e.shiftKey)}
                   style={{
                     background: "#1a1f2e",
@@ -208,18 +373,25 @@ function ChoresTable({ rows, notes, roomOptions, onChoreEdit, onNoteChange, onDe
             </tr>
           )}
           {rows.map((chore, i) => {
-            const note = notes[chore.id] || "";
+            const note       = notes[chore.id] || "";
+            const isSelected = chore.id === selectedChoreId;
+            const baseBg     = isSelected ? "#1e2035" : i % 2 === 0 ? "#13161f" : "#161920";
+            const hoverBg    = isSelected ? "#232545" : "#1e2430";
 
             return (
               <tr
                 key={chore.id}
+                onClick={() => onChoreSelect(chore.id)}
                 style={{
-                  background: i % 2 === 0 ? "#13161f" : "#161920",
-                  borderBottom: "1px solid #1e2330",
+                  background: baseBg,
+                  borderBottom: `1px solid ${isSelected ? "#c9a96e30" : "#1e2330"}`,
+                  cursor: "pointer",
+                  outline: isSelected ? "1px solid #c9a96e30" : "none",
+                  outlineOffset: "-1px",
                   transition: "background 0.1s",
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = "#1e2430"}
-                onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? "#13161f" : "#161920"}
+                onMouseEnter={e => e.currentTarget.style.background = hoverBg}
+                onMouseLeave={e => e.currentTarget.style.background = baseBg}
               >
                 {/* Room */}
                 <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
@@ -267,11 +439,29 @@ function ChoresTable({ rows, notes, roomOptions, onChoreEdit, onNoteChange, onDe
                   />
                 </td>
 
+                {/* Bell */}
+                <td style={{ padding: "0.5rem 0.4rem", textAlign: "center", verticalAlign: "middle" }}>
+                  <ReminderButton
+                    schedule={chore.schedule}
+                    mode={reminderModes?.[chore.id] ?? "off"}
+                    onCycle={() => onCycleReminderMode(chore.id)}
+                  />
+                </td>
+
                 {/* Notes */}
                 <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
                   <NoteCell
                     value={note}
                     onChange={v => onNoteChange(chore.id, v)}
+                  />
+                </td>
+
+                {/* Assignee */}
+                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                  <TitleCell
+                    value={chore.assignee || ""}
+                    placeholder="—"
+                    onChange={v => onChoreEdit(chore.id, "assignee", v)}
                   />
                 </td>
 
@@ -300,6 +490,9 @@ function ChoresTable({ rows, notes, roomOptions, onChoreEdit, onNoteChange, onDe
 export default function ChoresPage({ navigate }) {
   const [chores, setChores]               = useState(() => loadChores());
   const [notes, setNotes]                 = useState(() => loadChoreNotes());
+  const [reminderModes, setReminderModes] = useState(() => loadChoreReminderModes());
+  const [remindersOpen, setRemindersOpen] = useState(false);
+  const [selectedChoreId, setSelectedChoreId] = useState(null);
   const [roomOptions]                     = useState(() => buildRoomOptions());
   const [activeRoom, setActiveRoom]       = useState("All");
   const [activeFrequencies, setActiveFrequencies] = useState(new Set());
@@ -337,6 +530,7 @@ export default function ChoresPage({ navigate }) {
       case "schedule":  return parseMonths(chore.schedule) ?? 999;
       case "dayOfWeek": return chore.dayOfWeek ?? 7;
       case "timeOfDay": return chore.timeOfDay ?? "99:99";
+      case "assignee":  return (chore.assignee || "").toLowerCase();
       case "notes":     return (notes[chore.id] || "").toLowerCase();
       default:          return "";
     }
@@ -428,6 +622,35 @@ export default function ChoresPage({ navigate }) {
     });
   }
 
+  function handleCycleReminderMode(choreId) {
+    setReminderModes(prev => {
+      const cur = REMINDER_MODES.includes(prev[choreId]) ? prev[choreId] : "off";
+      const nextIdx = (REMINDER_MODES.indexOf(cur) + 1) % REMINDER_MODES.length;
+      const next = { ...prev, [choreId]: REMINDER_MODES[nextIdx] };
+      saveChoreReminderModes(next);
+      return next;
+    });
+  }
+
+  function handleSetStartDate(choreId, date) {
+    const updated = chores.map(c => c.id === choreId ? { ...c, startDate: date.toISOString() } : c);
+    setChores(updated);
+    saveChores(updated);
+    const chore = updated.find(c => c.id === choreId);
+    if (chore) {
+      const next = computeNextOccurrenceFromStart(date, chore.schedule, chore.dayOfWeek, chore.timeOfDay);
+      const nextDates = { ...loadChoreNextDates(), [choreId]: next.toISOString() };
+      saveChoreNextDates(nextDates);
+    }
+  }
+
+  async function handleSyncReminders() {
+    const maintenanceRows = loadData();
+    let maintenanceNextDates = {};
+    try { maintenanceNextDates = JSON.parse(localStorage.getItem("maintenance-next-dates") || "{}"); } catch {}
+    return syncReminders({ rows: maintenanceRows, nextDates: maintenanceNextDates, modes: loadReminderModes() });
+  }
+
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div style={{ background: "#0f1117", color: "#d4c9b8", display: "flex", flexDirection: "column", fontFamily: "'Georgia', 'Times New Roman', serif", height: "100vh", overflow: "hidden" }}>
@@ -456,6 +679,8 @@ export default function ChoresPage({ navigate }) {
 
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "2rem 2rem 4rem" }}>
+      <div style={{ alignItems: "flex-start", display: "flex", gap: "2rem" }}>
+      <div style={{ flex: "0 0 58%", minWidth: 0 }}>
 
         {/* Stats / search / add */}
         <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1.25rem" }}>
@@ -478,6 +703,15 @@ export default function ChoresPage({ navigate }) {
             style={{ background: "transparent", border: `1px solid ${addHovered ? "#c9a96e" : "#2e3448"}`, borderRadius: "3px", color: addHovered ? "#c9a96e" : "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s", whiteSpace: "nowrap" }}
           >
             + ADD CHORE
+          </button>
+          <button
+            onClick={() => setRemindersOpen(true)}
+            className="foreman-reminders-header-btn"
+            style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s", whiteSpace: "nowrap" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+          >
+            REMINDERS
           </button>
         </div>
 
@@ -514,13 +748,33 @@ export default function ChoresPage({ navigate }) {
           rows={filtered}
           notes={notes}
           roomOptions={roomOptions}
+          reminderModes={reminderModes}
+          selectedChoreId={selectedChoreId}
           onChoreEdit={handleChoreEdit}
           onNoteChange={handleNoteChange}
+          onCycleReminderMode={handleCycleReminderMode}
           onDelete={chore => setConfirmChore(chore)}
+          onChoreSelect={id => setSelectedChoreId(prev => prev === id ? null : id)}
           sortCols={sortCols}
           onHeaderClick={handleHeaderClick}
         />
       </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <CalendarWidget
+          chores={chores}
+          selectedChoreId={selectedChoreId}
+          onSelectDate={handleSetStartDate}
+        />
+      </div>
+      </div>
+      </div>
+
+      <ReminderSettings
+        open={remindersOpen}
+        onClose={() => setRemindersOpen(false)}
+        onSync={handleSyncReminders}
+        enabledCount={Object.values(reminderModes).filter(m => m && m !== "off").length}
+      />
     </div>
   );
 }

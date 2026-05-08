@@ -29,6 +29,7 @@ export default function ReminderButton({ schedule, mode, onCycle }) {
       className="foreman-bell-button"
       style={{
         alignItems: "center",
+        justifyContent: "center",
         background: filled ? "#c9a96e22" : "transparent",
         border: `1px solid ${active ? "#c9a96e" : "#2e3448"}`,
         borderRadius: "3px",

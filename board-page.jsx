@@ -690,7 +690,7 @@ export default function BoardPage({ navigate }) {
   }
 
   const todoCategories = useMemo(() => {
-    const cats = new Set(todos.filter(t => t.linkedCategory).map(t => t.linkedCategory));
+    const cats = new Set(todos.filter(t => t.linkedCategory && !t._isOverdueChore).map(t => t.linkedCategory));
     return Array.from(cats).sort();
   }, [todos]);
 
@@ -710,9 +710,10 @@ export default function BoardPage({ navigate }) {
   const modalTodo = modalState && modalState !== "new" && typeof modalState === "object" && modalState.id
     ? modalState : null;
 
-  const sidebarTodos = useMemo(() =>
-    activeCategory === "All" ? todos : todos.filter(t => t.linkedCategory === activeCategory),
-    [todos, activeCategory]);
+  const sidebarTodos = useMemo(() => {
+    const nonChore = todos.filter(t => !t._isOverdueChore);
+    return activeCategory === "All" ? nonChore : nonChore.filter(t => t.linkedCategory === activeCategory);
+  }, [todos, activeCategory]);
 
   return (
     <div style={{

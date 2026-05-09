@@ -4,13 +4,14 @@ import { useState } from "react";
 // TODO: "+" button is cosmetic — revisit functionality in a future version (likely quick-add or new view)
 
 const TABS = [
-  { key: "dashboard", label: "Dashboard" },
-  { key: "inventory", label: "Inventory" },
+  { key: "dashboard",   label: "Dashboard"   },
+  { key: "calendar",    label: "Calendar"    },
   { key: "maintenance", label: "Maintenance" },
-  { key: "chores", label: "Chores" },
-  { key: "board", label: "To Dos" },
-  { key: "projects", label: "Projects" },
-  { key: "guide", label: "Guide" },
+  { key: "chores",      label: "Chores"      },
+  { key: "board",       label: "To Dos"      },
+  { key: "projects",    label: "Projects"    },
+  { key: "guide",       label: "Guide"       },
+  { key: "preferences", label: "Preferences" },
 ];
 
 export default function PageNav({ currentPage, navigate }) {

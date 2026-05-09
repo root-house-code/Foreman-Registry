@@ -6,6 +6,8 @@ import ProjectsPage from "../projects-page.jsx";
 import DashboardPage from "../dashboard-page.jsx";
 import GuidePage from "../guide-page.jsx";
 import ChoresPage from "../chores-page.jsx";
+import CalendarPage from "../calendar-page.jsx";
+import PreferencesPage from "../preferences-page.jsx";
 export default function App() {
   const [page, setPage] = useState("dashboard");
 
@@ -37,6 +39,14 @@ export default function App() {
 
   if (page === "chores") {
     return <ChoresPage navigate={navigate} />;
+  }
+
+  if (page === "calendar") {
+    return <CalendarPage navigate={navigate} />;
+  }
+
+  if (page === "preferences") {
+    return <PreferencesPage navigate={navigate} />;
   }
 
   return <HomeMaintenanceTable navigate={navigate} />;

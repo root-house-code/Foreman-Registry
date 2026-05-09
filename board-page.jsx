@@ -471,6 +471,7 @@ export default function BoardPage({ navigate }) {
   const [chores] = useState(() => loadChores());
   const [choreNextDates, setChoreNextDates] = useState(() => loadChoreNextDates());
   const [choreCompletedDates, setChoreCompletedDates] = useState(() => loadChoreCompletedDates());
+  const [showChoresOnly, setShowChoresOnly] = useState(false);
 
   const rows = useMemo(() => loadData(), []);
   const deletedCategories = useMemo(() => loadDeletedCategories(), []);
@@ -696,8 +697,9 @@ export default function BoardPage({ navigate }) {
   const filteredTodos = useMemo(() => todos.filter(t => {
     if (selectedProjectId && t.projectId !== selectedProjectId) return false;
     if (activeCategory !== "All" && t.linkedCategory !== activeCategory) return false;
+    if (!showChoresOnly && t._isOverdueChore) return false;
     return true;
-  }), [todos, selectedProjectId, activeCategory]);
+  }), [todos, selectedProjectId, activeCategory, showChoresOnly]);
 
   const todosByStatus = useMemo(() => {
     const map = { "not-started": [], "in-progress": [], "done": [] };
@@ -895,18 +897,34 @@ export default function BoardPage({ navigate }) {
                 </span>
                 <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.65rem" }}>Overdue maintenance tasks and chores are automatically added here.</span>
               </div>
-              <button
-                onClick={() => setModalState("new")}
-                style={{
-                  background: "#c9a96e18", border: "1px solid #c9a96e40", borderRadius: "3px",
-                  color: "#c9a96e", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem",
-                  letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#c9a96e30"; e.currentTarget.style.borderColor = "#c9a96e"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "#c9a96e18"; e.currentTarget.style.borderColor = "#c9a96e40"; }}
-              >
-                + New To Do
-              </button>
+              <div style={{ alignItems: "center", display: "flex", gap: "0.75rem" }}>
+                <button
+                  onClick={() => setShowChoresOnly(prev => !prev)}
+                  style={{
+                    background: showChoresOnly ? "#c9a96e18" : "transparent",
+                    border: `1px solid ${showChoresOnly ? "#c9a96e" : "#2e3448"}`,
+                    borderRadius: "3px", color: showChoresOnly ? "#c9a96e" : "#5a5460",
+                    cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem",
+                    letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s",
+                  }}
+                  onMouseEnter={e => { if (!showChoresOnly) { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#8b7d6b"; } }}
+                  onMouseLeave={e => { if (!showChoresOnly) { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#5a5460"; } }}
+                >
+                  Chores
+                </button>
+                <button
+                  onClick={() => setModalState("new")}
+                  style={{
+                    background: "#c9a96e18", border: "1px solid #c9a96e40", borderRadius: "3px",
+                    color: "#c9a96e", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem",
+                    letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#c9a96e30"; e.currentTarget.style.borderColor = "#c9a96e"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "#c9a96e18"; e.currentTarget.style.borderColor = "#c9a96e40"; }}
+                >
+                  + New To Do
+                </button>
+              </div>
             </div>
 
             <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>

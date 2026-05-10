@@ -5,6 +5,10 @@ import { loadProjects } from "./lib/projects.js";
 import { loadData } from "./lib/data.js";
 import { loadDeletedCategories } from "./lib/deletedCategories.js";
 import { loadDeletedItems } from "./lib/deletedItems.js";
+import {
+  loadChores, loadChoreNextDates, loadChoreCompletedDates,
+  computeNextOccurrenceFromStart,
+} from "./lib/chores.js";
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -71,26 +75,41 @@ export default function DashboardPage({ navigate }) {
     return d;
   }, []);
 
+  const in7Days = useMemo(() => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + 7);
+    return d;
+  }, [today]);
+
   const in30Days = useMemo(() => {
     const d = new Date(today);
     d.setDate(d.getDate() + 30);
     return d;
   }, [today]);
 
-  const rows = useMemo(() => loadData(), []);
-  const deletedCategories = useMemo(() => loadDeletedCategories(), []);
-  const deletedItems = useMemo(() => loadDeletedItems(), []);
-  const todos = useMemo(() => loadTodos(), []);
-  const projects = useMemo(() => loadProjects(), []);
-  const nextDatesMap = useMemo(() => {
+  // ── Maintenance data ──────────────────────────────────────────────────────
+  const rows               = useMemo(() => loadData(), []);
+  const deletedCategories  = useMemo(() => loadDeletedCategories(), []);
+  const deletedItems       = useMemo(() => loadDeletedItems(), []);
+  const nextDatesMap       = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("maintenance-next-dates") || "{}"); }
     catch { return {}; }
   }, []);
-  const completedDatesMap = useMemo(() => {
+  const completedDatesMap  = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("maintenance-dates") || "{}"); }
     catch { return {}; }
   }, []);
 
+  // ── Chores data ───────────────────────────────────────────────────────────
+  const chores              = useMemo(() => loadChores(), []);
+  const choreNextDates      = useMemo(() => loadChoreNextDates(), []);
+  const choreCompletedDates = useMemo(() => loadChoreCompletedDates(), []);
+
+  // ── Todos / projects data ─────────────────────────────────────────────────
+  const todos    = useMemo(() => loadTodos(), []);
+  const projects = useMemo(() => loadProjects(), []);
+
+  // ── Derived: maintenance ──────────────────────────────────────────────────
   const activeRows = useMemo(() =>
     rows.filter(row =>
       !row._isBlankCategory && row.category && row.item && row.task &&
@@ -102,10 +121,7 @@ export default function DashboardPage({ navigate }) {
 
   const overdueItems = useMemo(() =>
     activeRows
-      .filter(row => {
-        const d = nextDatesMap[keyOf(row)];
-        return d && new Date(d) < today;
-      })
+      .filter(row => { const d = nextDatesMap[keyOf(row)]; return d && new Date(d) < today; })
       .sort((a, b) => new Date(nextDatesMap[keyOf(a)]) - new Date(nextDatesMap[keyOf(b)])),
     [activeRows, nextDatesMap, today]
   );
@@ -122,6 +138,36 @@ export default function DashboardPage({ navigate }) {
     [activeRows, nextDatesMap, today, in30Days]
   );
 
+  // ── Derived: chores ───────────────────────────────────────────────────────
+  function choreNextDate(c) {
+    if (choreNextDates[c.id]) return new Date(choreNextDates[c.id]);
+    if (!c.startDate) return null;
+    return computeNextOccurrenceFromStart(new Date(c.startDate), c.schedule, c.dayOfWeek, c.timeOfDay);
+  }
+
+  const overdueChores = useMemo(() =>
+    chores
+      .filter(c => { const d = choreNextDate(c); return d && d < today; })
+      .sort((a, b) => {
+        const dA = choreNextDate(a) ?? new Date(0);
+        const dB = choreNextDate(b) ?? new Date(0);
+        return dA - dB;
+      }),
+    [chores, choreNextDates, today]
+  );
+
+  const upcomingChores = useMemo(() =>
+    chores
+      .filter(c => { const d = choreNextDate(c); return d && d >= today && d <= in7Days; })
+      .sort((a, b) => {
+        const dA = choreNextDate(a) ?? new Date(0);
+        const dB = choreNextDate(b) ?? new Date(0);
+        return dA - dB;
+      }),
+    [chores, choreNextDates, today, in7Days]
+  );
+
+  // ── Derived: todos / projects ─────────────────────────────────────────────
   const todoStatusCounts = useMemo(() => {
     const counts = { "not-started": 0, "in-progress": 0, "done": 0 };
     todos.forEach(t => { if (counts[t.status] != null) counts[t.status]++; });
@@ -130,7 +176,7 @@ export default function DashboardPage({ navigate }) {
 
   const highPriorityTodos = useMemo(() =>
     todos
-      .filter(t => (t.priority === "urgent" || t.priority === "high") && t.status !== "done")
+      .filter(t => (t.priority === "urgent" || t.priority === "high") && t.status !== "done" && !t._isOverdueChore)
       .sort((a, b) => (a.priority === "urgent" ? -1 : 1)),
     [todos]
   );
@@ -144,44 +190,100 @@ export default function DashboardPage({ navigate }) {
     [projects, todos]
   );
 
+  // ── Completion chart (bug-fixed + chore series) ───────────────────────────
   const completionsByMonth = useMemo(() => {
     const result = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(today);
       d.setMonth(d.getMonth() - i);
-      result.push({ label: MONTH_LABELS[d.getMonth()], year: d.getFullYear(), month: d.getMonth(), count: 0 });
+      result.push({ label: MONTH_LABELS[d.getMonth()], year: d.getFullYear(), month: d.getMonth(), maint: 0, chores: 0 });
     }
-    Object.values(completedDatesMap).forEach(dateList => {
-      if (!Array.isArray(dateList)) return;
-      dateList.forEach(dateStr => {
+
+    // Maintenance completions — stored as single ISO strings (not arrays); handle both
+    Object.values(completedDatesMap).forEach(dateOrList => {
+      const dates = Array.isArray(dateOrList) ? dateOrList : (dateOrList ? [dateOrList] : []);
+      dates.forEach(dateStr => {
         const d = new Date(dateStr);
         const bucket = result.find(b => b.year === d.getFullYear() && b.month === d.getMonth());
-        if (bucket) bucket.count++;
+        if (bucket) bucket.maint++;
       });
     });
+
+    // Chore completions — stored as single ISO strings per chore ID
+    Object.values(choreCompletedDates).forEach(dateStr => {
+      if (!dateStr) return;
+      const d = new Date(dateStr);
+      const bucket = result.find(b => b.year === d.getFullYear() && b.month === d.getMonth());
+      if (bucket) bucket.chores++;
+    });
+
     return result;
-  }, [completedDatesMap, today]);
+  }, [completedDatesMap, choreCompletedDates, today]);
 
   const maxCompletions = useMemo(() =>
-    Math.max(...completionsByMonth.map(b => b.count), 1),
+    Math.max(...completionsByMonth.map(b => b.maint + b.chores), 1),
     [completionsByMonth]
   );
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
   const openTodosCount = todoStatusCounts["not-started"] + todoStatusCounts["in-progress"];
-  const activeProjectsCount = projects.length;
+  const totalOverdue   = overdueItems.length + overdueChores.length;
 
   function formatDate(dateStr) {
-    if (!dateStr) return "";
+    if (!dateStr) return "—";
     const d = new Date(dateStr);
     return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
   }
 
+  function formatDateFromDate(d) {
+    if (!d) return "—";
+    return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
+  }
+
   const PRIORITY_COLORS = {
-    low: "#4ade80",
-    medium: "#c9a96e",
-    high: "#f59e0b",
-    urgent: "#f87171",
+    low: "#4ade80", medium: "#c9a96e", high: "#f59e0b", urgent: "#f87171",
   };
+
+  // Combined overdue list (maintenance first, then chores), capped at 8
+  const combinedOverdue = useMemo(() => {
+    const maintRows = overdueItems.map(row => ({
+      type: "maint",
+      date: nextDatesMap[keyOf(row)] ? new Date(nextDatesMap[keyOf(row)]) : null,
+      label: row.task,
+      sub: row.category,
+    }));
+    const choreRows = overdueChores.map(c => ({
+      type: "chore",
+      date: choreNextDate(c),
+      label: c.title,
+      sub: c.room,
+    }));
+    return [...maintRows, ...choreRows]
+      .sort((a, b) => (a.date ?? new Date(0)) - (b.date ?? new Date(0)))
+      .slice(0, 8);
+  }, [overdueItems, overdueChores, nextDatesMap]);
+
+  // Combined due-soon list (maintenance ≤30d + chores ≤7d), sorted by date, capped at 8
+  const combinedUpcoming = useMemo(() => {
+    const maintRows = upcomingItems.map(row => ({
+      type: "maint",
+      date: new Date(nextDatesMap[keyOf(row)]),
+      label: row.task,
+      sub: row.category,
+    }));
+    const choreRows = upcomingChores.map(c => ({
+      type: "chore",
+      date: choreNextDate(c),
+      label: c.title,
+      sub: c.room,
+    }));
+    return [...maintRows, ...choreRows]
+      .sort((a, b) => (a.date ?? new Date(0)) - (b.date ?? new Date(0)))
+      .slice(0, 8);
+  }, [upcomingItems, upcomingChores, nextDatesMap]);
+
+  const combinedOverdueTotal  = overdueItems.length + overdueChores.length;
+  const combinedUpcomingTotal = upcomingItems.length + upcomingChores.length;
 
   return (
     <div style={{ background: "#0f1117", color: "#d4c9b8", display: "flex", flexDirection: "column", fontFamily: "monospace", height: "100vh", overflow: "hidden" }}>
@@ -202,21 +304,30 @@ export default function DashboardPage({ navigate }) {
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "2rem" }}>
 
-        {/* Stat summary row */}
+        {/* Stat summary row — Overdue · Upcoming · Chores This Week · Open To Dos */}
         <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(4, 1fr)", marginBottom: "1.5rem" }}>
           <StatCard
             label="Overdue"
-            value={overdueItems.length}
-            valueColor={overdueItems.length > 0 ? "#f87171" : "#4ade80"}
-            sub="maintenance tasks"
+            value={totalOverdue}
+            valueColor={totalOverdue > 0 ? "#f87171" : "#4ade80"}
+            sub={overdueItems.length > 0 || overdueChores.length > 0
+              ? `${overdueItems.length} maint · ${overdueChores.length} chores`
+              : "all clear"}
             onClick={() => navigate("maintenance")}
           />
           <StatCard
             label="Upcoming"
             value={upcomingItems.length}
             valueColor="#c9a96e"
-            sub="due within 30 days"
+            sub="maintenance in 30 days"
             onClick={() => navigate("maintenance")}
+          />
+          <StatCard
+            label="Chores This Week"
+            value={upcomingChores.length}
+            valueColor={upcomingChores.length > 0 ? "#c9a96e" : "#3a3548"}
+            sub="due in 7 days"
+            onClick={() => navigate("chores")}
           />
           <StatCard
             label="Open To Dos"
@@ -225,62 +336,61 @@ export default function DashboardPage({ navigate }) {
             sub={`${todoStatusCounts["in-progress"]} in progress`}
             onClick={() => navigate("board")}
           />
-          <StatCard
-            label="Projects"
-            value={activeProjectsCount}
-            valueColor="#8b7d6b"
-            sub="active"
-            onClick={() => navigate("projects")}
-          />
         </div>
 
-        {/* Overdue + Upcoming */}
+        {/* Overdue + Due Soon */}
         <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1fr", marginBottom: "1rem" }}>
-          {/* Overdue Maintenance */}
+
+          {/* Overdue (maintenance + chores) */}
           <div style={card}>
             <div style={sectionHeader}>
-              <span style={sectionTitle}>Overdue Maintenance</span>
+              <span style={sectionTitle}>Overdue</span>
               <button style={navLink} onClick={() => navigate("maintenance")}>&rarr; Maintenance</button>
             </div>
-            {overdueItems.length === 0
-              ? <div style={emptyText}>All clear</div>
-              : overdueItems.slice(0, 8).map((row, i) => (
+            {combinedOverdue.length === 0 ? (
+              <div style={emptyText}>All clear</div>
+            ) : (
+              combinedOverdue.map((item, i) => (
                 <div key={i} style={rowStyle}>
-                  <span style={{ color: "#f87171", minWidth: "60px" }}>{formatDate(nextDatesMap[keyOf(row)])}</span>
-                  <span style={{ color: "#4a4458", minWidth: "80px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.category}</span>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.task}</span>
+                  <span style={{ color: "#f87171", flexShrink: 0, minWidth: "58px" }}>{formatDateFromDate(item.date)}</span>
+                  <span style={{ color: "#2e3448", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
+                  <span style={{ color: "#4a4458", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
                 </div>
               ))
-            }
-            {overdueItems.length > 8 && (
-              <div style={{ ...emptyText, marginTop: "0.25rem" }}>+{overdueItems.length - 8} more</div>
+            )}
+            {combinedOverdueTotal > 8 && (
+              <div style={{ ...emptyText, marginTop: "0.25rem" }}>+{combinedOverdueTotal - 8} more</div>
             )}
           </div>
 
-          {/* Upcoming Maintenance */}
+          {/* Due Soon (maintenance ≤30d + chores ≤7d) */}
           <div style={card}>
             <div style={sectionHeader}>
-              <span style={sectionTitle}>Upcoming — 30 Days</span>
-              <button style={navLink} onClick={() => navigate("maintenance")}>&rarr; Maintenance</button>
+              <span style={sectionTitle}>Due Soon</span>
+              <button style={navLink} onClick={() => navigate("calendar")}>&rarr; Calendar</button>
             </div>
-            {upcomingItems.length === 0
-              ? <div style={emptyText}>Nothing due soon</div>
-              : upcomingItems.slice(0, 8).map((row, i) => (
+            {combinedUpcoming.length === 0 ? (
+              <div style={emptyText}>Nothing due soon</div>
+            ) : (
+              combinedUpcoming.map((item, i) => (
                 <div key={i} style={rowStyle}>
-                  <span style={{ color: "#c9a96e", minWidth: "60px" }}>{formatDate(nextDatesMap[keyOf(row)])}</span>
-                  <span style={{ color: "#4a4458", minWidth: "80px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.category}</span>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.task}</span>
+                  <span style={{ color: "#c9a96e", flexShrink: 0, minWidth: "58px" }}>{formatDateFromDate(item.date)}</span>
+                  <span style={{ color: "#2e3448", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
+                  <span style={{ color: "#4a4458", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
                 </div>
               ))
-            }
-            {upcomingItems.length > 8 && (
-              <div style={{ ...emptyText, marginTop: "0.25rem" }}>+{upcomingItems.length - 8} more</div>
+            )}
+            {combinedUpcomingTotal > 8 && (
+              <div style={{ ...emptyText, marginTop: "0.25rem" }}>+{combinedUpcomingTotal - 8} more</div>
             )}
           </div>
         </div>
 
         {/* To Dos + Projects */}
         <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1fr", marginBottom: "1rem" }}>
+
           {/* To Dos Summary */}
           <div style={card}>
             <div style={sectionHeader}>
@@ -291,7 +401,7 @@ export default function DashboardPage({ navigate }) {
               {[
                 { label: "Not Started", key: "not-started", color: "#4a4458" },
                 { label: "In Progress", key: "in-progress", color: "#c9a96e" },
-                { label: "Done", key: "done", color: "#4ade80" },
+                { label: "Done",        key: "done",        color: "#4ade80" },
               ].map(s => (
                 <div key={s.key} style={{ textAlign: "center" }}>
                   <div style={{ color: s.color, fontFamily: "monospace", fontSize: "1.4rem", fontWeight: 300 }}>
@@ -303,25 +413,24 @@ export default function DashboardPage({ navigate }) {
                 </div>
               ))}
             </div>
-            {highPriorityTodos.length === 0
-              ? <div style={emptyText}>No urgent or high priority items</div>
-              : (
-                <>
-                  <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase" }}>
-                    High Priority Open
+            {highPriorityTodos.length === 0 ? (
+              <div style={emptyText}>No urgent or high priority items</div>
+            ) : (
+              <>
+                <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase" }}>
+                  High Priority Open
+                </div>
+                {highPriorityTodos.slice(0, 6).map((t, i) => (
+                  <div key={i} style={rowStyle}>
+                    <span style={{ color: PRIORITY_COLORS[t.priority], minWidth: "50px" }}>{t.priority}</span>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title}</span>
                   </div>
-                  {highPriorityTodos.slice(0, 6).map((t, i) => (
-                    <div key={i} style={rowStyle}>
-                      <span style={{ color: PRIORITY_COLORS[t.priority], minWidth: "50px" }}>{t.priority}</span>
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title}</span>
-                    </div>
-                  ))}
-                  {highPriorityTodos.length > 6 && (
-                    <div style={{ ...emptyText, marginTop: "0.25rem" }}>+{highPriorityTodos.length - 6} more</div>
-                  )}
-                </>
-              )
-            }
+                ))}
+                {highPriorityTodos.length > 6 && (
+                  <div style={{ ...emptyText, marginTop: "0.25rem" }}>+{highPriorityTodos.length - 6} more</div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Projects Progress */}
@@ -330,58 +439,86 @@ export default function DashboardPage({ navigate }) {
               <span style={sectionTitle}>Projects</span>
               <button style={navLink} onClick={() => navigate("projects")}>&rarr; Projects</button>
             </div>
-            {projectsWithProgress.length === 0
-              ? <div style={emptyText}>No projects yet</div>
-              : projectsWithProgress.map((p, i) => {
-                const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
-                return (
-                  <div key={i} style={{ marginBottom: "0.85rem" }}>
-                    <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "0.3rem" }}>
-                      <span style={{ color: "#6a6478", fontFamily: "monospace", fontSize: "0.72rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {p.name}
-                      </span>
-                      <span style={{ color: "#3a3548", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem", marginLeft: "0.5rem" }}>
-                        {p.done}/{p.total}
-                      </span>
-                    </div>
-                    <div style={{ background: "#1a1d26", borderRadius: "2px", height: "3px", width: "100%" }}>
-                      <div style={{ background: pct === 100 ? "#4ade80" : "#c9a96e", borderRadius: "2px", height: "100%", transition: "width 0.3s", width: `${pct}%` }} />
-                    </div>
+            {projectsWithProgress.length === 0 ? (
+              <div style={emptyText}>No projects yet</div>
+            ) : projectsWithProgress.map((p, i) => {
+              const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
+              return (
+                <div key={i} style={{ marginBottom: "0.85rem" }}>
+                  <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "0.3rem" }}>
+                    <span style={{ color: "#6a6478", fontFamily: "monospace", fontSize: "0.72rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {p.name}
+                    </span>
+                    <span style={{ color: "#3a3548", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem", marginLeft: "0.5rem" }}>
+                      {p.done}/{p.total}
+                    </span>
                   </div>
-                );
-              })
-            }
+                  <div style={{ background: "#1a1d26", borderRadius: "2px", height: "3px", width: "100%" }}>
+                    <div style={{ background: pct === 100 ? "#4ade80" : "#c9a96e", borderRadius: "2px", height: "100%", transition: "width 0.3s", width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Completed Maintenance Over Time */}
+        {/* Completion chart — maintenance (amber) + chores (green), stacked */}
         <div style={card}>
           <div style={sectionHeader}>
-            <span style={sectionTitle}>Completed Maintenance — Last 6 Months</span>
-            <button style={navLink} onClick={() => navigate("maintenance")}>&rarr; Maintenance</button>
+            <span style={sectionTitle}>Completed — Last 6 Months</span>
+            <div style={{ alignItems: "center", display: "flex", gap: "0.9rem" }}>
+              <span style={{ alignItems: "center", color: "#3a3548", display: "flex", fontFamily: "monospace", fontSize: "0.58rem", gap: "0.3rem" }}>
+                <span style={{ background: "#c9a96e", borderRadius: "1px", display: "inline-block", height: "6px", width: "10px" }} />
+                Maintenance
+              </span>
+              <span style={{ alignItems: "center", color: "#3a3548", display: "flex", fontFamily: "monospace", fontSize: "0.58rem", gap: "0.3rem" }}>
+                <span style={{ background: "#4ade80", borderRadius: "1px", display: "inline-block", height: "6px", width: "10px" }} />
+                Chores
+              </span>
+            </div>
           </div>
           <div style={{ alignItems: "flex-end", display: "flex", gap: "1rem", height: "80px" }}>
-            {completionsByMonth.map((bucket, i) => (
-              <div key={i} style={{ alignItems: "center", display: "flex", flex: 1, flexDirection: "column", gap: "0.4rem" }}>
-                <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.6rem" }}>
-                  {bucket.count > 0 ? bucket.count : ""}
+            {completionsByMonth.map((bucket, i) => {
+              const total     = bucket.maint + bucket.chores;
+              const maxH      = 48;
+              const totalH    = Math.max((total / maxCompletions) * maxH, total > 0 ? 4 : 0);
+              const maintH    = total > 0 ? Math.round((bucket.maint / total) * totalH) : 0;
+              const choreH    = totalH - maintH;
+              return (
+                <div key={i} style={{ alignItems: "center", display: "flex", flex: 1, flexDirection: "column", gap: "0.4rem" }}>
+                  <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.6rem" }}>
+                    {total > 0 ? total : ""}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column-reverse", justifyContent: "flex-start", width: "100%" }}>
+                    {/* Maintenance segment (bottom) */}
+                    <div style={{
+                      background: bucket.maint > 0 ? "#c9a96e30" : "#1a1d26",
+                      border: bucket.maint > 0 ? "1px solid #c9a96e40" : "1px solid #1e2330",
+                      borderRadius: maintH > 0 && choreH === 0 ? "2px 2px 0 0" : "0 0 0 0",
+                      height: `${Math.max(maintH, bucket.maint > 0 ? 4 : 0)}px`,
+                      minHeight: bucket.maint > 0 ? "4px" : "0",
+                      width: "100%",
+                    }} />
+                    {/* Chore segment (top) */}
+                    {bucket.chores > 0 && (
+                      <div style={{
+                        background: "#4ade8030",
+                        border: "1px solid #4ade8040",
+                        borderRadius: "2px 2px 0 0",
+                        height: `${Math.max(choreH, 4)}px`,
+                        width: "100%",
+                      }} />
+                    )}
+                  </div>
+                  <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.6rem" }}>
+                    {bucket.label}
+                  </div>
                 </div>
-                <div style={{
-                  background: bucket.count > 0 ? "#c9a96e30" : "#1a1d26",
-                  border: bucket.count > 0 ? "1px solid #c9a96e40" : "1px solid #1e2330",
-                  borderRadius: "2px 2px 0 0",
-                  height: `${Math.max((bucket.count / maxCompletions) * 48, bucket.count > 0 ? 4 : 0)}px`,
-                  minHeight: bucket.count > 0 ? "4px" : "0",
-                  width: "100%",
-                }} />
-                <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.6rem" }}>
-                  {bucket.label}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-          {completionsByMonth.every(b => b.count === 0) && (
-            <div style={{ ...emptyText, marginTop: "0.5rem" }}>No completed maintenance recorded yet</div>
+          {completionsByMonth.every(b => b.maint + b.chores === 0) && (
+            <div style={{ ...emptyText, marginTop: "0.5rem" }}>No completed maintenance or chores recorded yet</div>
           )}
         </div>
 

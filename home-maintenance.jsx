@@ -391,7 +391,7 @@ export default function HomeMaintenanceTable({ navigate }) {
     }}>
       <div ref={pageHeaderRef} style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
-        borderBottom: "1px solid #2a2f3e",
+        borderBottom: "1px solid #6b6560",
         flexShrink: 0,
         padding: "2rem",
         zIndex: 50,
@@ -432,7 +432,7 @@ export default function HomeMaintenanceTable({ navigate }) {
             placeholder="Search items, types, schedules…"
             style={{
               background: "#1a1f2e",
-              border: "1px solid #2e3448",
+              border: "1px solid #6b6560",
               borderRadius: "4px",
               color: "#e8e0d0",
               fontSize: "0.82rem",
@@ -443,7 +443,7 @@ export default function HomeMaintenanceTable({ navigate }) {
               outline: "none",
             }}
           />
-          <span style={{ color: "#5a5460", fontSize: "0.78rem", fontFamily: "monospace" }}>
+          <span style={{ color: "#a8a29c", fontSize: "0.78rem", fontFamily: "monospace" }}>
             {filtered.length} results
           </span>
           <button
@@ -452,7 +452,7 @@ export default function HomeMaintenanceTable({ navigate }) {
             onMouseLeave={() => setAddRowHovered(false)}
             style={{
               background: "transparent",
-              border: `1px solid ${addRowHovered ? "#c9a96e" : "#2e3448"}`,
+              border: `1px solid ${addRowHovered ? "#c9a96e" : "#6b6560"}`,
               borderRadius: "3px",
               color: addRowHovered ? "#c9a96e" : "#8b7d6b",
               cursor: "pointer",
@@ -471,7 +471,7 @@ export default function HomeMaintenanceTable({ navigate }) {
             className="foreman-reminders-header-btn"
             style={{
               background: "transparent",
-              border: "1px solid #2e3448",
+              border: "1px solid #6b6560",
               borderRadius: "3px",
               color: "#8b7d6b",
               cursor: "pointer",
@@ -483,7 +483,7 @@ export default function HomeMaintenanceTable({ navigate }) {
               whiteSpace: "nowrap",
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}
           >
             REMINDERS
           </button>

@@ -25,12 +25,12 @@ export default function SelectCell({ value, options, placeholder, onChange, rend
   function renderValue() {
     if (renderDisplay) return renderDisplay(value);
     if (selectedOption) return (
-      <span style={{ color: "#d4c9b8", fontFamily: "monospace", fontSize: "0.78rem" }}>
+      <span style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.78rem" }}>
         {selectedOption.label}
       </span>
     );
     return (
-      <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.78rem" }}>
+      <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.78rem" }}>
         {placeholder}
       </span>
     );
@@ -47,7 +47,7 @@ export default function SelectCell({ value, options, placeholder, onChange, rend
       {open && (
         <div style={{
           background: "#1a1f2e",
-          border: "1px solid #2e3448",
+          border: "1px solid #6b6560",
           borderRadius: "2px",
           left: 0,
           maxHeight: 200,
@@ -63,14 +63,14 @@ export default function SelectCell({ value, options, placeholder, onChange, rend
               key={String(opt.value)}
               onMouseDown={() => handleSelect(opt.value)}
               style={{
-                color: opt.value === value ? "#c9a96e" : "#d4c9b8",
+                color: opt.value === value ? "#c9a96e" : "#e8e4dd",
                 cursor: "pointer",
                 fontFamily: "monospace",
                 fontSize: "0.78rem",
                 padding: "0.3rem 0.6rem",
                 whiteSpace: "nowrap",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#2a2f3e"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#6b6560"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
             >
               {opt.label}

@@ -7,9 +7,9 @@ const Trigger = forwardRef(({ value, onClick }, ref) => (
     onClick={onClick}
     style={{
       background: "transparent",
-      border: value ? "1px solid #2e3448" : "1px dashed #2e3448",
+      border: value ? "1px solid #6b6560" : "1px dashed #6b6560",
       borderRadius: "3px",
-      color: value ? "#d4c9b8" : "#3a3440",
+      color: value ? "#e8e4dd" : "#a8a29c",
       cursor: "pointer",
       fontFamily: "monospace",
       fontSize: "0.72rem",

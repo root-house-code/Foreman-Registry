@@ -16,7 +16,7 @@ const NAV_ITEMS = [
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
 const labelStyle = {
-  color: "#5a5460", display: "block", fontFamily: "monospace",
+  color: "#a8a29c", display: "block", fontFamily: "monospace",
   fontSize: "0.62rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase",
 };
 
@@ -26,7 +26,7 @@ const selectStyle = {
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`,
   backgroundRepeat: "no-repeat",
   backgroundPosition: "right 0.75rem center",
-  border: "1px solid #2e3448",
+  border: "1px solid #6b6560",
   borderRadius: "4px",
   boxSizing: "border-box",
   color: "#e8e0d0",
@@ -44,7 +44,7 @@ const subheadStyle = {
 };
 
 const bodyTextStyle = {
-  color: "#5a5460", fontFamily: "monospace", fontSize: "0.72rem",
+  color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem",
   lineHeight: 1.55, margin: "0 0 0.9rem",
 };
 
@@ -121,8 +121,8 @@ function ProfileSettings() {
 
   return (
     <div style={{ maxWidth: "560px" }}>
-      <h2 style={{ color: "#d4c9b8", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.25rem", fontWeight: "normal", margin: "0 0 0.3rem" }}>Profile</h2>
-      <p style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.75rem", margin: "0 0 2rem" }}>
+      <h2 style={{ color: "#e8e4dd", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.25rem", fontWeight: "normal", margin: "0 0 0.3rem" }}>Profile</h2>
+      <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.75rem", margin: "0 0 2rem" }}>
         Switch between profiles to use different data sets. Each profile's data is saved independently — switching away and back restores it exactly as you left it.
       </p>
 
@@ -156,17 +156,17 @@ function ProfileSettings() {
 
       {/* Inline switch confirmation */}
       {isDirty && (
-        <div style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "4px", marginBottom: "1.5rem", padding: "1rem 1.1rem" }}>
-          <div style={{ color: "#d4c9b8", fontFamily: "monospace", fontSize: "0.78rem", marginBottom: "0.4rem" }}>
+        <div style={{ background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "4px", marginBottom: "1.5rem", padding: "1rem 1.1rem" }}>
+          <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.78rem", marginBottom: "0.4rem" }}>
             Switch to <strong style={{ color: "#c9a96e" }}>{selectedMeta?.label}</strong>?
           </div>
-          <p style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.5, margin: "0 0 0.9rem" }}>
+          <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.5, margin: "0 0 0.9rem" }}>
             Your current <strong style={{ color: "#8b7d6b" }}>{activeMeta?.label}</strong> data will be saved automatically. The page will reload with {selectedMeta?.label} data.
           </p>
           <div style={{ display: "flex", gap: "0.6rem" }}>
             <button
               onClick={handleSwitch} disabled={switching}
-              style={{ background: switching ? "transparent" : "#c9a96e22", border: `1px solid ${switching ? "#2e3448" : "#c9a96e"}`, borderRadius: "3px", color: switching ? "#3a3440" : "#c9a96e", cursor: switching ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
+              style={{ background: switching ? "transparent" : "#c9a96e22", border: `1px solid ${switching ? "#6b6560" : "#c9a96e"}`, borderRadius: "3px", color: switching ? "#a8a29c" : "#c9a96e", cursor: switching ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
               onMouseEnter={e => { if (!switching) e.currentTarget.style.background = "#c9a96e35"; }}
               onMouseLeave={e => { if (!switching) e.currentTarget.style.background = "#c9a96e22"; }}
             >
@@ -174,9 +174,9 @@ function ProfileSettings() {
             </button>
             <button
               onClick={handleCancelSwitch} disabled={switching}
-              style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#5a5460", cursor: switching ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
-              onMouseEnter={e => { if (!switching) { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#8b7d6b"; } }}
-              onMouseLeave={e => { if (!switching) { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#5a5460"; } }}
+              style={{ background: "transparent", border: "1px solid #6b6560", borderRadius: "3px", color: "#a8a29c", cursor: switching ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+              onMouseEnter={e => { if (!switching) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; } }}
+              onMouseLeave={e => { if (!switching) { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#a8a29c"; } }}
             >
               Cancel
             </button>
@@ -205,21 +205,21 @@ function ProfileSettings() {
             disabled={!exportHasData}
             style={{
               background: exportHasData ? "#1a1f2e" : "transparent",
-              border: `1px solid ${exportHasData ? "#2e3448" : "#1e2330"}`,
+              border: `1px solid ${exportHasData ? "#6b6560" : "#1e2330"}`,
               borderRadius: "3px",
-              color: exportHasData ? "#8b7d6b" : "#2a2f3e",
+              color: exportHasData ? "#8b7d6b" : "#6b6560",
               cursor: exportHasData ? "pointer" : "default",
               fontFamily: "monospace", fontSize: "0.75rem",
               letterSpacing: "0.05em", padding: "0.5rem 1.1rem", transition: "all 0.15s",
             }}
             onMouseEnter={e => { if (exportHasData) { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; } }}
-            onMouseLeave={e => { if (exportHasData) { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; } }}
+            onMouseLeave={e => { if (exportHasData) { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; } }}
           >
             Download
           </button>
         </div>
         {!exportHasData && (
-          <p style={{ color: "#2a2f3e", fontFamily: "monospace", fontSize: "0.67rem", margin: "0.5rem 0 0" }}>
+          <p style={{ color: "#6b6560", fontFamily: "monospace", fontSize: "0.67rem", margin: "0.5rem 0 0" }}>
             No data saved for this profile yet. Switch to it first to generate data.
           </p>
         )}
@@ -235,16 +235,16 @@ function ProfileSettings() {
         {importSuccess && (
           <div style={{ alignItems: "center", background: "#4ade8010", border: "1px solid #4ade8030", borderRadius: "4px", display: "flex", gap: "0.5rem", marginBottom: "0.9rem", padding: "0.6rem 0.85rem" }}>
             <span style={{ color: "#4ade80", fontFamily: "monospace", fontSize: "0.72rem" }}>Import complete — data saved to {importTargetMeta?.label}.</span>
-            <button onClick={() => setImportSuccess(false)} style={{ background: "none", border: "none", color: "#3a3440", cursor: "pointer", fontFamily: "monospace", fontSize: "0.65rem", marginLeft: "auto", padding: 0 }}>×</button>
+            <button onClick={() => setImportSuccess(false)} style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.65rem", marginLeft: "auto", padding: 0 }}>×</button>
           </div>
         )}
 
         {!importFile ? (
           <button
             onClick={() => fileInputRef.current?.click()}
-            style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.5rem 1.1rem", transition: "all 0.15s" }}
+            style={{ background: "transparent", border: "1px solid #6b6560", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.5rem 1.1rem", transition: "all 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}
           >
             Choose File…
           </button>
@@ -255,9 +255,9 @@ function ProfileSettings() {
             </div>
             <button
               onClick={() => { setImportFile(null); fileInputRef.current?.click(); }}
-              style={{ background: "transparent", border: "none", color: "#5a5460", cursor: "pointer", fontFamily: "monospace", fontSize: "0.67rem", padding: 0 }}
+              style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.67rem", padding: 0 }}
               onMouseEnter={e => e.currentTarget.style.color = "#8b7d6b"}
-              onMouseLeave={e => e.currentTarget.style.color = "#5a5460"}
+              onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
             >
               Try again
             </button>
@@ -269,7 +269,7 @@ function ProfileSettings() {
               <span style={{ color: "#4ade80", fontFamily: "monospace", fontSize: "0.65rem" }}>✓</span>
               <span style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.72rem" }}>{importFile.name}</span>
               {importFile.data.label && (
-                <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.65rem" }}>· from {importFile.data.label}</span>
+                <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.65rem" }}>· from {importFile.data.label}</span>
               )}
             </div>
 
@@ -282,7 +282,7 @@ function ProfileSettings() {
             </div>
 
             {/* Warning */}
-            <p style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.68rem", lineHeight: 1.5, margin: "0 0 0.85rem" }}>
+            <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", lineHeight: 1.5, margin: "0 0 0.85rem" }}>
               {importTarget === activeProfile
                 ? `This will replace all current ${activeMeta?.label} data. The page will reload.`
                 : `This will replace the saved ${importTargetMeta?.label} snapshot. No reload needed.`
@@ -292,7 +292,7 @@ function ProfileSettings() {
             <div style={{ display: "flex", gap: "0.6rem" }}>
               <button
                 onClick={handleImport} disabled={importing}
-                style={{ background: importing ? "transparent" : "#c9a96e22", border: `1px solid ${importing ? "#2e3448" : "#c9a96e"}`, borderRadius: "3px", color: importing ? "#3a3440" : "#c9a96e", cursor: importing ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
+                style={{ background: importing ? "transparent" : "#c9a96e22", border: `1px solid ${importing ? "#6b6560" : "#c9a96e"}`, borderRadius: "3px", color: importing ? "#a8a29c" : "#c9a96e", cursor: importing ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
                 onMouseEnter={e => { if (!importing) e.currentTarget.style.background = "#c9a96e35"; }}
                 onMouseLeave={e => { if (!importing) e.currentTarget.style.background = "#c9a96e22"; }}
               >
@@ -300,9 +300,9 @@ function ProfileSettings() {
               </button>
               <button
                 onClick={handleCancelImport} disabled={importing}
-                style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#5a5460", cursor: importing ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
-                onMouseEnter={e => { if (!importing) { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#8b7d6b"; } }}
-                onMouseLeave={e => { if (!importing) { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#5a5460"; } }}
+                style={{ background: "transparent", border: "1px solid #6b6560", borderRadius: "3px", color: "#a8a29c", cursor: importing ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { if (!importing) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; } }}
+                onMouseLeave={e => { if (!importing) { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#a8a29c"; } }}
               >
                 Cancel
               </button>
@@ -322,10 +322,10 @@ export default function PreferencesPage({ navigate }) {
   const [activeSection, setActiveSection] = useState("profile");
 
   return (
-    <div style={{ background: "#0f1117", color: "#d4c9b8", display: "flex", flexDirection: "column", fontFamily: "'Georgia','Times New Roman',serif", height: "100vh", overflow: "hidden" }}>
+    <div style={{ background: "#0f1117", color: "#e8e4dd", display: "flex", flexDirection: "column", fontFamily: "'Georgia','Times New Roman',serif", height: "100vh", overflow: "hidden" }}>
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #2a2f3e", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #6b6560", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
         <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
           <div>
             <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
@@ -353,7 +353,7 @@ export default function PreferencesPage({ navigate }) {
                   background: isActive ? "#c9a96e12" : "transparent",
                   border: "none",
                   borderLeft: `2px solid ${isActive ? "#c9a96e" : "transparent"}`,
-                  color: isActive ? "#c9a96e" : item.available ? "#8b7d6b" : "#2a2f3e",
+                  color: isActive ? "#c9a96e" : item.available ? "#8b7d6b" : "#6b6560",
                   cursor: item.available ? "pointer" : "default",
                   display: "block",
                   fontFamily: "monospace",
@@ -369,7 +369,7 @@ export default function PreferencesPage({ navigate }) {
               >
                 {item.label}
                 {!item.available && (
-                  <span style={{ color: "#2a2f3e", fontFamily: "monospace", fontSize: "0.58rem", marginLeft: "0.5rem" }}>soon</span>
+                  <span style={{ color: "#6b6560", fontFamily: "monospace", fontSize: "0.58rem", marginLeft: "0.5rem" }}>soon</span>
                 )}
               </button>
             );

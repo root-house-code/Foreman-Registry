@@ -25,7 +25,7 @@ export default function Tooltip({ children, text }) {
       {pos && createPortal(
         <div style={{
           background: "#13161f",
-          border: "1px solid #2a2f3e",
+          border: "1px solid #6b6560",
           borderRadius: "4px",
           boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
           color: "#a89e8e",

@@ -36,7 +36,7 @@ const PRIORITY_COLORS = {
 function navBtnStyle(hovered) {
   return {
     background: "transparent",
-    border: `1px solid ${hovered ? "#c9a96e" : "#2e3448"}`,
+    border: `1px solid ${hovered ? "#c9a96e" : "#6b6560"}`,
     borderRadius: "3px",
     color: hovered ? "#c9a96e" : "#8b7d6b",
     cursor: "pointer",
@@ -89,10 +89,10 @@ const PurchaseDateTrigger = forwardRef(({ value, onClick }, ref) => (
     onClick={onClick}
     style={{
       background: "#13161f",
-      border: "1px solid #2a2f3e",
+      border: "1px solid #6b6560",
       borderRadius: "3px",
       boxSizing: "border-box",
-      color: value ? "#d4c9b8" : "#5a5460",
+      color: value ? "#e8e4dd" : "#a8a29c",
       cursor: "pointer",
       fontFamily: "monospace",
       fontSize: "0.75rem",
@@ -121,7 +121,7 @@ function InlineInput({ initialValue = "", placeholder = "", onCommit, onCancel }
       }}
       style={{
         background: "#1a1f2e",
-        border: "1px solid #2e3448",
+        border: "1px solid #6b6560",
         borderRadius: "2px",
         boxSizing: "border-box",
         color: "#e8e0d0",
@@ -172,7 +172,7 @@ function InlineComboInput({ placeholder = "", onCommit, onCancel, options = [] }
         }}
         style={{
           background: "#1a1f2e",
-          border: "1px solid #2e3448",
+          border: "1px solid #6b6560",
           borderRadius: "2px",
           boxSizing: "border-box",
           color: "#e8e0d0",
@@ -188,7 +188,7 @@ function InlineComboInput({ placeholder = "", onCommit, onCancel, options = [] }
           onMouseDown={e => e.preventDefault()}
           style={{
             background: "#1a1f2e",
-            border: "1px solid #2e3448",
+            border: "1px solid #6b6560",
             borderRadius: "0 0 2px 2px",
             left: pos.left,
             maxHeight: 200,
@@ -210,7 +210,7 @@ function InlineComboInput({ placeholder = "", onCommit, onCancel, options = [] }
                 fontSize: "0.78rem",
                 padding: "0.3rem 0.4rem",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#2a2f3e"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#6b6560"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
             >
               {opt}
@@ -780,13 +780,13 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
           transition: "background 0.15s, border-color 0.15s",
           userSelect: "none",
         }}>
-          <span style={{ color: "#2e3448", flexShrink: 0, fontSize: "0.7rem", lineHeight: 1 }}>⠿</span>
+          <span style={{ color: "#6b6560", flexShrink: 0, fontSize: "0.7rem", lineHeight: 1 }}>⠿</span>
           <button
             onClick={e => { e.stopPropagation(); toggleCollapse(category); }}
             style={{
               background: "none",
               border: "none",
-              color: "#5a5460",
+              color: "#a8a29c",
               cursor: "pointer",
               fontFamily: "monospace",
               fontSize: "0.65rem",
@@ -809,7 +809,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
               <span
                 onClick={e => { e.stopPropagation(); setEditingCategoryName(category); }}
                 title="Click to rename"
-                style={{ color: "#d4c9b8", cursor: "text", flex: 1, fontSize: "0.95rem" }}
+                style={{ color: "#e8e4dd", cursor: "text", flex: 1, fontSize: "0.95rem" }}
               >
                 {category}
               </span>
@@ -818,7 +818,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
           {!isEditing && (
             <>
-              <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.68rem" }}>
+              <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem" }}>
                 {items.length} {items.length === 1 ? "item" : "items"}
               </span>
               <button
@@ -827,7 +827,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#3a3440",
+                  color: "#a8a29c",
                   cursor: "pointer",
                   fontFamily: "monospace",
                   fontSize: "0.8rem",
@@ -835,7 +835,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                   transition: "color 0.15s",
                 }}
                 onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
-                onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
               >
                 ⎘
               </button>
@@ -845,7 +845,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#3a3440",
+                  color: "#a8a29c",
                   cursor: "pointer",
                   fontFamily: "monospace",
                   fontSize: "0.72rem",
@@ -853,7 +853,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                   transition: "color 0.15s",
                 }}
                 onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
               >
                 ×
               </button>
@@ -895,7 +895,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       style={{
                         background: "none",
                         border: "none",
-                        color: "#5a5460",
+                        color: "#a8a29c",
                         cursor: "pointer",
                         flexShrink: 0,
                         fontFamily: "monospace",
@@ -930,7 +930,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       style={{
                         background: "none",
                         border: "none",
-                        color: "#3a3440",
+                        color: "#a8a29c",
                         cursor: "pointer",
                         flexShrink: 0,
                         fontFamily: "monospace",
@@ -939,7 +939,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                         transition: "color 0.15s",
                       }}
                       onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
-                      onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                      onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
                     >
                       ⎘
                     </button>
@@ -949,7 +949,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       style={{
                         background: "none",
                         border: "none",
-                        color: "#3a3440",
+                        color: "#a8a29c",
                         cursor: "pointer",
                         fontFamily: "monospace",
                         fontSize: "0.72rem",
@@ -958,7 +958,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                         transition: "color 0.15s",
                       }}
                       onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                      onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                      onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
                     >
                       ×
                     </button>
@@ -976,7 +976,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                         {/* Manufacturer — dropdown when options exist, plain input otherwise */}
                         <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
                           <span style={{
-                            color: "#5a5460",
+                            color: "#a8a29c",
                             fontFamily: "monospace",
                             fontSize: "0.6rem",
                             letterSpacing: "0.12em",
@@ -988,10 +988,10 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                             const mfrs = getManufacturers(item);
                             const fieldStyle = {
                               background: "#13161f",
-                              border: "1px solid #2a2f3e",
+                              border: "1px solid #6b6560",
                               borderRadius: "3px",
                               boxSizing: "border-box",
-                              color: "#d4c9b8",
+                              color: "#e8e4dd",
                               fontFamily: "monospace",
                               fontSize: "0.75rem",
                               outline: "none",
@@ -1021,7 +1021,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                                     paddingRight: "1.5rem",
                                   }}
                                   onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-                                  onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }}
                                 >
                                   <option value="">—</option>
                                   {mfrs.map(m => (
@@ -1038,7 +1038,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                                 placeholder="—"
                                 style={fieldStyle}
                                 onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-                                onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                                onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }}
                               />
                             );
                           })()}
@@ -1050,10 +1050,10 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                           const models = getModels(selectedMfr, item);
                           const fieldStyle = {
                             background: "#13161f",
-                            border: "1px solid #2a2f3e",
+                            border: "1px solid #6b6560",
                             borderRadius: "3px",
                             boxSizing: "border-box",
-                            color: "#d4c9b8",
+                            color: "#e8e4dd",
                             fontFamily: "monospace",
                             fontSize: "0.75rem",
                             outline: "none",
@@ -1064,7 +1064,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                           return (
                             <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
                               <span style={{
-                                color: noMfr ? "#3a3440" : "#5a5460",
+                                color: noMfr ? "#a8a29c" : "#a8a29c",
                                 fontFamily: "monospace",
                                 fontSize: "0.6rem",
                                 letterSpacing: "0.12em",
@@ -1086,7 +1086,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                                     paddingRight: "1.5rem",
                                   }}
                                   onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-                                  onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }}
                                 >
                                   <option value="">—</option>
                                   {models.map(m => (
@@ -1101,12 +1101,12 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                                   disabled={noMfr}
                                   style={{
                                     ...fieldStyle,
-                                    color: noMfr ? "#3a3440" : "#d4c9b8",
+                                    color: noMfr ? "#a8a29c" : "#e8e4dd",
                                     cursor: noMfr ? "default" : "text",
                                     opacity: noMfr ? 0.5 : 1,
                                   }}
                                   onFocus={e => { if (!noMfr) e.currentTarget.style.borderColor = "#c9a96e"; }}
-                                  onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }}
                                 />
                               )}
                             </div>
@@ -1116,7 +1116,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                         {/* Serial No. — always plain text */}
                         <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
                           <span style={{
-                            color: "#5a5460",
+                            color: "#a8a29c",
                             fontFamily: "monospace",
                             fontSize: "0.6rem",
                             letterSpacing: "0.12em",
@@ -1130,10 +1130,10 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                             placeholder="—"
                             style={{
                               background: "#13161f",
-                              border: "1px solid #2a2f3e",
+                              border: "1px solid #6b6560",
                               borderRadius: "3px",
                               boxSizing: "border-box",
-                              color: "#d4c9b8",
+                              color: "#e8e4dd",
                               fontFamily: "monospace",
                               fontSize: "0.75rem",
                               outline: "none",
@@ -1141,12 +1141,12 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                               width: "100%",
                             }}
                             onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-                            onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                            onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }}
                           />
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "0.3rem", minWidth: 0 }}>
                           <span style={{
-                            color: "#5a5460",
+                            color: "#a8a29c",
                             fontFamily: "monospace",
                             fontSize: "0.6rem",
                             letterSpacing: "0.12em",
@@ -1179,7 +1179,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                               alt="Receipt"
                               onClick={() => window.open(details.receipt, "_blank")}
                               style={{
-                                border: "1px solid #2a2f3e",
+                                border: "1px solid #6b6560",
                                 borderRadius: "3px",
                                 cursor: "pointer",
                                 height: 48,
@@ -1193,7 +1193,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                               style={{
                                 background: "none",
                                 border: "none",
-                                color: "#5a5460",
+                                color: "#a8a29c",
                                 cursor: "pointer",
                                 fontFamily: "monospace",
                                 fontSize: "0.72rem",
@@ -1201,7 +1201,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                                 transition: "color 0.15s",
                               }}
                               onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                              onMouseLeave={e => e.currentTarget.style.color = "#5a5460"}
+                              onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
                             >
                               ×
                             </button>
@@ -1222,9 +1222,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                             />
                             <span
                               style={{
-                                border: "1px dashed #2a2f3e",
+                                border: "1px dashed #6b6560",
                                 borderRadius: "3px",
-                                color: "#5a5460",
+                                color: "#a8a29c",
                                 fontFamily: "monospace",
                                 fontSize: "0.7rem",
                                 letterSpacing: "0.08em",
@@ -1232,7 +1232,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                                 transition: "color 0.15s, border-color 0.15s",
                               }}
                               onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; e.currentTarget.style.borderColor = "#c9a96e"; }}
-                              onMouseLeave={e => { e.currentTarget.style.color = "#5a5460"; e.currentTarget.style.borderColor = "#2a2f3e"; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; e.currentTarget.style.borderColor = "#6b6560"; }}
                             >
                               + Upload Receipt
                             </span>
@@ -1245,7 +1245,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                             style={{
                               background: "none",
                               border: "none",
-                              color: fetchingTasks && suggestedFor?.category === category && suggestedFor?.item === item ? "#5a5460" : "#3a3440",
+                              color: fetchingTasks && suggestedFor?.category === category && suggestedFor?.item === item ? "#a8a29c" : "#a8a29c",
                               cursor: "pointer",
                               fontFamily: "monospace",
                               fontSize: "0.7rem",
@@ -1255,7 +1255,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                               transition: "color 0.15s",
                             }}
                             onMouseEnter={e => { if (!fetchingTasks) e.currentTarget.style.color = "#c9a96e"; }}
-                            onMouseLeave={e => { if (!fetchingTasks) e.currentTarget.style.color = "#3a3440"; }}
+                            onMouseLeave={e => { if (!fetchingTasks) e.currentTarget.style.color = "#a8a29c"; }}
                           >
                             {fetchingTasks && suggestedFor?.category === category && suggestedFor?.item === item
                               ? "Fetching…"
@@ -1353,7 +1353,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
           />
           <div style={{
             background: "#1a1f2e",
-            border: "1px solid #2e3448",
+            border: "1px solid #6b6560",
             borderRadius: "4px",
             boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
             left: duplicateItemPopup.x,
@@ -1365,8 +1365,8 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
             zIndex: 9999,
           }}>
             <div style={{
-              borderBottom: "1px solid #2e3448",
-              color: "#5a5460",
+              borderBottom: "1px solid #6b6560",
+              color: "#a8a29c",
               fontFamily: "monospace",
               fontSize: "0.62rem",
               letterSpacing: "0.1em",
@@ -1389,7 +1389,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                     padding: "0.35rem 0.65rem",
                     transition: "background 0.1s",
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#2a2f3e"}
+                  onMouseEnter={e => e.currentTarget.style.background = "#6b6560"}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                 >
                   {cat}
@@ -1397,7 +1397,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
               ))
             }
             {CATEGORIES.filter(cat => cat !== duplicateItemPopup.fromCategory && !CATEGORY_ITEMS[cat]?.includes(duplicateItemPopup.item)).length === 0 && (
-              <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.5rem 0.65rem" }}>
+              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.5rem 0.65rem" }}>
                 No other categories
               </div>
             )}
@@ -1426,7 +1426,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
             onClick={e => e.stopPropagation()}
             style={{
               background: "#1a1f2e",
-              border: "1px solid #2e3448",
+              border: "1px solid #6b6560",
               borderRadius: "8px",
               maxWidth: 440,
               padding: "2rem",
@@ -1452,7 +1452,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                 onClick={() => setDeletePrompt(null)}
                 style={{
                   background: "transparent",
-                  border: "1px solid #2e3448",
+                  border: "1px solid #6b6560",
                   borderRadius: "3px",
                   color: "#8b7d6b",
                   cursor: "pointer",
@@ -1462,8 +1462,8 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                   padding: "0.4rem 0.9rem",
                   transition: "all 0.15s",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#d4c9b8"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#e8e4dd"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}
               >
                 Cancel
               </button>
@@ -1498,18 +1498,18 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{ background: "#0f1117", border: "1px solid #2a2f3e", borderRadius: "8px", maxWidth: "min(95vw, 1120px)", overflow: "hidden", width: "95vw" }}
+            style={{ background: "#0f1117", border: "1px solid #6b6560", borderRadius: "8px", maxWidth: "min(95vw, 1120px)", overflow: "hidden", width: "95vw" }}
           >
             <div style={{ alignItems: "center", borderBottom: "1px solid #1e2330", display: "flex", justifyContent: "space-between", padding: "0.85rem 1.25rem" }}>
               <div>
                 <span style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>Add Maintenance Task</span>
-                <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.65rem", marginLeft: "0.75rem" }}>{selectedItem.item} — {selectedItem.category}</span>
+                <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.65rem", marginLeft: "0.75rem" }}>{selectedItem.item} — {selectedItem.category}</span>
               </div>
               <button
                 onClick={() => { setAddingTask(false); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }}
-                style={{ background: "none", border: "none", color: "#5a5460", cursor: "pointer", fontFamily: "monospace", fontSize: "1rem", padding: "0.1rem 0.3rem", transition: "color 0.15s" }}
+                style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "1rem", padding: "0.1rem 0.3rem", transition: "color 0.15s" }}
                 onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                onMouseLeave={e => e.currentTarget.style.color = "#5a5460"}
+                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
               >×</button>
             </div>
 
@@ -1527,7 +1527,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       { label: "Next Maintenance Date", width: "13%" },
                       { label: "Notes", width: "9%" },
                     ].map(({ label, width }) => (
-                      <th key={label} style={{ background: "#1a1f2e", borderBottom: "2px solid #2a2f3e", color: "#c9a96e", fontFamily: "monospace", fontSize: "0.68rem", fontWeight: "normal", letterSpacing: "0.12em", padding: "0.75rem 0.6rem", textAlign: "left", textTransform: "uppercase", whiteSpace: "nowrap", width }}>
+                      <th key={label} style={{ background: "#1a1f2e", borderBottom: "2px solid #6b6560", color: "#c9a96e", fontFamily: "monospace", fontSize: "0.68rem", fontWeight: "normal", letterSpacing: "0.12em", padding: "0.75rem 0.6rem", textAlign: "left", textTransform: "uppercase", whiteSpace: "nowrap", width }}>
                         {label}
                       </th>
                     ))}
@@ -1536,7 +1536,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                 <tbody>
                   <tr style={{ background: "#13161f" }}>
                     <td style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.72rem", padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>{selectedItem.category}</td>
-                    <td style={{ color: "#d4c9b8", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>{selectedItem.item}</td>
+                    <td style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>{selectedItem.item}</td>
                     <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
                       <input
                         autoFocus
@@ -1547,9 +1547,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                           if (e.key === "Enter" && newTask.task.trim()) { e.preventDefault(); handleAddTask(); }
                           if (e.key === "Escape") { e.preventDefault(); setAddingTask(false); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }
                         }}
-                        style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", fontFamily: "monospace", fontSize: "0.8rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
+                        style={{ background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", fontFamily: "monospace", fontSize: "0.8rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
                         onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"}
-                        onBlur={e => e.currentTarget.style.borderColor = "#2e3448"}
+                        onBlur={e => e.currentTarget.style.borderColor = "#6b6560"}
                       />
                     </td>
                     <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
@@ -1562,9 +1562,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       <select
                         value={newTask.season ?? ""}
                         onChange={e => setNewTask(t => ({ ...t, season: e.target.value || null }))}
-                        style={{ appearance: "none", background: "#1a1f2e", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.4rem center", border: "1px solid #2e3448", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", outline: "none", padding: "0.25rem 1.5rem 0.25rem 0.4rem", width: "100%" }}
+                        style={{ appearance: "none", background: "#1a1f2e", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.4rem center", border: "1px solid #6b6560", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", outline: "none", padding: "0.25rem 1.5rem 0.25rem 0.4rem", width: "100%" }}
                         onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"}
-                        onBlur={e => e.currentTarget.style.borderColor = "#2e3448"}
+                        onBlur={e => e.currentTarget.style.borderColor = "#6b6560"}
                       >
                         {SEASON_OPTIONS.map(({ value, label }) => <option key={label} value={value ?? ""}>{label}</option>)}
                       </select>
@@ -1574,9 +1574,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                         type="date"
                         value={newTask.lastCompleted || ""}
                         onChange={e => setNewTask(t => ({ ...t, lastCompleted: e.target.value || null }))}
-                        style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "2px", boxSizing: "border-box", color: newTask.lastCompleted ? "#e8e0d0" : "#5a5460", colorScheme: "dark", fontFamily: "monospace", fontSize: "0.72rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
+                        style={{ background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "2px", boxSizing: "border-box", color: newTask.lastCompleted ? "#e8e0d0" : "#a8a29c", colorScheme: "dark", fontFamily: "monospace", fontSize: "0.72rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
                         onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"}
-                        onBlur={e => e.currentTarget.style.borderColor = "#2e3448"}
+                        onBlur={e => e.currentTarget.style.borderColor = "#6b6560"}
                       />
                     </td>
                     <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
@@ -1585,9 +1585,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                           type="date"
                           value={newTask.nextDate || ""}
                           onChange={e => setNewTask(t => ({ ...t, nextDate: e.target.value || null }))}
-                          style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "2px", boxSizing: "border-box", color: newTask.nextDate ? "#e8e0d0" : "#5a5460", colorScheme: "dark", fontFamily: "monospace", fontSize: "0.72rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
+                          style={{ background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "2px", boxSizing: "border-box", color: newTask.nextDate ? "#e8e0d0" : "#a8a29c", colorScheme: "dark", fontFamily: "monospace", fontSize: "0.72rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
                           onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"}
-                          onBlur={e => e.currentTarget.style.borderColor = "#2e3448"}
+                          onBlur={e => e.currentTarget.style.borderColor = "#6b6560"}
                         />
                         <FollowButton
                           schedule={newTask.schedule}
@@ -1601,9 +1601,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                         value={newTask.notes}
                         placeholder="—"
                         onChange={e => setNewTask(t => ({ ...t, notes: e.target.value }))}
-                        style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", fontFamily: "monospace", fontSize: "0.75rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
+                        style={{ background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", fontFamily: "monospace", fontSize: "0.75rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
                         onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"}
-                        onBlur={e => e.currentTarget.style.borderColor = "#2e3448"}
+                        onBlur={e => e.currentTarget.style.borderColor = "#6b6560"}
                       />
                     </td>
                   </tr>
@@ -1614,14 +1614,14 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
             <div style={{ borderTop: "1px solid #1e2330", display: "flex", gap: "0.75rem", justifyContent: "flex-end", padding: "1rem 1.25rem" }}>
               <button
                 onClick={() => { setAddingTask(false); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }}
-                style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#d4c9b8"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+                style={{ background: "transparent", border: "1px solid #6b6560", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#e8e4dd"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}
               >Cancel</button>
               <button
                 onClick={handleAddTask}
                 disabled={!newTask.task.trim()}
-                style={{ background: newTask.task.trim() ? "#c9a96e18" : "transparent", border: `1px solid ${newTask.task.trim() ? "#c9a96e40" : "#2e3448"}`, borderRadius: "3px", color: newTask.task.trim() ? "#c9a96e" : "#5a5460", cursor: newTask.task.trim() ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                style={{ background: newTask.task.trim() ? "#c9a96e18" : "transparent", border: `1px solid ${newTask.task.trim() ? "#c9a96e40" : "#6b6560"}`, borderRadius: "3px", color: newTask.task.trim() ? "#c9a96e" : "#a8a29c", cursor: newTask.task.trim() ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
                 onMouseEnter={e => { if (newTask.task.trim()) { e.currentTarget.style.background = "#c9a96e30"; e.currentTarget.style.borderColor = "#c9a96e"; } }}
                 onMouseLeave={e => { if (newTask.task.trim()) { e.currentTarget.style.background = "#c9a96e18"; e.currentTarget.style.borderColor = "#c9a96e40"; } }}
               >Add Task</button>
@@ -1636,7 +1636,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
           onClick={() => setDeleteTaskPrompt(null)}
           style={{ alignItems: "center", background: "rgba(0,0,0,0.7)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 1000 }}
         >
-          <div onClick={e => e.stopPropagation()} style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "8px", maxWidth: 440, padding: "2rem", width: "90%" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "8px", maxWidth: 440, padding: "2rem", width: "90%" }}>
             <div style={{ color: "#f0e6d3", fontSize: "1.05rem", marginBottom: "0.75rem" }}>
               Delete "{deleteTaskPrompt.task}"?
             </div>
@@ -1648,9 +1648,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
             <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
               <button
                 onClick={() => setDeleteTaskPrompt(null)}
-                style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#d4c9b8"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+                style={{ background: "transparent", border: "1px solid #6b6560", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#e8e4dd"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}
               >Cancel</button>
               <button
                 onClick={() => { handleDeleteTask(deleteTaskPrompt); setDeleteTaskPrompt(null); }}
@@ -1666,7 +1666,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
       <div ref={headerRef} style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
-        borderBottom: "1px solid #2a2f3e",
+        borderBottom: "1px solid #6b6560",
         flexShrink: 0,
         padding: "2rem",
         zIndex: 50,
@@ -1705,7 +1705,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
             onClick={toggleAll}
             style={{
               background: "transparent",
-              border: "1px solid #2e3448",
+              border: "1px solid #6b6560",
               borderRadius: "3px",
               color: "#8b7d6b",
               cursor: "pointer",
@@ -1716,7 +1716,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
               transition: "all 0.15s",
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}
           >
             {allCollapsed ? "Expand All" : "Collapse All"}
           </button>
@@ -1747,7 +1747,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                 onClick={() => toggleGroup(groupType)}
                 style={{
                   alignItems: "center",
-                  borderBottom: `1px solid ${isTarget ? "#c9a96e30" : "#2a2f3e"}`,
+                  borderBottom: `1px solid ${isTarget ? "#c9a96e30" : "#6b6560"}`,
                   cursor: "pointer",
                   display: "flex",
                   gap: "0.5rem",
@@ -1756,7 +1756,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                   userSelect: "none",
                 }}
               >
-                <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.6rem" }}>
+                <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem" }}>
                   {isGroupCollapsed ? "▶" : "▼"}
                 </span>
                 <span style={{
@@ -1768,7 +1768,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                 }}>
                   {GROUP_LABELS[groupType]}
                 </span>
-                <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.62rem" }}>
+                <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem" }}>
                   · {cats.length}
                 </span>
               </div>
@@ -1788,8 +1788,8 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                         gap: "0.75rem",
                         padding: "0.8rem 1rem",
                       }}>
-                        <span style={{ color: "#2e3448", flexShrink: 0, fontSize: "0.7rem" }}>⠿</span>
-                        <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.65rem", width: 14 }}>▶</span>
+                        <span style={{ color: "#6b6560", flexShrink: 0, fontSize: "0.7rem" }}>⠿</span>
+                        <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.65rem", width: 14 }}>▶</span>
                         <InlineInput
                           placeholder="Category name..."
                           onCommit={name => handleCommitNewCategory(name, pendingNewCategory.id)}
@@ -1801,9 +1801,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
                   {cats.length === 0 && !isPendingHere && (
                     <div style={{
-                      border: `1px dashed ${isTarget ? "#c9a96e50" : "#2a2f3e"}`,
+                      border: `1px dashed ${isTarget ? "#c9a96e50" : "#6b6560"}`,
                       borderRadius: "6px",
-                      color: isTarget ? "#c9a96e80" : "#2e3448",
+                      color: isTarget ? "#c9a96e80" : "#6b6560",
                       fontFamily: "monospace",
                       fontSize: "0.72rem",
                       marginBottom: "0.5rem",
@@ -1857,9 +1857,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
               Maintenance
             </div>
             {selectedItem && (
-              <div style={{ color: "#d4c9b8", fontFamily: "monospace", fontSize: "0.82rem", marginTop: "0.35rem" }}>
+              <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.82rem", marginTop: "0.35rem" }}>
                 {selectedItem.item}
-                <span style={{ color: "#5a5460", fontSize: "0.65rem", marginLeft: "0.5rem" }}>
+                <span style={{ color: "#a8a29c", fontSize: "0.65rem", marginLeft: "0.5rem" }}>
                   — {selectedItem.category}
                 </span>
               </div>
@@ -1867,7 +1867,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
           </div>
           {!selectedItem ? (
             <div style={{
-              color: "#3a3440",
+              color: "#a8a29c",
               fontFamily: "monospace",
               fontSize: "0.72rem",
               padding: "2.5rem 1rem",
@@ -1879,7 +1879,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
             <>
               {itemTasks.length === 0 ? (
                 <div style={{
-                  color: "#3a3440",
+                  color: "#a8a29c",
                   fontFamily: "monospace",
                   fontSize: "0.72rem",
                   padding: "2rem 1rem 0.5rem",
@@ -1903,7 +1903,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                     >
                       <div style={{ flex: 1 }}>
                         <div style={{
-                          color: "#d4c9b8",
+                          color: "#e8e4dd",
                           fontFamily: "monospace",
                           fontSize: "0.78rem",
                           marginBottom: "0.2rem",
@@ -1929,7 +1929,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                           style={{
                             background: "none",
                             border: "none",
-                            color: "#3a3440",
+                            color: "#a8a29c",
                             cursor: "pointer",
                             flexShrink: 0,
                             fontFamily: "monospace",
@@ -1938,7 +1938,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                             transition: "color 0.15s",
                           }}
                           onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                          onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                          onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
                         >×</button>
                     </div>
                   ))}
@@ -1947,7 +1947,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
               {/* Groq suggested tasks */}
               {fetchingTasks && suggestedFor?.category === selectedItem?.category && suggestedFor?.item === selectedItem?.item && (
                 <div style={{ borderTop: "1px solid #1e2330", padding: "1.25rem 1rem", textAlign: "center" }}>
-                  <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.05em" }}>Fetching tasks…</span>
+                  <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.05em" }}>Fetching tasks…</span>
                 </div>
               )}
               {fetchError && suggestedFor?.category === selectedItem?.category && suggestedFor?.item === selectedItem?.item && (
@@ -1958,14 +1958,14 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
               {suggestedTasks && suggestedFor?.category === selectedItem?.category && suggestedFor?.item === selectedItem?.item && (
                 <div style={{ borderTop: "1px solid #1e2330" }}>
                   <div style={{ alignItems: "center", borderBottom: "1px solid #1e2330", display: "flex", justifyContent: "space-between", padding: "0.5rem 1rem 0.4rem" }}>
-                    <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                    <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
                       Suggested by AI
                     </span>
                     <button
                       onClick={() => { setSuggestedTasks(null); setSuggestedFor(null); setFetchError(null); }}
-                      style={{ background: "none", border: "none", color: "#3a3440", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", padding: "0.1rem 0.3rem", transition: "color 0.15s" }}
+                      style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", padding: "0.1rem 0.3rem", transition: "color 0.15s" }}
                       onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                      onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                      onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
                     >×</button>
                   </div>
                   {suggestedTasks.map((t, idx) => (
@@ -1980,11 +1980,11 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                         style={{ accentColor: "#c9a96e", cursor: "pointer", flexShrink: 0, marginTop: "0.15rem" }}
                       />
                       <div style={{ flex: 1 }}>
-                        <div style={{ color: t.selected ? "#d4c9b8" : "#5a5460", fontFamily: "monospace", fontSize: "0.75rem", transition: "color 0.15s" }}>
+                        <div style={{ color: t.selected ? "#e8e4dd" : "#a8a29c", fontFamily: "monospace", fontSize: "0.75rem", transition: "color 0.15s" }}>
                           {t.task}
                         </div>
                         {t.schedule && (
-                          <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.63rem", marginTop: "0.1rem" }}>
+                          <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.63rem", marginTop: "0.1rem" }}>
                             {t.schedule}{t.season ? ` · ${t.season}` : ""}
                           </div>
                         )}
@@ -1997,9 +1997,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       disabled={!suggestedTasks.some(t => t.selected)}
                       style={{
                         background: suggestedTasks.some(t => t.selected) ? "#c9a96e18" : "transparent",
-                        border: `1px solid ${suggestedTasks.some(t => t.selected) ? "#c9a96e40" : "#2e3448"}`,
+                        border: `1px solid ${suggestedTasks.some(t => t.selected) ? "#c9a96e40" : "#6b6560"}`,
                         borderRadius: "3px",
-                        color: suggestedTasks.some(t => t.selected) ? "#c9a96e" : "#5a5460",
+                        color: suggestedTasks.some(t => t.selected) ? "#c9a96e" : "#a8a29c",
                         cursor: suggestedTasks.some(t => t.selected) ? "pointer" : "default",
                         fontFamily: "monospace",
                         fontSize: "0.68rem",
@@ -2022,7 +2022,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#3a3440",
+                    color: "#a8a29c",
                     cursor: "pointer",
                     fontFamily: "monospace",
                     fontSize: "0.7rem",
@@ -2031,7 +2031,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                     transition: "color 0.15s",
                   }}
                   onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
-                  onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                  onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
                 >+ Add Task</button>
               </div>
             </>
@@ -2051,13 +2051,13 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
             </div>
 
             {!selectedItem ? (
-              <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.72rem", padding: "1.5rem 1rem", textAlign: "center" }}>
+              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", padding: "1.5rem 1rem", textAlign: "center" }}>
                 Select an item to view to dos
               </div>
             ) : (
               <>
                 {selectedTodos.length === 0 && !addingTodo && (
-                  <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.72rem", padding: "1.25rem 1rem 0.5rem", textAlign: "center" }}>
+                  <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", padding: "1.25rem 1rem 0.5rem", textAlign: "center" }}>
                     No to dos
                   </div>
                 )}
@@ -2078,7 +2078,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
-                          color: todo.status === "done" ? "#5a5460" : "#d4c9b8",
+                          color: todo.status === "done" ? "#a8a29c" : "#e8e4dd",
                           fontFamily: "monospace",
                           fontSize: "0.75rem",
                           overflow: "hidden",
@@ -2089,16 +2089,16 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                           {todo.title}
                         </div>
                         {todo.dueDate && (
-                          <div style={{ color: isOverdue ? "#f87171" : "#5a5460", fontFamily: "monospace", fontSize: "0.62rem" }}>
+                          <div style={{ color: isOverdue ? "#f87171" : "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem" }}>
                             {new Date(todo.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </div>
                         )}
                       </div>
                       <span style={{
-                        background: todo.status === "done" ? "#4ade8018" : todo.status === "in-progress" ? "#c9a96e18" : "#2a2f3e",
-                        border: `1px solid ${todo.status === "done" ? "#4ade8040" : todo.status === "in-progress" ? "#c9a96e40" : "#2e3448"}`,
+                        background: todo.status === "done" ? "#4ade8018" : todo.status === "in-progress" ? "#c9a96e18" : "#6b6560",
+                        border: `1px solid ${todo.status === "done" ? "#4ade8040" : todo.status === "in-progress" ? "#c9a96e40" : "#6b6560"}`,
                         borderRadius: "2px",
-                        color: todo.status === "done" ? "#4ade80" : todo.status === "in-progress" ? "#c9a96e" : "#5a5460",
+                        color: todo.status === "done" ? "#4ade80" : todo.status === "in-progress" ? "#c9a96e" : "#a8a29c",
                         flexShrink: 0,
                         fontFamily: "monospace",
                         fontSize: "0.58rem",
@@ -2126,10 +2126,10 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       onBlur={handleAddTodo}
                       style={{
                         background: "#13161f",
-                        border: "1px solid #2a2f3e",
+                        border: "1px solid #6b6560",
                         borderRadius: "3px",
                         boxSizing: "border-box",
-                        color: "#d4c9b8",
+                        color: "#e8e4dd",
                         fontFamily: "monospace",
                         fontSize: "0.75rem",
                         outline: "none",
@@ -2145,7 +2145,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       style={{
                         background: "none",
                         border: "none",
-                        color: "#3a3440",
+                        color: "#a8a29c",
                         cursor: "pointer",
                         fontFamily: "monospace",
                         fontSize: "0.7rem",
@@ -2154,7 +2154,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                         transition: "color 0.15s",
                       }}
                       onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
-                      onMouseLeave={e => { e.currentTarget.style.color = "#3a3440"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
                     >
                       + Add To Do
                     </button>
@@ -2167,7 +2167,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#3a3440",
+                      color: "#a8a29c",
                       cursor: "pointer",
                       fontFamily: "monospace",
                       fontSize: "0.62rem",
@@ -2176,7 +2176,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       transition: "color 0.15s",
                     }}
                     onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = "#3a3440"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
                   >
                     View all on To Dos →
                   </button>

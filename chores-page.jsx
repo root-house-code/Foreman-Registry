@@ -113,7 +113,7 @@ function TitleCell({ value, onChange, placeholder = "Chore name" }) {
     return (
       <span
         onClick={startEdit}
-        style={{ color: value ? "#a89e8e" : "#3a3440", cursor: "text", display: "block", fontFamily: "inherit", fontSize: "inherit", minHeight: "1.2em" }}
+        style={{ color: value ? "#a89e8e" : "#a8a29c", cursor: "text", display: "block", fontFamily: "inherit", fontSize: "inherit", minHeight: "1.2em" }}
       >
         {value || placeholder}
       </span>
@@ -126,7 +126,7 @@ function TitleCell({ value, onChange, placeholder = "Chore name" }) {
       onChange={e => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); commit(); } if (e.key === "Escape") setEditing(false); }}
-      style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "2px", color: "#e8e0d0", fontFamily: "inherit", fontSize: "inherit", outline: "none", padding: "0.1rem 0.3rem", width: "100%" }}
+      style={{ background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "2px", color: "#e8e0d0", fontFamily: "inherit", fontSize: "inherit", outline: "none", padding: "0.1rem 0.3rem", width: "100%" }}
     />
   );
 }
@@ -137,22 +137,22 @@ function DeleteConfirmModal({ chore, onConfirm, onClose }) {
       style={{ alignItems: "center", background: "rgba(0,0,0,0.6)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 1000 }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: "#0f1117", border: "1px solid #2e3448", borderRadius: "6px", maxWidth: 420, padding: "1.75rem 2rem", width: "90%" }}>
+      <div style={{ background: "#0f1117", border: "1px solid #6b6560", borderRadius: "6px", maxWidth: 420, padding: "1.75rem 2rem", width: "90%" }}>
         <div style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: "1rem", textTransform: "uppercase" }}>
           Permanently Delete Chore
         </div>
-        <p style={{ color: "#d4c9b8", fontFamily: "monospace", fontSize: "0.82rem", margin: "0 0 0.5rem" }}>
+        <p style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.82rem", margin: "0 0 0.5rem" }}>
           <strong>{chore.title || "Unnamed chore"}</strong>
         </p>
-        <p style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.78rem", margin: "0 0 1.5rem" }}>
+        <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.78rem", margin: "0 0 1.5rem" }}>
           This will permanently delete this chore and its history. This cannot be undone.
         </p>
         <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
           <button
             onClick={onClose}
-            style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#5a5460", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#8b7d6b"; e.currentTarget.style.borderColor = "#5a5460"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "#5a5460"; e.currentTarget.style.borderColor = "#2e3448"; }}
+            style={{ background: "transparent", border: "1px solid #6b6560", borderRadius: "3px", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "#8b7d6b"; e.currentTarget.style.borderColor = "#a8a29c"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; e.currentTarget.style.borderColor = "#6b6560"; }}
           >
             Cancel
           </button>
@@ -273,12 +273,12 @@ function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
   const canSave = form.title.trim().length > 0;
 
   const inputStyle = {
-    background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "2px",
+    background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "2px",
     boxSizing: "border-box", color: "#e8e0d0", fontFamily: "monospace",
     fontSize: "0.8rem", outline: "none", padding: "0.35rem 0.5rem", width: "100%",
   };
   const labelStyle = {
-    color: "#5a5460", display: "block", fontFamily: "monospace", fontSize: "0.62rem",
+    color: "#a8a29c", display: "block", fontFamily: "monospace", fontSize: "0.62rem",
     letterSpacing: "0.1em", marginBottom: "0.25rem", textTransform: "uppercase",
   };
   const selectStyle = {
@@ -292,7 +292,7 @@ function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
       style={{ alignItems: "center", background: "rgba(0,0,0,0.7)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 200 }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: "#0f1117", border: "1px solid #2e3448", borderRadius: "6px", maxWidth: 480, padding: "1.75rem 2rem", width: "90%" }}>
+      <div style={{ background: "#0f1117", border: "1px solid #6b6560", borderRadius: "6px", maxWidth: 480, padding: "1.75rem 2rem", width: "90%" }}>
         <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: "0.2rem", textTransform: "uppercase" }}>
           New Chore
         </div>
@@ -356,14 +356,14 @@ function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
         <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
           <button
             onClick={onClose}
-            style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#5a5460", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#8b7d6b"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#5a5460"; }}
+            style={{ background: "transparent", border: "1px solid #6b6560", borderRadius: "3px", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#a8a29c"; }}
           >Cancel</button>
           <button
             onClick={() => canSave && onSave(form, date)}
             disabled={!canSave}
-            style={{ background: canSave ? "#c9a96e22" : "transparent", border: `1px solid ${canSave ? "#c9a96e" : "#2e3448"}`, borderRadius: "3px", color: canSave ? "#c9a96e" : "#3a3440", cursor: canSave ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+            style={{ background: canSave ? "#c9a96e22" : "transparent", border: `1px solid ${canSave ? "#c9a96e" : "#6b6560"}`, borderRadius: "3px", color: canSave ? "#c9a96e" : "#a8a29c", cursor: canSave ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
           >Add Chore</button>
         </div>
       </div>
@@ -445,7 +445,7 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
             onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
             onMouseLeave={e => e.currentTarget.style.color = "#8b7d6b"}
           >‹</button>
-          <span style={{ color: "#d4c9b8", fontFamily: "monospace", fontSize: "0.8rem", letterSpacing: "0.04em" }}>
+          <span style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.8rem", letterSpacing: "0.04em" }}>
             {CAL_MONTHS[view.m]} {view.y}
           </span>
           <button style={navBtnStyle} onClick={nextMonth}
@@ -457,7 +457,7 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
         {/* Day-of-week headers */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "1px", marginBottom: "2px" }}>
           {CAL_DOWS.map(d => (
-            <div key={d} style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.58rem", padding: "0.15rem 0", textAlign: "center" }}>
+            <div key={d} style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.58rem", padding: "0.15rem 0", textAlign: "center" }}>
               {d}
             </div>
           ))}
@@ -551,7 +551,7 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
                         whiteSpace: "nowrap",
                       }}>
                         {chore.timeOfDay && (
-                          <span style={{ color: "#5a5460" }}>{formatTimeOfDay(chore.timeOfDay)} </span>
+                          <span style={{ color: "#a8a29c" }}>{formatTimeOfDay(chore.timeOfDay)} </span>
                         )}
                         {chore.title}
                       </span>
@@ -561,7 +561,7 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
 
                 {/* Overflow badge */}
                 {overflow > 0 && (
-                  <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.54rem", padding: "1px 3px" }}>
+                  <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.54rem", padding: "1px 3px" }}>
                     +{overflow} more
                   </div>
                 )}
@@ -579,11 +579,11 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
 
           const upcomingCol = (
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.12em", marginBottom: "0.5rem", textTransform: "uppercase" }}>
+              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.12em", marginBottom: "0.5rem", textTransform: "uppercase" }}>
                 Upcoming
               </div>
               {!selectedChore ? (
-                <p style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.7rem", margin: 0 }}>
+                <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.7rem", margin: 0 }}>
                   Select a chore to see its schedule.
                 </p>
               ) : !hasStartDate ? (
@@ -597,14 +597,14 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
                   </div>
                   {upcoming.map((date, idx) => (
                     <div key={idx} style={{ alignItems: "baseline", display: "flex", gap: "0.4rem", marginBottom: "0.3rem" }}>
-                      <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.63rem", minWidth: "2rem" }}>
+                      <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.63rem", minWidth: "2rem" }}>
                         {CAL_DOWS_LONG[date.getDay()]}
                       </span>
                       <span style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.68rem" }}>
                         {CAL_MONTHS_SHORT[date.getMonth()]} {date.getDate()}
                       </span>
                       {selectedChore.timeOfDay && (
-                        <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.63rem" }}>
+                        <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.63rem" }}>
                           {formatTimeOfDay(selectedChore.timeOfDay)}
                         </span>
                       )}
@@ -612,9 +612,9 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
                   ))}
                   <button
                     onClick={() => onClearDate(selectedChoreId)}
-                    style={{ background: "transparent", border: "none", color: "#3a3440", cursor: "pointer", fontFamily: "monospace", fontSize: "0.63rem", marginTop: "0.35rem", padding: 0, transition: "color 0.15s" }}
+                    style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.63rem", marginTop: "0.35rem", padding: 0, transition: "color 0.15s" }}
                     onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                    onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
                   >
                     × clear start date
                   </button>
@@ -624,19 +624,19 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
           );
 
           const dayCol = selectedDay ? (
-            <div style={{ borderLeft: "1px solid #2a2f3e", flex: 1, minWidth: 0, paddingLeft: "1rem" }}>
-              <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.12em", marginBottom: "0.5rem", textTransform: "uppercase" }}>
+            <div style={{ borderLeft: "1px solid #6b6560", flex: 1, minWidth: 0, paddingLeft: "1rem" }}>
+              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.12em", marginBottom: "0.5rem", textTransform: "uppercase" }}>
                 {selectedDayLabel}
               </div>
               {selectedDayChores.length === 0 ? (
-                <p style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.7rem", margin: 0 }}>No chores scheduled.</p>
+                <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.7rem", margin: 0 }}>No chores scheduled.</p>
               ) : selectedDayChores.map(chore => {
                 const color = getScheduleColor(chore.schedule);
                 return (
                   <div key={chore.id} style={{ alignItems: "baseline", display: "flex", gap: "0.4rem", marginBottom: "0.35rem" }}>
                     <span style={{ background: color, borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "6px", marginTop: "2px", width: "6px" }} />
                     <span style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.68rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {chore.timeOfDay && <span style={{ color: "#5a5460" }}>{formatTimeOfDay(chore.timeOfDay)} </span>}
+                      {chore.timeOfDay && <span style={{ color: "#a8a29c" }}>{formatTimeOfDay(chore.timeOfDay)} </span>}
                       {chore.title}
                     </span>
                   </div>
@@ -646,7 +646,7 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
           ) : null;
 
           return (
-            <div style={{ borderTop: "1px solid #2a2f3e", display: "flex", gap: "1rem", marginTop: "0.85rem", paddingTop: "0.75rem" }}>
+            <div style={{ borderTop: "1px solid #6b6560", display: "flex", gap: "1rem", marginTop: "0.85rem", paddingTop: "0.75rem" }}>
               {upcomingCol}
               {dayCol}
             </div>
@@ -672,8 +672,8 @@ function ChoresTable({ rows, notes, roomOptions, reminderModes, selectedChoreId,
                   onClick={e => sortKey && onHeaderClick(sortKey, e.shiftKey)}
                   style={{
                     background: "#1a1f2e",
-                    borderBottom: "2px solid #2a2f3e",
-                    color: sort ? (isPrimary ? "#c9a96e" : "#5a5460") : "#c9a96e",
+                    borderBottom: "2px solid #6b6560",
+                    color: sort ? (isPrimary ? "#c9a96e" : "#a8a29c") : "#c9a96e",
                     cursor: sortKey ? "pointer" : "default",
                     fontFamily: "monospace",
                     fontSize: "0.68rem",
@@ -699,7 +699,7 @@ function ChoresTable({ rows, notes, roomOptions, reminderModes, selectedChoreId,
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={COLUMNS.length} style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.82rem", padding: "3rem", textAlign: "center" }}>
+              <td colSpan={COLUMNS.length} style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.82rem", padding: "3rem", textAlign: "center" }}>
                 No results found.
               </td>
             </tr>
@@ -801,9 +801,9 @@ function ChoresTable({ rows, notes, roomOptions, reminderModes, selectedChoreId,
                 <td style={{ padding: "0.5rem 0.4rem", textAlign: "center", verticalAlign: "middle" }}>
                   <button
                     onClick={() => onDelete(chore)}
-                    style={{ background: "transparent", border: "none", color: "#3a3440", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", padding: "0.1rem 0.3rem", transition: "color 0.15s" }}
+                    style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", padding: "0.1rem 0.3rem", transition: "color 0.15s" }}
                     onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                    onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
                   >
                     ×
                   </button>
@@ -1008,7 +1008,7 @@ export default function ChoresPage({ navigate }) {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div style={{ background: "#0f1117", color: "#d4c9b8", display: "flex", flexDirection: "column", fontFamily: "'Georgia', 'Times New Roman', serif", height: "100vh", overflow: "hidden" }}>
+    <div style={{ background: "#0f1117", color: "#e8e4dd", display: "flex", flexDirection: "column", fontFamily: "'Georgia', 'Times New Roman', serif", height: "100vh", overflow: "hidden" }}>
 
       {confirmChore && (
         <DeleteConfirmModal
@@ -1019,7 +1019,7 @@ export default function ChoresPage({ navigate }) {
       )}
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #2a2f3e", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #6b6560", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
         <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
           <div>
             <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
@@ -1046,25 +1046,25 @@ export default function ChoresPage({ navigate }) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search chores, rooms, schedules…"
-            style={{ background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "4px", color: "#e8e0d0", fontFamily: "monospace", fontSize: "0.82rem", marginLeft: "auto", outline: "none", padding: "0.5rem 0.85rem", width: "260px" }}
+            style={{ background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "4px", color: "#e8e0d0", fontFamily: "monospace", fontSize: "0.82rem", marginLeft: "auto", outline: "none", padding: "0.5rem 0.85rem", width: "260px" }}
           />
           {search.trim() && (
-            <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.78rem" }}>{filtered.length} results</span>
+            <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.78rem" }}>{filtered.length} results</span>
           )}
           <button
             onClick={handleAddChore}
             onMouseEnter={() => setAddHovered(true)}
             onMouseLeave={() => setAddHovered(false)}
-            style={{ background: "transparent", border: `1px solid ${addHovered ? "#c9a96e" : "#2e3448"}`, borderRadius: "3px", color: addHovered ? "#c9a96e" : "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s", whiteSpace: "nowrap" }}
+            style={{ background: "transparent", border: `1px solid ${addHovered ? "#c9a96e" : "#6b6560"}`, borderRadius: "3px", color: addHovered ? "#c9a96e" : "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s", whiteSpace: "nowrap" }}
           >
             + ADD CHORE
           </button>
           <button
             onClick={() => setRemindersOpen(true)}
             className="foreman-reminders-header-btn"
-            style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s", whiteSpace: "nowrap" }}
+            style={{ background: "transparent", border: "1px solid #6b6560", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s", whiteSpace: "nowrap" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}
           >
             REMINDERS
           </button>
@@ -1080,7 +1080,7 @@ export default function ChoresPage({ navigate }) {
 
         {/* Frequency filter */}
         <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: "1.25rem" }}>
-          <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.1em", marginRight: "0.25rem", textTransform: "uppercase" }}>Frequency:</span>
+          <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.1em", marginRight: "0.25rem", textTransform: "uppercase" }}>Frequency:</span>
           {FREQ_ITEMS.map(({ label, color }) => {
             const active = activeFrequencies.has(color);
             return (

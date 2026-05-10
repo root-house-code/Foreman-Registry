@@ -10,7 +10,7 @@ const FREQ_ITEMS = [
 const SEASON_ITEMS = ["Spring", "Summer", "Fall", "Winter"];
 
 const labelStyle = {
-  color: "#5a5460",
+  color: "#a8a29c",
   fontFamily: "monospace",
   fontSize: "0.68rem",
   letterSpacing: "0.1em",

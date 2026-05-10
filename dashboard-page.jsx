@@ -7,8 +7,10 @@ import { loadDeletedCategories } from "./lib/deletedCategories.js";
 import { loadDeletedItems } from "./lib/deletedItems.js";
 import {
   loadChores, loadChoreNextDates, loadChoreCompletedDates,
-  computeNextOccurrenceFromStart,
+  computeNextOccurrenceFromStart, computeChoreNextDate,
+  saveChoreNextDates, saveChoreCompletedDates,
 } from "./lib/chores.js";
+import { computeNextDate } from "./lib/scheduleInterval.js";
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -43,7 +45,7 @@ const sectionTitle = {
 const navLink = {
   background: "transparent",
   border: "none",
-  color: "#4a4458",
+  color: "#a8a29c",
   cursor: "pointer",
   fontFamily: "monospace",
   fontSize: "0.6rem",
@@ -52,15 +54,16 @@ const navLink = {
 };
 
 const emptyText = {
-  color: "#2e3448",
+  color: "#6b6560",
   fontFamily: "monospace",
   fontSize: "0.72rem",
   padding: "0.5rem 0",
 };
 
 const rowStyle = {
+  alignItems: "center",
   borderBottom: "1px solid #1a1d26",
-  color: "#6a6478",
+  color: "#a8a29c",
   display: "flex",
   fontFamily: "monospace",
   fontSize: "0.72rem",
@@ -87,29 +90,32 @@ export default function DashboardPage({ navigate }) {
     return d;
   }, [today]);
 
-  // ── Maintenance data ──────────────────────────────────────────────────────
-  const rows               = useMemo(() => loadData(), []);
-  const deletedCategories  = useMemo(() => loadDeletedCategories(), []);
-  const deletedItems       = useMemo(() => loadDeletedItems(), []);
-  const nextDatesMap       = useMemo(() => {
+  // ���� Static data (never changes) ��������������������������������������������������������������������������������������
+  const rows              = useMemo(() => loadData(), []);
+  const deletedCategories = useMemo(() => loadDeletedCategories(), []);
+  const deletedItems      = useMemo(() => loadDeletedItems(), []);
+  const chores            = useMemo(() => loadChores(), []);
+  const todos             = useMemo(() => loadTodos(), []);
+  const projects          = useMemo(() => loadProjects(), []);
+
+  // ���� Mutable state (updates live on completion) ��������������������������������������������������������
+  const [nextDatesMap, setNextDatesMap] = useState(() => {
     try { return JSON.parse(localStorage.getItem("maintenance-next-dates") || "{}"); }
     catch { return {}; }
-  }, []);
-  const completedDatesMap  = useMemo(() => {
+  });
+  const [completedDatesMap, setCompletedDatesMap] = useState(() => {
     try { return JSON.parse(localStorage.getItem("maintenance-dates") || "{}"); }
     catch { return {}; }
-  }, []);
+  });
+  const [choreNextDates, setChoreNextDates]           = useState(() => loadChoreNextDates());
+  const [choreCompletedDates, setChoreCompletedDates] = useState(() => loadChoreCompletedDates());
 
-  // ── Chores data ───────────────────────────────────────────────────────────
-  const chores              = useMemo(() => loadChores(), []);
-  const choreNextDates      = useMemo(() => loadChoreNextDates(), []);
-  const choreCompletedDates = useMemo(() => loadChoreCompletedDates(), []);
+  // ���� Visual completion state ����������������������������������������������������������������������������������������������
+  const [completedKeys, setCompletedKeys]   = useState(() => new Set());
+  // Items marked done this session � kept in display even after cycling out of window
+  const [completedItems, setCompletedItems] = useState([]);
 
-  // ── Todos / projects data ─────────────────────────────────────────────────
-  const todos    = useMemo(() => loadTodos(), []);
-  const projects = useMemo(() => loadProjects(), []);
-
-  // ── Derived: maintenance ──────────────────────────────────────────────────
+  // ���� Derived: maintenance ����������������������������������������������������������������������������������������������������
   const activeRows = useMemo(() =>
     rows.filter(row =>
       !row._isBlankCategory && row.category && row.item && row.task &&
@@ -138,7 +144,7 @@ export default function DashboardPage({ navigate }) {
     [activeRows, nextDatesMap, today, in30Days]
   );
 
-  // ── Derived: chores ───────────────────────────────────────────────────────
+  // ���� Derived: chores ��������������������������������������������������������������������������������������������������������������
   function choreNextDate(c) {
     if (choreNextDates[c.id]) return new Date(choreNextDates[c.id]);
     if (!c.startDate) return null;
@@ -148,26 +154,18 @@ export default function DashboardPage({ navigate }) {
   const overdueChores = useMemo(() =>
     chores
       .filter(c => { const d = choreNextDate(c); return d && d < today; })
-      .sort((a, b) => {
-        const dA = choreNextDate(a) ?? new Date(0);
-        const dB = choreNextDate(b) ?? new Date(0);
-        return dA - dB;
-      }),
+      .sort((a, b) => (choreNextDate(a) ?? new Date(0)) - (choreNextDate(b) ?? new Date(0))),
     [chores, choreNextDates, today]
   );
 
   const upcomingChores = useMemo(() =>
     chores
       .filter(c => { const d = choreNextDate(c); return d && d >= today && d <= in7Days; })
-      .sort((a, b) => {
-        const dA = choreNextDate(a) ?? new Date(0);
-        const dB = choreNextDate(b) ?? new Date(0);
-        return dA - dB;
-      }),
+      .sort((a, b) => (choreNextDate(a) ?? new Date(0)) - (choreNextDate(b) ?? new Date(0))),
     [chores, choreNextDates, today, in7Days]
   );
 
-  // ── Derived: todos / projects ─────────────────────────────────────────────
+  // ���� Derived: todos / projects ������������������������������������������������������������������������������������������
   const todoStatusCounts = useMemo(() => {
     const counts = { "not-started": 0, "in-progress": 0, "done": 0 };
     todos.forEach(t => { if (counts[t.status] != null) counts[t.status]++; });
@@ -190,7 +188,7 @@ export default function DashboardPage({ navigate }) {
     [projects, todos]
   );
 
-  // ── Completion chart (bug-fixed + chore series) ───────────────────────────
+  // ���� Completion chart ������������������������������������������������������������������������������������������������������������
   const completionsByMonth = useMemo(() => {
     const result = [];
     for (let i = 5; i >= 0; i--) {
@@ -199,7 +197,6 @@ export default function DashboardPage({ navigate }) {
       result.push({ label: MONTH_LABELS[d.getMonth()], year: d.getFullYear(), month: d.getMonth(), maint: 0, chores: 0 });
     }
 
-    // Maintenance completions — stored as single ISO strings (not arrays); handle both
     Object.values(completedDatesMap).forEach(dateOrList => {
       const dates = Array.isArray(dateOrList) ? dateOrList : (dateOrList ? [dateOrList] : []);
       dates.forEach(dateStr => {
@@ -209,7 +206,6 @@ export default function DashboardPage({ navigate }) {
       });
     });
 
-    // Chore completions — stored as single ISO strings per chore ID
     Object.values(choreCompletedDates).forEach(dateStr => {
       if (!dateStr) return;
       const d = new Date(dateStr);
@@ -225,26 +221,7 @@ export default function DashboardPage({ navigate }) {
     [completionsByMonth]
   );
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  const openTodosCount = todoStatusCounts["not-started"] + todoStatusCounts["in-progress"];
-  const totalOverdue   = overdueItems.length + overdueChores.length;
-
-  function formatDate(dateStr) {
-    if (!dateStr) return "—";
-    const d = new Date(dateStr);
-    return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
-  }
-
-  function formatDateFromDate(d) {
-    if (!d) return "—";
-    return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
-  }
-
-  const PRIORITY_COLORS = {
-    low: "#4ade80", medium: "#c9a96e", high: "#f59e0b", urgent: "#f87171",
-  };
-
-  // Combined overdue list (maintenance first, then chores), capped at 8
+  // ���� Combined lists ����������������������������������������������������������������������������������������������������������������
   const combinedOverdue = useMemo(() => {
     const maintRows = overdueItems.map(row => ({
       type: "maint",
@@ -263,32 +240,92 @@ export default function DashboardPage({ navigate }) {
       .slice(0, 8);
   }, [overdueItems, overdueChores, nextDatesMap]);
 
-  // Combined due-soon list (maintenance ≤30d + chores ≤7d), sorted by date, capped at 8
+  // combinedUpcoming includes key + original data for completion
   const combinedUpcoming = useMemo(() => {
     const maintRows = upcomingItems.map(row => ({
       type: "maint",
+      key: `maint:${keyOf(row)}`,
       date: new Date(nextDatesMap[keyOf(row)]),
       label: row.task,
       sub: row.category,
+      row,
     }));
     const choreRows = upcomingChores.map(c => ({
       type: "chore",
+      key: `chore:${c.id}`,
       date: choreNextDate(c),
       label: c.title,
       sub: c.room,
+      chore: c,
     }));
     return [...maintRows, ...choreRows]
       .sort((a, b) => (a.date ?? new Date(0)) - (b.date ?? new Date(0)))
       .slice(0, 8);
   }, [upcomingItems, upcomingChores, nextDatesMap]);
 
+  // Stable display list: active items + any completed items that cycled out
+  const displayUpcoming = useMemo(() => {
+    const activeKeys = new Set(combinedUpcoming.map(i => i.key));
+    const cycledOut = completedItems.filter(i => !activeKeys.has(i.key));
+    return [...combinedUpcoming, ...cycledOut];
+  }, [combinedUpcoming, completedItems]);
+
+  // ���� Completion handlers ������������������������������������������������������������������������������������������������������
+  function handleMarkDone(item) {
+    if (completedKeys.has(item.key)) return;
+
+    setCompletedKeys(prev => new Set([...prev, item.key]));
+    setCompletedItems(prev => [...prev, item]);
+
+    const now = new Date();
+
+    if (item.type === "maint") {
+      const k = keyOf(item.row);
+
+      const newCompleted = { ...completedDatesMap, [k]: now.toISOString() };
+      setCompletedDatesMap(newCompleted);
+      localStorage.setItem("maintenance-dates", JSON.stringify(newCompleted));
+
+      const nextDate = computeNextDate(now, item.row.schedule, item.row.season);
+      if (nextDate) {
+        const newNext = { ...nextDatesMap, [k]: nextDate.toISOString() };
+        setNextDatesMap(newNext);
+        localStorage.setItem("maintenance-next-dates", JSON.stringify(newNext));
+      }
+    } else {
+      const c = item.chore;
+      const base = choreNextDates[c.id] ? new Date(choreNextDates[c.id]) : now;
+      const nextDate = computeChoreNextDate(base, c.schedule, c.dayOfWeek, c.timeOfDay);
+
+      const newCompleted = { ...choreCompletedDates, [c.id]: now.toISOString() };
+      setChoreCompletedDates(newCompleted);
+      saveChoreCompletedDates(newCompleted);
+
+      const newNext = { ...choreNextDates, [c.id]: nextDate.toISOString() };
+      setChoreNextDates(newNext);
+      saveChoreNextDates(newNext);
+    }
+  }
+
+  // ���� Helpers ������������������������������������������������������������������������������������������������������������������������������
+  const openTodosCount     = todoStatusCounts["not-started"] + todoStatusCounts["in-progress"];
+  const totalOverdue       = overdueItems.length + overdueChores.length;
   const combinedOverdueTotal  = overdueItems.length + overdueChores.length;
   const combinedUpcomingTotal = upcomingItems.length + upcomingChores.length;
 
+  function formatDateFromDate(d) {
+    if (!d) return "�";
+    return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
+  }
+
+  const PRIORITY_COLORS = {
+    low: "#4ade80", medium: "#c9a96e", high: "#f59e0b", urgent: "#f87171",
+  };
+
   return (
-    <div style={{ background: "#0f1117", color: "#d4c9b8", display: "flex", flexDirection: "column", fontFamily: "monospace", height: "100vh", overflow: "hidden" }}>
+    <div style={{ background: "#0f1117", color: "#e8e4dd", display: "flex", flexDirection: "column", fontFamily: "monospace", height: "100vh", overflow: "hidden" }}>
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #2a2f3e", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #6b6560", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
         <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
           <div>
             <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
@@ -304,7 +341,7 @@ export default function DashboardPage({ navigate }) {
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "2rem" }}>
 
-        {/* Stat summary row — Overdue · Upcoming · Chores This Week · Open To Dos */}
+        {/* Stat summary row */}
         <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(4, 1fr)", marginBottom: "1.5rem" }}>
           <StatCard
             label="Overdue"
@@ -325,7 +362,7 @@ export default function DashboardPage({ navigate }) {
           <StatCard
             label="Chores This Week"
             value={upcomingChores.length}
-            valueColor={upcomingChores.length > 0 ? "#c9a96e" : "#3a3548"}
+            valueColor={upcomingChores.length > 0 ? "#c9a96e" : "#a8a29c"}
             sub="due in 7 days"
             onClick={() => navigate("chores")}
           />
@@ -341,7 +378,7 @@ export default function DashboardPage({ navigate }) {
         {/* Overdue + Due Soon */}
         <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1fr", marginBottom: "1rem" }}>
 
-          {/* Overdue (maintenance + chores) */}
+          {/* Overdue */}
           <div style={card}>
             <div style={sectionHeader}>
               <span style={sectionTitle}>Overdue</span>
@@ -353,8 +390,8 @@ export default function DashboardPage({ navigate }) {
               combinedOverdue.map((item, i) => (
                 <div key={i} style={rowStyle}>
                   <span style={{ color: "#f87171", flexShrink: 0, minWidth: "58px" }}>{formatDateFromDate(item.date)}</span>
-                  <span style={{ color: "#2e3448", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
-                  <span style={{ color: "#4a4458", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
+                  <span style={{ color: "#6b6560", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
+                  <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
                 </div>
               ))
@@ -364,23 +401,27 @@ export default function DashboardPage({ navigate }) {
             )}
           </div>
 
-          {/* Due Soon (maintenance ≤30d + chores ≤7d) */}
+          {/* Due Soon */}
           <div style={card}>
             <div style={sectionHeader}>
               <span style={sectionTitle}>Due Soon</span>
               <button style={navLink} onClick={() => navigate("calendar")}>&rarr; Calendar</button>
             </div>
-            {combinedUpcoming.length === 0 ? (
+            {displayUpcoming.length === 0 ? (
               <div style={emptyText}>Nothing due soon</div>
             ) : (
-              combinedUpcoming.map((item, i) => (
-                <div key={i} style={rowStyle}>
-                  <span style={{ color: "#c9a96e", flexShrink: 0, minWidth: "58px" }}>{formatDateFromDate(item.date)}</span>
-                  <span style={{ color: "#2e3448", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
-                  <span style={{ color: "#4a4458", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
-                </div>
-              ))
+              displayUpcoming.map((item, i) => {
+                const done = completedKeys.has(item.key);
+                return (
+                  <div key={item.key} style={{ ...rowStyle, opacity: done ? 0.3 : 1 }}>
+                    <span style={{ color: "#c9a96e", flexShrink: 0, minWidth: "58px" }}>{formatDateFromDate(item.date)}</span>
+                    <span style={{ color: "#6b6560", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
+                    <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
+                    <span style={{ flex: 1, overflow: "hidden", textDecoration: done ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
+                    {!done && <MarkDoneButton onClick={() => handleMarkDone(item)} />}
+                  </div>
+                );
+              })
             )}
             {combinedUpcomingTotal > 8 && (
               <div style={{ ...emptyText, marginTop: "0.25rem" }}>+{combinedUpcomingTotal - 8} more</div>
@@ -399,7 +440,7 @@ export default function DashboardPage({ navigate }) {
             </div>
             <div style={{ display: "flex", gap: "1.5rem", marginBottom: "0.75rem" }}>
               {[
-                { label: "Not Started", key: "not-started", color: "#4a4458" },
+                { label: "Not Started", key: "not-started", color: "#a8a29c" },
                 { label: "In Progress", key: "in-progress", color: "#c9a96e" },
                 { label: "Done",        key: "done",        color: "#4ade80" },
               ].map(s => (
@@ -407,7 +448,7 @@ export default function DashboardPage({ navigate }) {
                   <div style={{ color: s.color, fontFamily: "monospace", fontSize: "1.4rem", fontWeight: 300 }}>
                     {todoStatusCounts[s.key]}
                   </div>
-                  <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                  <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
                     {s.label}
                   </div>
                 </div>
@@ -417,7 +458,7 @@ export default function DashboardPage({ navigate }) {
               <div style={emptyText}>No urgent or high priority items</div>
             ) : (
               <>
-                <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase" }}>
+                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase" }}>
                   High Priority Open
                 </div>
                 {highPriorityTodos.slice(0, 6).map((t, i) => (
@@ -446,10 +487,10 @@ export default function DashboardPage({ navigate }) {
               return (
                 <div key={i} style={{ marginBottom: "0.85rem" }}>
                   <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "0.3rem" }}>
-                    <span style={{ color: "#6a6478", fontFamily: "monospace", fontSize: "0.72rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {p.name}
                     </span>
-                    <span style={{ color: "#3a3548", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem", marginLeft: "0.5rem" }}>
+                    <span style={{ color: "#a8a29c", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem", marginLeft: "0.5rem" }}>
                       {p.done}/{p.total}
                     </span>
                   </div>
@@ -462,16 +503,16 @@ export default function DashboardPage({ navigate }) {
           </div>
         </div>
 
-        {/* Completion chart — maintenance (amber) + chores (green), stacked */}
+        {/* Completion chart */}
         <div style={card}>
           <div style={sectionHeader}>
-            <span style={sectionTitle}>Completed — Last 6 Months</span>
+            <span style={sectionTitle}>Completed � Last 6 Months</span>
             <div style={{ alignItems: "center", display: "flex", gap: "0.9rem" }}>
-              <span style={{ alignItems: "center", color: "#3a3548", display: "flex", fontFamily: "monospace", fontSize: "0.58rem", gap: "0.3rem" }}>
+              <span style={{ alignItems: "center", color: "#a8a29c", display: "flex", fontFamily: "monospace", fontSize: "0.58rem", gap: "0.3rem" }}>
                 <span style={{ background: "#c9a96e", borderRadius: "1px", display: "inline-block", height: "6px", width: "10px" }} />
                 Maintenance
               </span>
-              <span style={{ alignItems: "center", color: "#3a3548", display: "flex", fontFamily: "monospace", fontSize: "0.58rem", gap: "0.3rem" }}>
+              <span style={{ alignItems: "center", color: "#a8a29c", display: "flex", fontFamily: "monospace", fontSize: "0.58rem", gap: "0.3rem" }}>
                 <span style={{ background: "#4ade80", borderRadius: "1px", display: "inline-block", height: "6px", width: "10px" }} />
                 Chores
               </span>
@@ -479,18 +520,17 @@ export default function DashboardPage({ navigate }) {
           </div>
           <div style={{ alignItems: "flex-end", display: "flex", gap: "1rem", height: "80px" }}>
             {completionsByMonth.map((bucket, i) => {
-              const total     = bucket.maint + bucket.chores;
-              const maxH      = 48;
-              const totalH    = Math.max((total / maxCompletions) * maxH, total > 0 ? 4 : 0);
-              const maintH    = total > 0 ? Math.round((bucket.maint / total) * totalH) : 0;
-              const choreH    = totalH - maintH;
+              const total  = bucket.maint + bucket.chores;
+              const maxH   = 48;
+              const totalH = Math.max((total / maxCompletions) * maxH, total > 0 ? 4 : 0);
+              const maintH = total > 0 ? Math.round((bucket.maint / total) * totalH) : 0;
+              const choreH = totalH - maintH;
               return (
                 <div key={i} style={{ alignItems: "center", display: "flex", flex: 1, flexDirection: "column", gap: "0.4rem" }}>
-                  <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.6rem" }}>
+                  <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem" }}>
                     {total > 0 ? total : ""}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column-reverse", justifyContent: "flex-start", width: "100%" }}>
-                    {/* Maintenance segment (bottom) */}
                     <div style={{
                       background: bucket.maint > 0 ? "#c9a96e30" : "#1a1d26",
                       border: bucket.maint > 0 ? "1px solid #c9a96e40" : "1px solid #1e2330",
@@ -499,7 +539,6 @@ export default function DashboardPage({ navigate }) {
                       minHeight: bucket.maint > 0 ? "4px" : "0",
                       width: "100%",
                     }} />
-                    {/* Chore segment (top) */}
                     {bucket.chores > 0 && (
                       <div style={{
                         background: "#4ade8030",
@@ -510,7 +549,7 @@ export default function DashboardPage({ navigate }) {
                       }} />
                     )}
                   </div>
-                  <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.6rem" }}>
+                  <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem" }}>
                     {bucket.label}
                   </div>
                 </div>
@@ -527,6 +566,31 @@ export default function DashboardPage({ navigate }) {
   );
 }
 
+function MarkDoneButton({ onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: "transparent",
+        border: `1px solid ${hovered ? "#4ade8060" : "#1e2330"}`,
+        borderRadius: "3px",
+        color: hovered ? "#4ade80" : "#6b6560",
+        cursor: "pointer",
+        flexShrink: 0,
+        fontFamily: "monospace",
+        fontSize: "0.62rem",
+        lineHeight: 1,
+        padding: "0.2rem 0.4rem",
+        transition: "all 0.12s",
+      }}
+    >{"✓"}
+    </button>
+  );
+}
+
 function StatCard({ label, value, valueColor, sub, onClick }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -536,7 +600,7 @@ function StatCard({ label, value, valueColor, sub, onClick }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         background: hovered ? "#0f1117" : "#0d0f16",
-        border: `1px solid ${hovered ? "#2e3448" : "#1e2330"}`,
+        border: `1px solid ${hovered ? "#6b6560" : "#1e2330"}`,
         borderRadius: "6px",
         cursor: "pointer",
         padding: "1rem 1.25rem",
@@ -544,15 +608,16 @@ function StatCard({ label, value, valueColor, sub, onClick }) {
         transition: "all 0.15s",
       }}
     >
-      <div style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.12em", marginBottom: "0.4rem", textTransform: "uppercase" }}>
+      <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.12em", marginBottom: "0.4rem", textTransform: "uppercase" }}>
         {label}
       </div>
       <div style={{ color: valueColor, fontFamily: "monospace", fontSize: "1.8rem", fontWeight: 300, lineHeight: 1 }}>
         {value}
       </div>
-      <div style={{ color: "#2e3448", fontFamily: "monospace", fontSize: "0.6rem", marginTop: "0.3rem" }}>
+      <div style={{ color: "#6b6560", fontFamily: "monospace", fontSize: "0.6rem", marginTop: "0.3rem" }}>
         {sub}
       </div>
     </button>
   );
 }
+

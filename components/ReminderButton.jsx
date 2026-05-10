@@ -31,9 +31,9 @@ export default function ReminderButton({ schedule, mode, onCycle }) {
         alignItems: "center",
         justifyContent: "center",
         background: filled ? "#c9a96e22" : "transparent",
-        border: `1px solid ${active ? "#c9a96e" : "#2e3448"}`,
+        border: `1px solid ${active ? "#c9a96e" : "#6b6560"}`,
         borderRadius: "3px",
-        // #8b7d6b passes 4.5:1 on Foreman's dark bg; #5a5460 did not.
+        // #8b7d6b passes 4.5:1 on Foreman's dark bg; #a8a29c did not.
         color: active ? "#c9a96e" : "#8b7d6b",
         cursor: "pointer",
         display: "inline-flex",

@@ -17,7 +17,7 @@ export default function NoteCell({ value, onChange }) {
         padding: "0.2rem 0.4rem",
         width: "100%",
       }}
-      onFocus={e => e.target.style.borderColor = "#2e3448"}
+      onFocus={e => e.target.style.borderColor = "#6b6560"}
       onBlur={e => e.target.style.borderColor = "transparent"}
     />
   );

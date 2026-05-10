@@ -6,6 +6,7 @@ import { useState } from "react";
 const TABS = [
   { key: "dashboard",   label: "Dashboard"   },
   { key: "calendar",    label: "Calendar"    },
+  { key: "inventory",   label: "Inventory"   },
   { key: "maintenance", label: "Maintenance" },
   { key: "chores",      label: "Chores"      },
   { key: "board",       label: "To Dos"      },
@@ -32,9 +33,9 @@ export default function PageNav({ currentPage, navigate }) {
             onMouseLeave={() => setHovered(null)}
             style={{
               background: isActive ? "#c9a96e18" : isHovered && !isCosmetic ? "#ffffff06" : "transparent",
-              border: `1px solid ${isActive ? "#c9a96e50" : isHovered && !isCosmetic ? "#2e3448" : "#1e2330"}`,
+              border: `1px solid ${isActive ? "#c9a96e50" : isHovered && !isCosmetic ? "#6b6560" : "#1e2330"}`,
               borderRadius: "4px",
-              color: isActive ? "#c9a96e" : isCosmetic ? "#2a2f3e" : isHovered ? "#8b7d6b" : "#4a4458",
+              color: isActive ? "#c9a96e" : isCosmetic ? "#6b6560" : isHovered ? "#8b7d6b" : "#a8a29c",
               cursor: isActive || isCosmetic ? "default" : "pointer",
               fontFamily: "monospace",
               fontSize: "0.7rem",
@@ -55,7 +56,7 @@ export default function PageNav({ currentPage, navigate }) {
           background: "transparent",
           border: "1px solid #1e2330",
           borderRadius: "4px",
-          color: "#2a2f3e",
+          color: "#6b6560",
           cursor: "default",
           fontFamily: "monospace",
           fontSize: "0.7rem",

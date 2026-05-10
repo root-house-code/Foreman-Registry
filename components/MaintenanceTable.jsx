@@ -48,7 +48,7 @@ function TaskCell({ value, onChange, tooltip }) {
         <span
           onClick={startEdit}
           style={{
-            color: value ? "#a89e8e" : "#3a3440",
+            color: value ? "#a89e8e" : "#a8a29c",
             cursor: "text",
             display: "block",
             fontFamily: "inherit",
@@ -74,7 +74,7 @@ function TaskCell({ value, onChange, tooltip }) {
       }}
       style={{
         background: "#1a1f2e",
-        border: "1px solid #2e3448",
+        border: "1px solid #6b6560",
         borderRadius: "2px",
         color: "#e8e0d0",
         fontFamily: "inherit",
@@ -122,7 +122,7 @@ export default function MaintenanceTable({
                   onClick={e => onHeaderClick?.(sortKey, e.shiftKey)}
                   style={{
                     background: "#1a1f2e",
-                    borderBottom: "2px solid #2a2f3e",
+                    borderBottom: "2px solid #6b6560",
                     color: "#c9a96e",
                     cursor: "pointer",
                     fontFamily: "monospace",
@@ -142,7 +142,7 @@ export default function MaintenanceTable({
                 >
                   {label}
                   {sortEntry && (
-                    <span style={{ color: isPrimary ? "#c9a96e" : "#5a5460", marginLeft: "0.3rem" }}>
+                    <span style={{ color: isPrimary ? "#c9a96e" : "#a8a29c", marginLeft: "0.3rem" }}>
                       {sortEntry.dir === "asc" ? "↑" : "↓"}
                     </span>
                   )}
@@ -176,7 +176,7 @@ export default function MaintenanceTable({
                     tooltip={!row._isCustom ? CATEGORY_TIPS[row.category] : undefined}
                   />
                 </td>
-                <td style={{ padding: "0.5rem 0.6rem", color: "#d4c9b8", verticalAlign: "middle" }}>
+                <td style={{ padding: "0.5rem 0.6rem", color: "#e8e4dd", verticalAlign: "middle" }}>
                   <ComboCell
                     value={row.item}
                     options={itemOptions}
@@ -243,7 +243,7 @@ export default function MaintenanceTable({
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#3a3440",
+                      color: "#a8a29c",
                       cursor: "pointer",
                       fontFamily: "monospace",
                       fontSize: "0.72rem",
@@ -251,7 +251,7 @@ export default function MaintenanceTable({
                       transition: "color 0.15s",
                     }}
                     onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                    onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
                   >
                     ×
                   </button>
@@ -263,7 +263,7 @@ export default function MaintenanceTable({
       </table>
 
       {rows.length === 0 && (
-        <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.82rem", padding: "3rem", textAlign: "center" }}>
+        <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.82rem", padding: "3rem", textAlign: "center" }}>
           No results found.
         </div>
       )}
@@ -302,7 +302,7 @@ function DeleteConfirmModal({ row, onConfirm, onCancel }) {
         onClick={e => e.stopPropagation()}
         style={{
           background: "#0f1117",
-          border: "1px solid #2e3448",
+          border: "1px solid #6b6560",
           borderRadius: "6px",
           maxWidth: "420px",
           padding: "1.75rem 2rem",
@@ -313,9 +313,9 @@ function DeleteConfirmModal({ row, onConfirm, onCancel }) {
           {isCustom ? "Permanently Delete Task" : "Remove from Schedule"}
         </div>
         <p style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.78rem", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
-          <strong style={{ color: "#d4c9b8" }}>{row.task}</strong>
+          <strong style={{ color: "#e8e4dd" }}>{row.task}</strong>
         </p>
-        <p style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.6, margin: "0 0 1.5rem" }}>
+        <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.6, margin: "0 0 1.5rem" }}>
           {isCustom
             ? "This will permanently delete this task. This cannot be undone."
             : "This will remove this task from your maintenance schedule. You can restore it anytime from the Guide page."}
@@ -325,17 +325,17 @@ function DeleteConfirmModal({ row, onConfirm, onCancel }) {
             onClick={onCancel}
             style={{
               background: "transparent",
-              border: "1px solid #2e3448",
+              border: "1px solid #6b6560",
               borderRadius: "4px",
-              color: "#5a5460",
+              color: "#a8a29c",
               cursor: "pointer",
               fontFamily: "monospace",
               fontSize: "0.72rem",
               padding: "0.4rem 1rem",
               transition: "all 0.15s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#4a4458"; e.currentTarget.style.color = "#8b7d6b"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#5a5460"; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#a8a29c"; }}
           >
             Cancel
           </button>

@@ -31,7 +31,7 @@ const STATUS_COLUMNS = [
 function navBtnStyle(hovered) {
   return {
     background: "transparent",
-    border: `1px solid ${hovered ? "#c9a96e" : "#2e3448"}`,
+    border: `1px solid ${hovered ? "#c9a96e" : "#6b6560"}`,
     borderRadius: "3px",
     color: hovered ? "#c9a96e" : "#8b7d6b",
     cursor: "pointer",
@@ -45,7 +45,7 @@ function navBtnStyle(hovered) {
 }
 
 const fieldLabel = {
-  color: "#5a5460",
+  color: "#a8a29c",
   display: "block",
   fontFamily: "monospace",
   fontSize: "0.6rem",
@@ -56,10 +56,10 @@ const fieldLabel = {
 
 const fieldInput = {
   background: "#13161f",
-  border: "1px solid #2a2f3e",
+  border: "1px solid #6b6560",
   borderRadius: "3px",
   boxSizing: "border-box",
-  color: "#d4c9b8",
+  color: "#e8e4dd",
   fontFamily: "monospace",
   fontSize: "0.78rem",
   outline: "none",
@@ -73,7 +73,7 @@ const DueDateBtn = forwardRef(({ value, onClick }, ref) => (
   <button
     ref={ref}
     onClick={onClick}
-    style={{ ...fieldInput, cursor: "pointer", color: value ? "#d4c9b8" : "#5a5460", textAlign: "left" }}
+    style={{ ...fieldInput, cursor: "pointer", color: value ? "#e8e4dd" : "#a8a29c", textAlign: "left" }}
   >
     {value || "No date"}
   </button>
@@ -105,7 +105,7 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "8px",
+          background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "8px",
           maxHeight: "90vh", maxWidth: 540, overflowY: "auto", padding: "2rem", width: "90%",
         }}
       >
@@ -118,7 +118,7 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
           <input autoFocus value={form.title} onChange={e => set("title", e.target.value)}
             placeholder="What needs to be done?" style={fieldInput}
             onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-            onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }} />
+            onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }} />
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
@@ -127,7 +127,7 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
             placeholder="Additional notes or context..." rows={2}
             style={{ ...fieldInput, resize: "vertical" }}
             onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-            onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }} />
+            onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }} />
         </div>
 
         <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
@@ -162,14 +162,14 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
             <input value={form.assignee} onChange={e => set("assignee", e.target.value)}
               placeholder="Homeowner, contractor..." style={fieldInput}
               onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-              onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }} />
+              onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }} />
           </div>
           <div style={{ flex: 1 }}>
             <label style={fieldLabel}>Est. Cost ($)</label>
             <input type="number" min="0" step="0.01" value={form.estimatedCost}
               onChange={e => set("estimatedCost", e.target.value)} placeholder="0.00" style={fieldInput}
               onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-              onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }} />
+              onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }} />
           </div>
         </div>
 
@@ -209,8 +209,8 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
             onChange={e => set("labels", e.target.value.split(",").map(l => l.trim()).filter(Boolean))}
             placeholder="Plumbing, Seasonal, Cosmetic..." style={fieldInput}
             onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-            onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; }} />
-          <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.6rem", marginTop: "0.25rem", display: "block" }}>
+            onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }} />
+          <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", marginTop: "0.25rem", display: "block" }}>
             Comma-separated
           </span>
         </div>
@@ -231,12 +231,12 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
           </div>
           <div style={{ display: "flex", gap: "0.75rem" }}>
             <button onClick={onClose} style={{
-              background: "transparent", border: "1px solid #2e3448", borderRadius: "3px",
+              background: "transparent", border: "1px solid #6b6560", borderRadius: "3px",
               color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem",
               letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s",
             }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#d4c9b8"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}>
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#e8e4dd"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}>
               Cancel
             </button>
             <button
@@ -244,8 +244,8 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
               disabled={!form.title.trim()}
               style={{
                 background: form.title.trim() ? "#c9a96e18" : "transparent",
-                border: `1px solid ${form.title.trim() ? "#c9a96e40" : "#2e3448"}`,
-                borderRadius: "3px", color: form.title.trim() ? "#c9a96e" : "#5a5460",
+                border: `1px solid ${form.title.trim() ? "#c9a96e40" : "#6b6560"}`,
+                borderRadius: "3px", color: form.title.trim() ? "#c9a96e" : "#a8a29c",
                 cursor: form.title.trim() ? "pointer" : "default", fontFamily: "monospace",
                 fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s",
               }}
@@ -272,14 +272,14 @@ function TodoCard({ todo, onEdit, isDragging, onDragStart, onDragEnd }) {
       onDragEnd={onDragEnd}
       onClick={onEdit}
       style={{
-        background: "#1a1f2e", border: "1px solid #2e3448",
+        background: "#1a1f2e", border: "1px solid #6b6560",
         borderLeft: `3px solid ${PRIORITY_COLORS[todo.priority] || "#c9a96e"}`,
         borderRadius: "6px", cursor: "grab", marginBottom: "0.5rem",
         opacity: isDragging ? 0.4 : 1, padding: "0.65rem 0.75rem",
         transition: "border-color 0.15s, opacity 0.15s", userSelect: "none",
       }}
       onMouseEnter={e => { e.currentTarget.style.borderColor = "#3a3f52"; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; }}
     >
       {todo._isOverdueMaintenance && (
         <div style={{ marginBottom: "0.4rem" }}>
@@ -294,7 +294,7 @@ function TodoCard({ todo, onEdit, isDragging, onDragStart, onDragEnd }) {
       )}
 
       <div style={{
-        color: isDone ? "#5a5460" : "#d4c9b8", fontSize: "0.82rem", lineHeight: 1.35,
+        color: isDone ? "#a8a29c" : "#e8e4dd", fontSize: "0.82rem", lineHeight: 1.35,
         marginBottom: "0.35rem", textDecoration: isDone ? "line-through" : "none",
       }}>
         {todo.title}
@@ -304,7 +304,7 @@ function TodoCard({ todo, onEdit, isDragging, onDragStart, onDragEnd }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem", marginBottom: "0.35rem" }}>
           {todo.labels.map(label => (
             <span key={label} style={{
-              background: "#2a2f3e", borderRadius: "2px", color: "#8b7d6b",
+              background: "#6b6560", borderRadius: "2px", color: "#8b7d6b",
               fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.06em", padding: "0.1rem 0.35rem",
             }}>
               {label}
@@ -316,30 +316,30 @@ function TodoCard({ todo, onEdit, isDragging, onDragStart, onDragEnd }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: "0.5rem" }}>
         <div style={{ minWidth: 0 }}>
           {(todo.linkedCategory || todo.linkedItem) && (
-            <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.62rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {todo.linkedItem ? `${todo.linkedCategory} › ${todo.linkedItem}` : todo.linkedCategory}
             </div>
           )}
           {todo.assignee && (
-            <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.62rem" }}>{todo.assignee}</div>
+            <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem" }}>{todo.assignee}</div>
           )}
         </div>
         <div style={{ flexShrink: 0, textAlign: "right" }}>
           {todo.tasks?.length > 0 && (() => {
             const done = todo.tasks.filter(t => t.completed).length;
             return (
-              <div style={{ color: done === todo.tasks.length ? "#4ade8080" : "#5a5460", fontFamily: "monospace", fontSize: "0.62rem" }}>
+              <div style={{ color: done === todo.tasks.length ? "#4ade8080" : "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem" }}>
                 {done}/{todo.tasks.length} tasks
               </div>
             );
           })()}
           {todo.estimatedCost != null && (
-            <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.62rem" }}>
+            <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem" }}>
               ${Number(todo.estimatedCost).toLocaleString()}
             </div>
           )}
           {todo.dueDate && (
-            <div style={{ color: isOverdue ? "#f87171" : "#5a5460", fontFamily: "monospace", fontSize: "0.62rem" }}>
+            <div style={{ color: isOverdue ? "#f87171" : "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem" }}>
               {new Date(todo.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </div>
           )}
@@ -373,7 +373,7 @@ function MaintenanceCompletionModal({ todo, rowDataByKey, onConfirm, onClose }) 
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: "#1a1f2e", border: "1px solid #2e3448",
+          background: "#1a1f2e", border: "1px solid #6b6560",
           borderRadius: "8px", maxWidth: 420, padding: "1.75rem 2rem", width: "90%",
         }}
       >
@@ -422,7 +422,7 @@ function MaintenanceCompletionModal({ todo, rowDataByKey, onConfirm, onClose }) 
             >
               Follow Recommended Schedule
             </button>
-            <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.6rem", marginTop: "0.3rem" }}>
+            <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", marginTop: "0.3rem" }}>
               {schedule}
             </div>
           </div>
@@ -430,12 +430,12 @@ function MaintenanceCompletionModal({ todo, rowDataByKey, onConfirm, onClose }) 
 
         <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
           <button onClick={onClose} style={{
-            background: "transparent", border: "1px solid #2e3448", borderRadius: "3px",
+            background: "transparent", border: "1px solid #6b6560", borderRadius: "3px",
             color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem",
             letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s",
           }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#d4c9b8"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#8b7d6b"; }}>
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#e8e4dd"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}>
             Cancel
           </button>
           <button
@@ -741,7 +741,7 @@ export default function BoardPage({ navigate }) {
       {/* Header */}
       <div style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
-        borderBottom: "1px solid #2a2f3e", flexShrink: 0, padding: "2rem", zIndex: 50,
+        borderBottom: "1px solid #6b6560", flexShrink: 0, padding: "2rem", zIndex: 50,
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
@@ -773,9 +773,9 @@ export default function BoardPage({ navigate }) {
               <span style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>Projects</span>
               <button
                 onClick={() => { setAddingProject(true); setNewProjectName(""); }}
-                style={{ background: "none", border: "none", color: "#3a3440", cursor: "pointer", fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.15s" }}
+                style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
-                onMouseLeave={e => { e.currentTarget.style.color = "#3a3440"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
               >+</button>
             </div>
             <div style={{ overflowY: "auto" }}>
@@ -784,7 +784,7 @@ export default function BoardPage({ navigate }) {
                 style={{
                   background: selectedProjectId === null ? "#1a2035" : "transparent",
                   borderLeft: `2px solid ${selectedProjectId === null ? "#c9a96e" : "transparent"}`,
-                  color: selectedProjectId === null ? "#c9a96e" : "#5a5460",
+                  color: selectedProjectId === null ? "#c9a96e" : "#a8a29c",
                   cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem",
                   padding: "0.45rem 0.85rem", transition: "background 0.1s, color 0.1s",
                 }}
@@ -826,7 +826,7 @@ export default function BoardPage({ navigate }) {
                 </div>
               )}
               {projects.length === 0 && !addingProject && (
-                <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.68rem", padding: "0.75rem 0.85rem" }}>No projects yet</div>
+                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", padding: "0.75rem 0.85rem" }}>No projects yet</div>
               )}
             </div>
           </div>
@@ -839,7 +839,7 @@ export default function BoardPage({ navigate }) {
                 {["All", ...todoCategories].map(cat => (
                   <button key={cat} onClick={() => setActiveCategory(cat)} style={{
                     background: activeCategory === cat ? "#c9a96e" : "transparent",
-                    border: `1px solid ${activeCategory === cat ? "#c9a96e" : "#2e3448"}`,
+                    border: `1px solid ${activeCategory === cat ? "#c9a96e" : "#6b6560"}`,
                     borderRadius: "3px", color: activeCategory === cat ? "#0f1117" : "#8b7d6b",
                     cursor: "pointer", fontFamily: "monospace", fontSize: "0.62rem",
                     fontWeight: activeCategory === cat ? "bold" : "normal",
@@ -852,7 +852,7 @@ export default function BoardPage({ navigate }) {
             </div>
             <div style={{ flex: 1, overflowY: "auto" }}>
               {sidebarTodos.length === 0 ? (
-                <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.68rem", padding: "0.75rem 0.85rem" }}>No to dos</div>
+                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", padding: "0.75rem 0.85rem" }}>No to dos</div>
               ) : sidebarTodos.map(todo => (
                 <div
                   key={todo.id}
@@ -875,7 +875,7 @@ export default function BoardPage({ navigate }) {
                       {todo.title}
                     </div>
                     {todo.dueDate && (
-                      <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.6rem" }}>
+                      <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem" }}>
                         {new Date(todo.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </div>
                     )}
@@ -891,25 +891,25 @@ export default function BoardPage({ navigate }) {
           <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem 2rem 4rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.75rem" }}>
               <div style={{ alignItems: "center", display: "flex", gap: "1.25rem" }}>
-                <span style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.72rem" }}>
+                <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem" }}>
                   {filteredTodos.length} {filteredTodos.length === 1 ? "to do" : "to dos"}
                   {selectedProjectId && projects.find(p => p.id === selectedProjectId) && ` · ${projects.find(p => p.id === selectedProjectId).name}`}
                   {activeCategory !== "All" && ` · ${activeCategory}`}
                 </span>
-                <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.65rem" }}>Overdue maintenance tasks and chores are automatically added here.</span>
+                <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.65rem" }}>Overdue maintenance tasks and chores are automatically added here.</span>
               </div>
               <div style={{ alignItems: "center", display: "flex", gap: "0.75rem" }}>
                 <button
                   onClick={() => setShowChoresOnly(prev => !prev)}
                   style={{
                     background: showChoresOnly ? "#c9a96e18" : "transparent",
-                    border: `1px solid ${showChoresOnly ? "#c9a96e" : "#2e3448"}`,
-                    borderRadius: "3px", color: showChoresOnly ? "#c9a96e" : "#5a5460",
+                    border: `1px solid ${showChoresOnly ? "#c9a96e" : "#6b6560"}`,
+                    borderRadius: "3px", color: showChoresOnly ? "#c9a96e" : "#a8a29c",
                     cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem",
                     letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s",
                   }}
-                  onMouseEnter={e => { if (!showChoresOnly) { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#8b7d6b"; } }}
-                  onMouseLeave={e => { if (!showChoresOnly) { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#5a5460"; } }}
+                  onMouseEnter={e => { if (!showChoresOnly) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; } }}
+                  onMouseLeave={e => { if (!showChoresOnly) { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#a8a29c"; } }}
                 >
                   Chores
                 </button>
@@ -949,7 +949,7 @@ export default function BoardPage({ navigate }) {
                       <span style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>
                         {col.label}
                       </span>
-                      <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.65rem" }}>{colTodos.length}</span>
+                      <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.65rem" }}>{colTodos.length}</span>
                     </div>
 
                     {colTodos.map(todo => (
@@ -964,13 +964,13 @@ export default function BoardPage({ navigate }) {
                     <button
                       onClick={() => setModalState({ colKey: col.key })}
                       style={{
-                        background: "none", border: "none", color: "#3a3440", cursor: "pointer",
+                        background: "none", border: "none", color: "#a8a29c", cursor: "pointer",
                         fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.05em",
                         marginTop: "0.25rem", padding: "0.3rem 0", transition: "color 0.15s",
                         width: "100%", textAlign: "left",
                       }}
                       onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
-                      onMouseLeave={e => { e.currentTarget.style.color = "#3a3440"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
                     >
                       + Add
                     </button>

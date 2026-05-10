@@ -238,12 +238,12 @@ function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
   function set(f, v) { setForm(p => ({ ...p, [f]: v })); }
   const dateLabel = date ? date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) : "";
   const canSave   = form.title.trim().length > 0;
-  const inputStyle  = { background: "#1a1f2e", border: "1px solid #2e3448", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", fontFamily: "monospace", fontSize: "0.8rem", outline: "none", padding: "0.35rem 0.5rem", width: "100%" };
-  const labelStyle  = { color: "#5a5460", display: "block", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.1em", marginBottom: "0.25rem", textTransform: "uppercase" };
+  const inputStyle  = { background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", fontFamily: "monospace", fontSize: "0.8rem", outline: "none", padding: "0.35rem 0.5rem", width: "100%" };
+  const labelStyle  = { color: "#a8a29c", display: "block", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.1em", marginBottom: "0.25rem", textTransform: "uppercase" };
   const selectStyle = { ...inputStyle, appearance: "none", cursor: "pointer", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.5rem center", paddingRight: "1.5rem" };
   return (
     <div style={{ alignItems: "center", background: "rgba(0,0,0,0.7)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 200 }} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: "#0f1117", border: "1px solid #2e3448", borderRadius: "6px", maxWidth: 480, padding: "1.75rem 2rem", width: "90%" }}>
+      <div style={{ background: "#0f1117", border: "1px solid #6b6560", borderRadius: "6px", maxWidth: 480, padding: "1.75rem 2rem", width: "90%" }}>
         <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: "0.2rem", textTransform: "uppercase" }}>New Chore</div>
         <div style={{ color: "#c9a96e", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.05rem", marginBottom: "1.5rem" }}>{dateLabel}</div>
         <div style={{ marginBottom: "1rem" }}><label style={labelStyle}>Chore Name</label><input autoFocus value={form.title} onChange={e => set("title", e.target.value)} onKeyDown={e => { if (e.key === "Enter" && canSave) onSave(form, date); if (e.key === "Escape") onClose(); }} placeholder="e.g. Vacuum all floors" style={inputStyle} /></div>
@@ -256,8 +256,8 @@ function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
         <div style={{ marginBottom: "1rem" }}><label style={labelStyle}>Assignee</label><input value={form.assignee} onChange={e => set("assignee", e.target.value)} placeholder="Who does this chore?" style={inputStyle} /></div>
         <div style={{ marginBottom: "1.5rem" }}><label style={labelStyle}>Notes</label><textarea value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Any notes…" rows={2} style={{ ...inputStyle, resize: "vertical" }} /></div>
         <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={{ background: "transparent", border: "1px solid #2e3448", borderRadius: "3px", color: "#5a5460", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem" }} onMouseEnter={e => { e.currentTarget.style.borderColor = "#5a5460"; e.currentTarget.style.color = "#8b7d6b"; }} onMouseLeave={e => { e.currentTarget.style.borderColor = "#2e3448"; e.currentTarget.style.color = "#5a5460"; }}>Cancel</button>
-          <button onClick={() => canSave && onSave(form, date)} disabled={!canSave} style={{ background: canSave ? "#c9a96e22" : "transparent", border: `1px solid ${canSave ? "#c9a96e" : "#2e3448"}`, borderRadius: "3px", color: canSave ? "#c9a96e" : "#3a3440", cursor: canSave ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem" }}>Add Chore</button>
+          <button onClick={onClose} style={{ background: "transparent", border: "1px solid #6b6560", borderRadius: "3px", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem" }} onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }} onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#a8a29c"; }}>Cancel</button>
+          <button onClick={() => canSave && onSave(form, date)} disabled={!canSave} style={{ background: canSave ? "#c9a96e22" : "transparent", border: `1px solid ${canSave ? "#c9a96e" : "#6b6560"}`, borderRadius: "3px", color: canSave ? "#c9a96e" : "#a8a29c", cursor: canSave ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem" }}>Add Chore</button>
         </div>
       </div>
     </div>
@@ -396,7 +396,7 @@ export default function CalendarPage({ navigate }) {
 
   const navBtnStyle = (disabled) => ({
     background: "transparent", border: "none",
-    color: disabled ? "#2a2f3e" : "#8b7d6b",
+    color: disabled ? "#6b6560" : "#8b7d6b",
     cursor: disabled ? "default" : "pointer",
     fontFamily: "monospace", fontSize: "1.2rem", lineHeight: 1,
     padding: "0.1rem 0.6rem", transition: "color 0.15s",
@@ -404,7 +404,7 @@ export default function CalendarPage({ navigate }) {
 
 
   return (
-    <div style={{ background: "#0f1117", color: "#d4c9b8", display: "flex", flexDirection: "column", fontFamily: "'Georgia','Times New Roman',serif", height: "100vh", overflow: "hidden" }}>
+    <div style={{ background: "#0f1117", color: "#e8e4dd", display: "flex", flexDirection: "column", fontFamily: "'Georgia','Times New Roman',serif", height: "100vh", overflow: "hidden" }}>
 
       {createDate && (
         <CreateChoreModal
@@ -415,7 +415,7 @@ export default function CalendarPage({ navigate }) {
       )}
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #2a2f3e", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #6b6560", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
         <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
           <div>
             <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
@@ -438,7 +438,7 @@ export default function CalendarPage({ navigate }) {
             onMouseEnter={e => { if (!atYearStart) e.currentTarget.style.color = "#c9a96e"; }}
             onMouseLeave={e => { if (!atYearStart) e.currentTarget.style.color = "#8b7d6b"; }}
           >‹</button>
-          <span style={{ color: "#d4c9b8", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.05rem", letterSpacing: "0.02em", minWidth: "11rem", textAlign: "center" }}>
+          <span style={{ color: "#e8e4dd", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.05rem", letterSpacing: "0.02em", minWidth: "11rem", textAlign: "center" }}>
             {CAL_MONTHS[view.m]} {view.y}
           </span>
           <button
@@ -446,7 +446,7 @@ export default function CalendarPage({ navigate }) {
             onMouseEnter={e => { if (!atYearEnd) e.currentTarget.style.color = "#c9a96e"; }}
             onMouseLeave={e => { if (!atYearEnd) e.currentTarget.style.color = "#8b7d6b"; }}
           >›</button>
-          <span style={{ color: "#2a2f3e", fontFamily: "monospace", fontSize: "0.62rem", marginLeft: "1rem" }}>{CURRENT_YEAR}</span>
+          <span style={{ color: "#6b6560", fontFamily: "monospace", fontSize: "0.62rem", marginLeft: "1rem" }}>{CURRENT_YEAR}</span>
         </div>
 
         <CategoryTabs
@@ -469,7 +469,7 @@ export default function CalendarPage({ navigate }) {
           {/* DOW headers */}
           <div style={{ display: "grid", flexShrink: 0, gap: "2px", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: "2px" }}>
             {CAL_DOWS.map(d => (
-              <div key={d} style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.06em", padding: "0.15rem 0.4rem", textAlign: "center" }}>{d}</div>
+              <div key={d} style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.06em", padding: "0.15rem 0.4rem", textAlign: "center" }}>{d}</div>
             ))}
           </div>
 
@@ -531,7 +531,7 @@ export default function CalendarPage({ navigate }) {
                     );
                   })}
                   {overflow > 0 && (
-                    <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.56rem", padding: "0 2px" }}>+{overflow} more</div>
+                    <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.56rem", padding: "0 2px" }}>+{overflow} more</div>
                   )}
                 </div>
               );
@@ -547,13 +547,13 @@ export default function CalendarPage({ navigate }) {
             {selectedTaskKey && selectedTaskRow && (
               <div style={{ background: "#c9a96e10", border: "1px solid #c9a96e30", borderRadius: "4px", marginBottom: "1rem", padding: "0.75rem" }}>
                 <div style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.3rem", textTransform: "uppercase" }}>Set Start Date</div>
-                <div style={{ color: "#d4c9b8", fontFamily: "monospace", fontSize: "0.72rem", marginBottom: "0.4rem" }}>{selectedTaskRow.item} › {selectedTaskRow.task}</div>
+                <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.72rem", marginBottom: "0.4rem" }}>{selectedTaskRow.item} › {selectedTaskRow.task}</div>
                 <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.68rem", marginBottom: "0.5rem" }}>Click a date on the calendar.</div>
                 <button
                   onClick={() => setSelectedTaskKey(null)}
-                  style={{ background: "transparent", border: "none", color: "#3a3440", cursor: "pointer", fontFamily: "monospace", fontSize: "0.63rem", padding: 0, transition: "color 0.15s" }}
+                  style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.63rem", padding: 0, transition: "color 0.15s" }}
                   onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                  onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}
+                  onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
                 >× cancel</button>
               </div>
             )}
@@ -561,21 +561,21 @@ export default function CalendarPage({ navigate }) {
             {selectedDay ? (
               /* Day detail view */
               <>
-                <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.75rem", textTransform: "uppercase" }}>{selectedDayLabel}</div>
+                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.75rem", textTransform: "uppercase" }}>{selectedDayLabel}</div>
                 {selectedDayEvents.length === 0 ? (
-                  <p style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.72rem", margin: 0 }}>No events scheduled.</p>
+                  <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", margin: 0 }}>No events scheduled.</p>
                 ) : (
                   <>
                     {/* Chores section */}
                     {selectedDayEvents.some(e => e.type === "chore") && (
                       <>
-                        <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase" }}>Chores</div>
+                        <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase" }}>Chores</div>
                         {selectedDayEvents.filter(e => e.type === "chore").map((evt, idx) => (
                           <div key={idx} style={{ alignItems: "flex-start", borderBottom: "1px solid #1e2330", display: "flex", gap: "0.5rem", marginBottom: "0.5rem", paddingBottom: "0.5rem" }}>
                             <span style={{ background: getScheduleColor(evt.chore.schedule), borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "7px", marginTop: "4px", width: "7px" }} />
                             <div>
-                              <div style={{ color: "#d4c9b8", fontFamily: "monospace", fontSize: "0.75rem" }}>{evt.chore.title}</div>
-                              <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.63rem" }}>
+                              <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.75rem" }}>{evt.chore.title}</div>
+                              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.63rem" }}>
                                 {evt.chore.room}{evt.chore.timeOfDay && ` · ${formatTimeOfDay(evt.chore.timeOfDay)}`}{evt.chore.assignee && ` · ${evt.chore.assignee}`}
                               </div>
                             </div>
@@ -586,13 +586,13 @@ export default function CalendarPage({ navigate }) {
                     {/* Maintenance section */}
                     {selectedDayEvents.some(e => e.type === "maintenance") && (
                       <>
-                        <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", marginBottom: "0.4rem", marginTop: "0.5rem", textTransform: "uppercase" }}>Maintenance</div>
+                        <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", marginBottom: "0.4rem", marginTop: "0.5rem", textTransform: "uppercase" }}>Maintenance</div>
                         {selectedDayEvents.filter(e => e.type === "maintenance").map((evt, idx) => (
                           <div key={idx} style={{ alignItems: "flex-start", borderBottom: "1px solid #1e2330", display: "flex", gap: "0.5rem", marginBottom: "0.5rem", opacity: evt.isCompleted ? 0.45 : 1, paddingBottom: "0.5rem" }}>
                             <span style={{ background: getScheduleColor(evt.row.schedule), borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "7px", marginTop: "4px", width: "7px" }} />
                             <div>
-                              <div style={{ color: "#d4c9b8", fontFamily: "monospace", fontSize: "0.75rem", textDecoration: evt.isCompleted ? "line-through" : "none" }}>{evt.row.item} › {evt.row.task}</div>
-                              <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.63rem" }}>{evt.row.category} · {evt.row.schedule}</div>
+                              <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.75rem", textDecoration: evt.isCompleted ? "line-through" : "none" }}>{evt.row.item} › {evt.row.task}</div>
+                              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.63rem" }}>{evt.row.category} · {evt.row.schedule}</div>
                             </div>
                           </div>
                         ))}
@@ -600,28 +600,28 @@ export default function CalendarPage({ navigate }) {
                     )}
                   </>
                 )}
-                <button onClick={() => setSelectedDay(null)} style={{ background: "transparent", border: "none", color: "#3a3440", cursor: "pointer", fontFamily: "monospace", fontSize: "0.63rem", marginTop: "0.25rem", padding: 0, transition: "color 0.15s" }} onMouseEnter={e => e.currentTarget.style.color = "#8b7d6b"} onMouseLeave={e => e.currentTarget.style.color = "#3a3440"}>× clear selection</button>
+                <button onClick={() => setSelectedDay(null)} style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.63rem", marginTop: "0.25rem", padding: 0, transition: "color 0.15s" }} onMouseEnter={e => e.currentTarget.style.color = "#8b7d6b"} onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}>× clear selection</button>
               </>
             ) : (
               /* Default: upcoming + unscheduled */
               <>
-                <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.65rem", textTransform: "uppercase" }}>Upcoming</div>
+                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.65rem", textTransform: "uppercase" }}>Upcoming</div>
                 {globalUpcoming.length === 0 ? (
-                  <p style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.72rem", margin: "0 0 1.5rem" }}>No scheduled events. Set start dates below.</p>
+                  <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", margin: "0 0 1.5rem" }}>No scheduled events. Set start dates below.</p>
                 ) : globalUpcoming.map(({ date, label, color, meta }, idx) => {
                   const prev = globalUpcoming[idx - 1];
                   const isNewDay = idx === 0 || prev.date.toDateString() !== date.toDateString();
                   return (
                     <div key={`${label}-${date.toISOString()}`}>
                       {isNewDay && (
-                        <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.06em", marginBottom: "0.25rem", marginTop: idx > 0 ? "0.75rem" : 0 }}>
+                        <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.06em", marginBottom: "0.25rem", marginTop: idx > 0 ? "0.75rem" : 0 }}>
                           {CAL_DOWS_LONG[date.getDay()]}, {CAL_MONTHS_SHORT[date.getMonth()]} {date.getDate()}
                         </div>
                       )}
                       <div style={{ alignItems: "baseline", display: "flex", gap: "0.4rem", marginBottom: "0.25rem", paddingLeft: "0.2rem" }}>
                         <span style={{ background: color, borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "6px", marginTop: "2px", width: "6px" }} />
                         <span style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.7rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
-                        <span style={{ color: "#3a3440", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem" }}>{meta}</span>
+                        <span style={{ color: "#a8a29c", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem" }}>{meta}</span>
                       </div>
                     </div>
                   );
@@ -630,10 +630,10 @@ export default function CalendarPage({ navigate }) {
                 {/* Unscheduled maintenance — tasks needing a start date */}
                 {unscheduledMaintenance.length > 0 && (
                   <>
-                    <div style={{ borderTop: "1px solid #1e2330", color: "#3a3440", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.5rem", marginTop: "1.25rem", paddingTop: "0.85rem", textTransform: "uppercase" }}>
+                    <div style={{ borderTop: "1px solid #1e2330", color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.5rem", marginTop: "1.25rem", paddingTop: "0.85rem", textTransform: "uppercase" }}>
                       To Schedule ({unscheduledMaintenance.length})
                     </div>
-                    <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.62rem", marginBottom: "0.6rem" }}>
+                    <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem", marginBottom: "0.6rem" }}>
                       Select a task, then click a date to anchor its schedule.
                     </div>
                     {unscheduledMaintenance.map(row => {
@@ -653,7 +653,7 @@ export default function CalendarPage({ navigate }) {
                           onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
                         >
                           <div style={{ color: isActive ? "#c9a96e" : "#8b7d6b", fontFamily: "monospace", fontSize: "0.7rem" }}>{row.item} › {row.task}</div>
-                          <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.6rem" }}>{row.category} · {row.schedule}</div>
+                          <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem" }}>{row.category} · {row.schedule}</div>
                         </div>
                       );
                     })}

@@ -9,9 +9,9 @@ export default function FollowButton({ schedule, checked, onToggle }) {
       title="Follow recommended schedule"
       style={{
         background: "transparent",
-        border: `1px solid ${checked ? "#c9a96e" : "#2e3448"}`,
+        border: `1px solid ${checked ? "#c9a96e" : "#6b6560"}`,
         borderRadius: "3px",
-        color: checked ? "#c9a96e" : "#3a3440",
+        color: checked ? "#c9a96e" : "#a8a29c",
         cursor: "pointer",
         flexShrink: 0,
         fontSize: "0.9rem",

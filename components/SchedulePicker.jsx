@@ -24,7 +24,7 @@ function formatValue(mode, count, unit, special) {
 
 const INPUT_STYLE = {
   background: "#1a1f2e",
-  border: "1px solid #2e3448",
+  border: "1px solid #6b6560",
   borderRadius: "2px",
   color: "#e8e0d0",
   fontFamily: "monospace",
@@ -97,7 +97,7 @@ export default function SchedulePicker({ value, onChange }) {
       ref={popoverRef}
       style={{
         background: "#1a1f2e",
-        border: "1px solid #2e3448",
+        border: "1px solid #6b6560",
         borderRadius: "3px",
         left: popoverPos.left,
         padding: "0.75rem",
@@ -112,7 +112,7 @@ export default function SchedulePicker({ value, onChange }) {
         onClick={() => setMode("interval")}
         style={{
           alignItems: "center",
-          background: mode === "interval" ? "#2a2f3e" : "transparent",
+          background: mode === "interval" ? "#6b6560" : "transparent",
           borderRadius: "2px",
           cursor: "pointer",
           display: "flex",
@@ -153,7 +153,7 @@ export default function SchedulePicker({ value, onChange }) {
               onMouseDown={e => { e.preventDefault(); handleSpecialClick(s); }}
               style={{
                 background: active ? "#c9a96e18" : "transparent",
-                border: `1px solid ${active ? "#c9a96e" : "#2e3448"}`,
+                border: `1px solid ${active ? "#c9a96e" : "#6b6560"}`,
                 borderRadius: "2px",
                 color: active ? "#c9a96e" : "#7a7090",
                 cursor: "pointer",
@@ -175,9 +175,9 @@ export default function SchedulePicker({ value, onChange }) {
           onMouseDown={e => { e.preventDefault(); handleClear(); }}
           style={{
             background: "transparent",
-            border: "1px solid #2e3448",
+            border: "1px solid #6b6560",
             borderRadius: "2px",
-            color: "#5a5460",
+            color: "#a8a29c",
             cursor: "pointer",
             fontFamily: "monospace",
             fontSize: "0.72rem",
@@ -211,7 +211,7 @@ export default function SchedulePicker({ value, onChange }) {
       <div onClick={handleOpen} style={{ cursor: "pointer", minHeight: "1.2em" }}>
         {value
           ? <ScheduleBadge schedule={value} />
-          : <span style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.72rem" }}>Schedule</span>
+          : <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem" }}>Schedule</span>
         }
       </div>
       {open && createPortal(popover, document.body)}

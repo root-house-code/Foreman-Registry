@@ -23,7 +23,7 @@ const LABEL_STYLE = {
 
 const INPUT_STYLE = {
   background: "#1a1f2e",
-  border: "1px solid #2e3448",
+  border: "1px solid #6b6560",
   borderRadius: "3px",
   boxSizing: "border-box",
   color: "#e8e0d0",
@@ -191,7 +191,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
         onClick={e => e.stopPropagation()}
         style={{
           background: "#0f1117",
-          border: "1px solid #2e3448",
+          border: "1px solid #6b6560",
           borderRadius: "6px",
           maxWidth: "560px",
           padding: "1.75rem 2rem",
@@ -209,7 +209,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
             Reminder Agent
           </div>
           <div style={{
-            color: "#5a5460",
+            color: "#a8a29c",
             fontFamily: "monospace",
             fontSize: "0.66rem",
             letterSpacing: "0.04em",
@@ -235,7 +235,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
               aria-describedby={webhookValid ? "webhook-help" : "webhook-error"}
               style={{
                 ...INPUT_STYLE,
-                borderColor: webhookValid ? "#2e3448" : "#f87171",
+                borderColor: webhookValid ? "#6b6560" : "#f87171",
               }}
             />
             <button
@@ -245,7 +245,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
               aria-pressed={showWebhook}
               style={{
                 background: "transparent",
-                border: "1px solid #2e3448",
+                border: "1px solid #6b6560",
                 borderRadius: "3px",
                 color: "#a89e8e",
                 cursor: "pointer",
@@ -335,7 +335,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
             style={{
               background: "transparent",
               border: "none",
-              color: "#5a5460",
+              color: "#a8a29c",
               cursor: busy ? "default" : "pointer",
               fontFamily: "monospace",
               fontSize: "0.72rem",
@@ -352,7 +352,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
             disabled={busy}
             style={{
               background: "transparent",
-              border: "1px solid #2e3448",
+              border: "1px solid #6b6560",
               borderRadius: "4px",
               color: "#8b7d6b",
               cursor: busy ? "default" : "pointer",
@@ -393,7 +393,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
           style={{ borderTop: "1px solid #1e2330", marginTop: "1.5rem", paddingTop: "1rem" }}
         >
           <summary style={{
-            color: "#5a5460",
+            color: "#a8a29c",
             cursor: "pointer",
             fontFamily: "monospace",
             fontSize: "0.66rem",
@@ -403,7 +403,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
             Connection details
           </summary>
           <div style={{
-            color: "#5a5460",
+            color: "#a8a29c",
             fontFamily: "monospace",
             fontSize: "0.66rem",
             lineHeight: 1.6,

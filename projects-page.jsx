@@ -14,7 +14,7 @@ const PRIORITY_COLORS = {
 function navBtnStyle(hovered) {
   return {
     background: "transparent",
-    border: `1px solid ${hovered ? "#c9a96e" : "#2e3448"}`,
+    border: `1px solid ${hovered ? "#c9a96e" : "#6b6560"}`,
     borderRadius: "3px",
     color: hovered ? "#c9a96e" : "#8b7d6b",
     cursor: "pointer",
@@ -28,7 +28,7 @@ function navBtnStyle(hovered) {
 }
 
 const fieldLabel = {
-  color: "#5a5460",
+  color: "#a8a29c",
   display: "block",
   fontFamily: "monospace",
   fontSize: "0.6rem",
@@ -39,10 +39,10 @@ const fieldLabel = {
 
 const fieldInput = {
   background: "#13161f",
-  border: "1px solid #2a2f3e",
+  border: "1px solid #6b6560",
   borderRadius: "3px",
   boxSizing: "border-box",
-  color: "#d4c9b8",
+  color: "#e8e4dd",
   fontFamily: "monospace",
   fontSize: "0.78rem",
   outline: "none",
@@ -56,7 +56,7 @@ const DueDateBtn = forwardRef(({ value, onClick }, ref) => (
   <button
     ref={ref}
     onClick={onClick}
-    style={{ ...fieldInput, color: value ? "#d4c9b8" : "#5a5460", cursor: "pointer", textAlign: "left" }}
+    style={{ ...fieldInput, color: value ? "#e8e4dd" : "#a8a29c", cursor: "pointer", textAlign: "left" }}
   >
     {value || "No date"}
   </button>
@@ -69,7 +69,7 @@ function TaskCheckbox({ completed, onToggle }) {
       style={{
         alignItems: "center",
         background: completed ? "#c9a96e18" : "transparent",
-        border: `1px solid ${completed ? "#c9a96e40" : "#2e3448"}`,
+        border: `1px solid ${completed ? "#c9a96e40" : "#6b6560"}`,
         borderRadius: "3px",
         cursor: "pointer",
         display: "flex",
@@ -88,9 +88,9 @@ function TaskCheckbox({ completed, onToggle }) {
 function statusBadgeStyle(status) {
   return {
     background: status === "done" ? "#4ade8018" : status === "in-progress" ? "#c9a96e18" : "#1a1f2e",
-    border: `1px solid ${status === "done" ? "#4ade8040" : status === "in-progress" ? "#c9a96e40" : "#2e3448"}`,
+    border: `1px solid ${status === "done" ? "#4ade8040" : status === "in-progress" ? "#c9a96e40" : "#6b6560"}`,
     borderRadius: "2px",
-    color: status === "done" ? "#4ade80" : status === "in-progress" ? "#c9a96e" : "#5a5460",
+    color: status === "done" ? "#4ade80" : status === "in-progress" ? "#c9a96e" : "#a8a29c",
     display: "inline-block",
     flexShrink: 0,
     fontFamily: "monospace",
@@ -276,7 +276,7 @@ export default function ProjectsPage({ navigate }) {
       {/* Header */}
       <div ref={headerRef} style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
-        borderBottom: "1px solid #2a2f3e",
+        borderBottom: "1px solid #6b6560",
         flexShrink: 0,
         padding: "2rem",
         zIndex: 50,
@@ -328,9 +328,9 @@ export default function ProjectsPage({ navigate }) {
               <button
                 onClick={() => { setAddingProject(true); setNewProjectName(""); }}
                 title="New project"
-                style={{ background: "none", border: "none", color: "#3a3440", cursor: "pointer", fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.15s" }}
+                style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
-                onMouseLeave={e => { e.currentTarget.style.color = "#3a3440"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
               >
                 +
               </button>
@@ -376,7 +376,7 @@ export default function ProjectsPage({ navigate }) {
                 </div>
               )}
               {projects.length === 0 && !addingProject && (
-                <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.68rem", padding: "0.75rem 0.85rem" }}>
+                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", padding: "0.75rem 0.85rem" }}>
                   No projects yet
                 </div>
               )}
@@ -396,7 +396,7 @@ export default function ProjectsPage({ navigate }) {
                     onClick={() => setActiveCategory(cat)}
                     style={{
                       background: activeCategory === cat ? "#c9a96e" : "transparent",
-                      border: `1px solid ${activeCategory === cat ? "#c9a96e" : "#2e3448"}`,
+                      border: `1px solid ${activeCategory === cat ? "#c9a96e" : "#6b6560"}`,
                       borderRadius: "3px",
                       color: activeCategory === cat ? "#0f1117" : "#8b7d6b",
                       cursor: "pointer",
@@ -415,7 +415,7 @@ export default function ProjectsPage({ navigate }) {
             </div>
             <div style={{ flex: 1, overflowY: "auto" }}>
               {filteredSidebarTodos.length === 0 ? (
-                <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.68rem", padding: "0.75rem 0.85rem" }}>
+                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", padding: "0.75rem 0.85rem" }}>
                   No to dos
                 </div>
               ) : (
@@ -452,7 +452,7 @@ export default function ProjectsPage({ navigate }) {
                           {todo.title}
                         </div>
                         {todo.dueDate && (
-                          <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.6rem" }}>
+                          <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem" }}>
                             {new Date(todo.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </div>
                         )}
@@ -469,10 +469,10 @@ export default function ProjectsPage({ navigate }) {
         <main style={{ display: "flex", flex: 1, flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
           {!selectedProject ? (
             <div style={{ alignItems: "center", display: "flex", flex: 1, flexDirection: "column", justifyContent: "center", gap: "0.5rem" }}>
-              <div style={{ color: "#3a3440", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
                 No project selected
               </div>
-              <div style={{ color: "#2e3448", fontFamily: "monospace", fontSize: "0.68rem" }}>
+              <div style={{ color: "#6b6560", fontFamily: "monospace", fontSize: "0.68rem" }}>
                 Choose a project from the sidebar or create a new one
               </div>
             </div>
@@ -483,16 +483,16 @@ export default function ProjectsPage({ navigate }) {
                 <div style={{ color: "#f0e6d3", fontSize: "1.1rem" }}>
                   {selectedProject.name}
                 </div>
-                <div style={{ color: "#5a5460", fontFamily: "monospace", fontSize: "0.65rem", marginTop: "0.2rem" }}>
+                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.65rem", marginTop: "0.2rem" }}>
                   {projectTodos.length} {projectTodos.length === 1 ? "to do" : "to dos"}
                 </div>
               </div>
 
               {/* Column headers */}
               <div style={{ borderBottom: "1px solid #1e2330", display: "flex", flexShrink: 0, padding: "0.4rem 1.5rem 0.4rem 2.5rem" }}>
-                <span style={{ color: "#2e3448", flex: 1, fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>Name</span>
-                <span style={{ color: "#2e3448", flexShrink: 0, fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", textAlign: "right", textTransform: "uppercase", width: 72 }}>Due</span>
-                <span style={{ color: "#2e3448", flexShrink: 0, fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", textAlign: "right", textTransform: "uppercase", width: 88 }}>Status</span>
+                <span style={{ color: "#6b6560", flex: 1, fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>Name</span>
+                <span style={{ color: "#6b6560", flexShrink: 0, fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", textAlign: "right", textTransform: "uppercase", width: 72 }}>Due</span>
+                <span style={{ color: "#6b6560", flexShrink: 0, fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", textAlign: "right", textTransform: "uppercase", width: 88 }}>Status</span>
               </div>
 
               {/* To Do list */}
@@ -524,13 +524,13 @@ export default function ProjectsPage({ navigate }) {
                       >
                         <button
                           onClick={e => { e.stopPropagation(); toggleExpandTodo(todo.id); }}
-                          style={{ background: "none", border: "none", color: tasks.length > 0 ? "#5a5460" : "#2e3448", cursor: "pointer", flexShrink: 0, fontFamily: "monospace", fontSize: "0.58rem", padding: 0, width: 12 }}
+                          style={{ background: "none", border: "none", color: tasks.length > 0 ? "#a8a29c" : "#6b6560", cursor: "pointer", flexShrink: 0, fontFamily: "monospace", fontSize: "0.58rem", padding: 0, width: 12 }}
                         >
                           {isExpanded ? "▼" : "▶"}
                         </button>
 
                         <span style={{
-                          color: isSelected ? "#c9a96e" : "#d4c9b8",
+                          color: isSelected ? "#c9a96e" : "#e8e4dd",
                           flex: 1,
                           fontFamily: "monospace",
                           fontSize: "0.82rem",
@@ -544,12 +544,12 @@ export default function ProjectsPage({ navigate }) {
                         </span>
 
                         {tasks.length > 0 && (
-                          <span style={{ color: "#3a3440", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem" }}>
+                          <span style={{ color: "#a8a29c", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem" }}>
                             {doneTasks}/{tasks.length}
                           </span>
                         )}
 
-                        <span style={{ color: isOverdue ? "#f87171" : "#5a5460", flexShrink: 0, fontFamily: "monospace", fontSize: "0.65rem", textAlign: "right", width: 72 }}>
+                        <span style={{ color: isOverdue ? "#f87171" : "#a8a29c", flexShrink: 0, fontFamily: "monospace", fontSize: "0.65rem", textAlign: "right", width: 72 }}>
                           {todo.dueDate ? new Date(todo.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
                         </span>
 
@@ -570,7 +570,7 @@ export default function ProjectsPage({ navigate }) {
                             >
                               <TaskCheckbox completed={task.completed} onToggle={() => handleToggleTask(todo.id, task.id)} />
                               <span style={{
-                                color: task.completed ? "#3a3440" : "#8b7d6b",
+                                color: task.completed ? "#a8a29c" : "#8b7d6b",
                                 flex: 1,
                                 fontFamily: "monospace",
                                 fontSize: "0.72rem",
@@ -580,9 +580,9 @@ export default function ProjectsPage({ navigate }) {
                               </span>
                               <button
                                 onClick={() => handleDeleteTask(todo.id, task.id)}
-                                style={{ background: "none", border: "none", color: "#2e3448", cursor: "pointer", fontFamily: "monospace", fontSize: "0.7rem", padding: "0 0.2rem", transition: "color 0.15s" }}
+                                style={{ background: "none", border: "none", color: "#6b6560", cursor: "pointer", fontFamily: "monospace", fontSize: "0.7rem", padding: "0 0.2rem", transition: "color 0.15s" }}
                                 onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; }}
-                                onMouseLeave={e => { e.currentTarget.style.color = "#2e3448"; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = "#6b6560"; }}
                               >
                                 ×
                               </button>
@@ -591,7 +591,7 @@ export default function ProjectsPage({ navigate }) {
 
                           {centerAddingTaskFor === todo.id ? (
                             <div style={{ alignItems: "center", display: "flex", gap: "0.6rem", padding: "0.3rem 1.5rem 0.3rem 2.6rem" }}>
-                              <div style={{ border: "1px solid #2e3448", borderRadius: "3px", flexShrink: 0, height: 16, width: 16 }} />
+                              <div style={{ border: "1px solid #6b6560", borderRadius: "3px", flexShrink: 0, height: 16, width: 16 }} />
                               <input
                                 autoFocus
                                 value={centerNewTaskTitle}
@@ -608,9 +608,9 @@ export default function ProjectsPage({ navigate }) {
                           ) : (
                             <button
                               onClick={() => { setCenterAddingTaskFor(todo.id); setCenterNewTaskTitle(""); }}
-                              style={{ background: "none", border: "none", color: "#2e3448", cursor: "pointer", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.05em", padding: "0.25rem 0 0.25rem 2.6rem", transition: "color 0.15s", width: "100%", textAlign: "left" }}
+                              style={{ background: "none", border: "none", color: "#6b6560", cursor: "pointer", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.05em", padding: "0.25rem 0 0.25rem 2.6rem", transition: "color 0.15s", width: "100%", textAlign: "left" }}
                               onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
-                              onMouseLeave={e => { e.currentTarget.style.color = "#2e3448"; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = "#6b6560"; }}
                             >
                               + Add task
                             </button>
@@ -641,9 +641,9 @@ export default function ProjectsPage({ navigate }) {
                   <div style={{ padding: "0.5rem 1.5rem" }}>
                     <button
                       onClick={() => setAddingTodoToProject(true)}
-                      style={{ background: "none", border: "none", color: "#3a3440", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.05em", padding: "0.2rem 0", transition: "color 0.15s" }}
+                      style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.05em", padding: "0.2rem 0", transition: "color 0.15s" }}
                       onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
-                      onMouseLeave={e => { e.currentTarget.style.color = "#3a3440"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
                     >
                       + Add To Do
                     </button>
@@ -665,7 +665,7 @@ export default function ProjectsPage({ navigate }) {
         }}>
           {!rightPanelForm ? (
             <div style={{ alignItems: "center", display: "flex", flex: 1, flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ color: "#2e3448", fontFamily: "monospace", fontSize: "0.68rem", padding: "1rem", textAlign: "center" }}>
+              <div style={{ color: "#6b6560", fontFamily: "monospace", fontSize: "0.68rem", padding: "1rem", textAlign: "center" }}>
                 Select a To Do to view details
               </div>
             </div>
@@ -677,7 +677,7 @@ export default function ProjectsPage({ navigate }) {
                 value={rightPanelForm.title || ""}
                 onChange={e => setRightField("title", e.target.value)}
                 onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-                onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; handleRightBlur("title"); }}
+                onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; handleRightBlur("title"); }}
                 style={{ ...fieldInput, fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "1rem", marginBottom: "1.1rem", padding: "0.4rem 0.5rem" }}
               />
 
@@ -727,7 +727,7 @@ export default function ProjectsPage({ navigate }) {
                     value={rightPanelForm.assignee || ""}
                     onChange={e => setRightField("assignee", e.target.value)}
                     onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; handleRightBlur("assignee"); }}
+                    onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; handleRightBlur("assignee"); }}
                     placeholder="—"
                     style={fieldInput}
                   />
@@ -740,7 +740,7 @@ export default function ProjectsPage({ navigate }) {
                     value={rightPanelForm.estimatedCostText || ""}
                     onChange={e => setRightField("estimatedCostText", e.target.value)}
                     onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; handleRightBlur("estimatedCost"); }}
+                    onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; handleRightBlur("estimatedCost"); }}
                     placeholder="—"
                     style={fieldInput}
                   />
@@ -797,7 +797,7 @@ export default function ProjectsPage({ navigate }) {
                   value={rightPanelForm.labelsText || ""}
                   onChange={e => setRightField("labelsText", e.target.value)}
                   onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-                  onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; handleRightBlur("labels"); }}
+                  onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; handleRightBlur("labels"); }}
                   placeholder="Plumbing, Seasonal..."
                   style={fieldInput}
                 />
@@ -810,7 +810,7 @@ export default function ProjectsPage({ navigate }) {
                   value={rightPanelForm.description || ""}
                   onChange={e => setRightField("description", e.target.value)}
                   onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-                  onBlur={e => { e.currentTarget.style.borderColor = "#2a2f3e"; handleRightBlur("description"); }}
+                  onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; handleRightBlur("description"); }}
                   placeholder="Notes..."
                   rows={3}
                   style={{ ...fieldInput, resize: "vertical" }}
@@ -824,7 +824,7 @@ export default function ProjectsPage({ navigate }) {
                   <div key={task.id} style={{ alignItems: "center", display: "flex", gap: "0.5rem", marginBottom: "0.3rem" }}>
                     <TaskCheckbox completed={task.completed} onToggle={() => selectedTodo && handleToggleTask(selectedTodo.id, task.id)} />
                     <span style={{
-                      color: task.completed ? "#3a3440" : "#a89e8e",
+                      color: task.completed ? "#a8a29c" : "#a89e8e",
                       flex: 1,
                       fontFamily: "monospace",
                       fontSize: "0.72rem",
@@ -834,9 +834,9 @@ export default function ProjectsPage({ navigate }) {
                     </span>
                     <button
                       onClick={() => selectedTodo && handleDeleteTask(selectedTodo.id, task.id)}
-                      style={{ background: "none", border: "none", color: "#2e3448", cursor: "pointer", fontFamily: "monospace", fontSize: "0.7rem", padding: "0 0.1rem", transition: "color 0.15s" }}
+                      style={{ background: "none", border: "none", color: "#6b6560", cursor: "pointer", fontFamily: "monospace", fontSize: "0.7rem", padding: "0 0.1rem", transition: "color 0.15s" }}
                       onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; }}
-                      onMouseLeave={e => { e.currentTarget.style.color = "#2e3448"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "#6b6560"; }}
                     >
                       ×
                     </button>
@@ -845,7 +845,7 @@ export default function ProjectsPage({ navigate }) {
 
                 {rightAddingTask ? (
                   <div style={{ alignItems: "center", display: "flex", gap: "0.5rem", marginTop: "0.3rem" }}>
-                    <div style={{ border: "1px solid #2e3448", borderRadius: "3px", flexShrink: 0, height: 16, width: 16 }} />
+                    <div style={{ border: "1px solid #6b6560", borderRadius: "3px", flexShrink: 0, height: 16, width: 16 }} />
                     <input
                       autoFocus
                       value={rightNewTaskTitle}
@@ -862,9 +862,9 @@ export default function ProjectsPage({ navigate }) {
                 ) : (
                   <button
                     onClick={() => setRightAddingTask(true)}
-                    style={{ background: "none", border: "none", color: "#3a3440", cursor: "pointer", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.05em", marginTop: "0.25rem", padding: "0.2rem 0", transition: "color 0.15s" }}
+                    style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.05em", marginTop: "0.25rem", padding: "0.2rem 0", transition: "color 0.15s" }}
                     onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = "#3a3440"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
                   >
                     + Add task
                   </button>

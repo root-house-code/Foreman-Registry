@@ -142,13 +142,14 @@ export default function ProjectsPage({ navigate }) {
   const projectTodos = useMemo(() => selectedProjectId ? todos.filter(t => t.projectId === selectedProjectId) : [], [todos, selectedProjectId]);
 
   const todoCategories = useMemo(() => {
-    const cats = new Set(todos.filter(t => t.linkedCategory).map(t => t.linkedCategory));
+    const cats = new Set(todos.filter(t => t.linkedCategory && !t._isOverdueChore).map(t => t.linkedCategory));
     return Array.from(cats).sort();
   }, [todos]);
 
   const filteredSidebarTodos = useMemo(() => {
-    if (activeCategory === "All") return todos;
-    return todos.filter(t => t.linkedCategory === activeCategory);
+    const base = todos.filter(t => !t._isOverdueChore);
+    if (activeCategory === "All") return base;
+    return base.filter(t => t.linkedCategory === activeCategory);
   }, [todos, activeCategory]);
 
   const linkedItems = rightPanelForm?.linkedCategory ? (categoryItems[rightPanelForm.linkedCategory] || []) : [];

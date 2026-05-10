@@ -10,14 +10,14 @@ export default function NoteCell({ value, onChange }) {
         border: "1px solid transparent",
         borderRadius: "3px",
         boxSizing: "border-box",
-        color: "#a89e8e",
+        color: "#a8a29c",
         fontFamily: "monospace",
         fontSize: "0.72rem",
         outline: "none",
         padding: "0.2rem 0.4rem",
         width: "100%",
       }}
-      onFocus={e => e.target.style.borderColor = "#6b6560"}
+      onFocus={e => e.target.style.borderColor = "#a8a29c"}
       onBlur={e => e.target.style.borderColor = "transparent"}
     />
   );

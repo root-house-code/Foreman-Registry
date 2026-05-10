@@ -60,9 +60,9 @@ export default function ComboCell({ value, options, placeholder, onChange, toolt
         onKeyDown={handleKeyDown}
         style={{
           background: "#1a1f2e",
-          border: "1px solid #6b6560",
+          border: "1px solid #a8a29c",
           borderRadius: "2px",
-          color: "#e8e0d0",
+          color: "#e8e4dd",
           fontFamily: "monospace",
           fontSize: "0.78rem",
           outline: "none",
@@ -76,7 +76,7 @@ export default function ComboCell({ value, options, placeholder, onChange, toolt
           onMouseDown={e => e.preventDefault()}
           style={{
             background: "#1a1f2e",
-            border: "1px solid #6b6560",
+            border: "1px solid #a8a29c",
             borderRadius: "2px",
             left: 0,
             maxHeight: 200,
@@ -98,7 +98,7 @@ export default function ComboCell({ value, options, placeholder, onChange, toolt
                 fontSize: "0.78rem",
                 padding: "0.3rem 0.4rem",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#6b6560"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#a8a29c"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
             >
               {opt}

@@ -48,7 +48,7 @@ function TaskCell({ value, onChange, tooltip }) {
         <span
           onClick={startEdit}
           style={{
-            color: value ? "#a89e8e" : "#a8a29c",
+            color: value ? "#a8a29c" : "#a8a29c",
             cursor: "text",
             display: "block",
             fontFamily: "inherit",
@@ -74,9 +74,9 @@ function TaskCell({ value, onChange, tooltip }) {
       }}
       style={{
         background: "#1a1f2e",
-        border: "1px solid #6b6560",
+        border: "1px solid #a8a29c",
         borderRadius: "2px",
-        color: "#e8e0d0",
+        color: "#e8e4dd",
         fontFamily: "inherit",
         fontSize: "inherit",
         outline: "none",
@@ -122,7 +122,7 @@ export default function MaintenanceTable({
                   onClick={e => onHeaderClick?.(sortKey, e.shiftKey)}
                   style={{
                     background: "#1a1f2e",
-                    borderBottom: "2px solid #6b6560",
+                    borderBottom: "2px solid #a8a29c",
                     color: "#c9a96e",
                     cursor: "pointer",
                     fontFamily: "monospace",
@@ -185,7 +185,7 @@ export default function MaintenanceTable({
                     tooltip={!row._isCustom ? ITEM_TIPS[row.item] : undefined}
                   />
                 </td>
-                <td style={{ padding: "0.5rem 0.6rem", color: "#a89e8e", verticalAlign: "middle" }}>
+                <td style={{ padding: "0.5rem 0.6rem", color: "#a8a29c", verticalAlign: "middle" }}>
                   <TaskCell
                     value={row.task}
                     onChange={v => onRowEdit(row._id, "task", v)}
@@ -302,7 +302,7 @@ function DeleteConfirmModal({ row, onConfirm, onCancel }) {
         onClick={e => e.stopPropagation()}
         style={{
           background: "#0f1117",
-          border: "1px solid #6b6560",
+          border: "1px solid #a8a29c",
           borderRadius: "6px",
           maxWidth: "420px",
           padding: "1.75rem 2rem",
@@ -312,7 +312,7 @@ function DeleteConfirmModal({ row, onConfirm, onCancel }) {
         <div style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: "0.75rem", textTransform: "uppercase" }}>
           {isCustom ? "Permanently Delete Task" : "Remove from Schedule"}
         </div>
-        <p style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.78rem", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
+        <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.78rem", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
           <strong style={{ color: "#e8e4dd" }}>{row.task}</strong>
         </p>
         <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.6, margin: "0 0 1.5rem" }}>
@@ -325,7 +325,7 @@ function DeleteConfirmModal({ row, onConfirm, onCancel }) {
             onClick={onCancel}
             style={{
               background: "transparent",
-              border: "1px solid #6b6560",
+              border: "1px solid #a8a29c",
               borderRadius: "4px",
               color: "#a8a29c",
               cursor: "pointer",
@@ -335,7 +335,7 @@ function DeleteConfirmModal({ row, onConfirm, onCancel }) {
               transition: "all 0.15s",
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#a8a29c"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#a8a29c"; }}
           >
             Cancel
           </button>

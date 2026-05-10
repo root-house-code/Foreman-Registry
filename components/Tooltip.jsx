@@ -25,10 +25,10 @@ export default function Tooltip({ children, text }) {
       {pos && createPortal(
         <div style={{
           background: "#13161f",
-          border: "1px solid #6b6560",
+          border: "1px solid #a8a29c",
           borderRadius: "4px",
           boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
-          color: "#a89e8e",
+          color: "#a8a29c",
           fontFamily: "monospace",
           fontSize: "0.71rem",
           left: pos.x,

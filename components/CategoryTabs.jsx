@@ -4,7 +4,7 @@ function TabButton({ cat, active, onSelect }) {
       onClick={() => onSelect(cat)}
       style={{
         background: active === cat ? "#c9a96e" : "transparent",
-        border: `1px solid ${active === cat ? "#c9a96e" : "#6b6560"}`,
+        border: `1px solid ${active === cat ? "#c9a96e" : "#a8a29c"}`,
         borderRadius: "3px",
         color: active === cat ? "#0f1117" : "#8b7d6b",
         cursor: "pointer",

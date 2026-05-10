@@ -238,12 +238,12 @@ function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
   function set(f, v) { setForm(p => ({ ...p, [f]: v })); }
   const dateLabel = date ? date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) : "";
   const canSave   = form.title.trim().length > 0;
-  const inputStyle  = { background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "2px", boxSizing: "border-box", color: "#e8e0d0", fontFamily: "monospace", fontSize: "0.8rem", outline: "none", padding: "0.35rem 0.5rem", width: "100%" };
+  const inputStyle  = { background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "2px", boxSizing: "border-box", color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.8rem", outline: "none", padding: "0.35rem 0.5rem", width: "100%" };
   const labelStyle  = { color: "#a8a29c", display: "block", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.1em", marginBottom: "0.25rem", textTransform: "uppercase" };
   const selectStyle = { ...inputStyle, appearance: "none", cursor: "pointer", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.5rem center", paddingRight: "1.5rem" };
   return (
     <div style={{ alignItems: "center", background: "rgba(0,0,0,0.7)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 200 }} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: "#0f1117", border: "1px solid #6b6560", borderRadius: "6px", maxWidth: 480, padding: "1.75rem 2rem", width: "90%" }}>
+      <div style={{ background: "#0f1117", border: "1px solid #a8a29c", borderRadius: "6px", maxWidth: 480, padding: "1.75rem 2rem", width: "90%" }}>
         <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: "0.2rem", textTransform: "uppercase" }}>New Chore</div>
         <div style={{ color: "#c9a96e", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.05rem", marginBottom: "1.5rem" }}>{dateLabel}</div>
         <div style={{ marginBottom: "1rem" }}><label style={labelStyle}>Chore Name</label><input autoFocus value={form.title} onChange={e => set("title", e.target.value)} onKeyDown={e => { if (e.key === "Enter" && canSave) onSave(form, date); if (e.key === "Escape") onClose(); }} placeholder="e.g. Vacuum all floors" style={inputStyle} /></div>
@@ -256,8 +256,8 @@ function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
         <div style={{ marginBottom: "1rem" }}><label style={labelStyle}>Assignee</label><input value={form.assignee} onChange={e => set("assignee", e.target.value)} placeholder="Who does this chore?" style={inputStyle} /></div>
         <div style={{ marginBottom: "1.5rem" }}><label style={labelStyle}>Notes</label><textarea value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Any notes…" rows={2} style={{ ...inputStyle, resize: "vertical" }} /></div>
         <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={{ background: "transparent", border: "1px solid #6b6560", borderRadius: "3px", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem" }} onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }} onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#a8a29c"; }}>Cancel</button>
-          <button onClick={() => canSave && onSave(form, date)} disabled={!canSave} style={{ background: canSave ? "#c9a96e22" : "transparent", border: `1px solid ${canSave ? "#c9a96e" : "#6b6560"}`, borderRadius: "3px", color: canSave ? "#c9a96e" : "#a8a29c", cursor: canSave ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem" }}>Add Chore</button>
+          <button onClick={onClose} style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem" }} onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }} onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#a8a29c"; }}>Cancel</button>
+          <button onClick={() => canSave && onSave(form, date)} disabled={!canSave} style={{ background: canSave ? "#c9a96e22" : "transparent", border: `1px solid ${canSave ? "#c9a96e" : "#a8a29c"}`, borderRadius: "3px", color: canSave ? "#c9a96e" : "#a8a29c", cursor: canSave ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem" }}>Add Chore</button>
         </div>
       </div>
     </div>
@@ -396,7 +396,7 @@ export default function CalendarPage({ navigate }) {
 
   const navBtnStyle = (disabled) => ({
     background: "transparent", border: "none",
-    color: disabled ? "#6b6560" : "#8b7d6b",
+    color: disabled ? "#a8a29c" : "#8b7d6b",
     cursor: disabled ? "default" : "pointer",
     fontFamily: "monospace", fontSize: "1.2rem", lineHeight: 1,
     padding: "0.1rem 0.6rem", transition: "color 0.15s",
@@ -415,7 +415,7 @@ export default function CalendarPage({ navigate }) {
       )}
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #6b6560", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #a8a29c", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
         <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
           <div>
             <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
@@ -446,7 +446,7 @@ export default function CalendarPage({ navigate }) {
             onMouseEnter={e => { if (!atYearEnd) e.currentTarget.style.color = "#c9a96e"; }}
             onMouseLeave={e => { if (!atYearEnd) e.currentTarget.style.color = "#8b7d6b"; }}
           >›</button>
-          <span style={{ color: "#6b6560", fontFamily: "monospace", fontSize: "0.62rem", marginLeft: "1rem" }}>{CURRENT_YEAR}</span>
+          <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem", marginLeft: "1rem" }}>{CURRENT_YEAR}</span>
         </div>
 
         <CategoryTabs
@@ -524,7 +524,7 @@ export default function CalendarPage({ navigate }) {
                     return (
                       <div key={idx} style={{ alignItems: "baseline", display: "flex", gap: "3px", marginBottom: "2px", overflow: "hidden", padding: "0 1px" }}>
                         <span style={{ background: color, borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "6px", marginTop: "2px", opacity: evt.isCompleted ? 0.4 : 1, width: "6px" }} />
-                        <span style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.6rem", opacity: evt.isCompleted ? 0.45 : 1, overflow: "hidden", textDecoration: evt.isCompleted ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", opacity: evt.isCompleted ? 0.45 : 1, overflow: "hidden", textDecoration: evt.isCompleted ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {label}
                         </span>
                       </div>
@@ -620,7 +620,7 @@ export default function CalendarPage({ navigate }) {
                       )}
                       <div style={{ alignItems: "baseline", display: "flex", gap: "0.4rem", marginBottom: "0.25rem", paddingLeft: "0.2rem" }}>
                         <span style={{ background: color, borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "6px", marginTop: "2px", width: "6px" }} />
-                        <span style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.7rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+                        <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.7rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
                         <span style={{ color: "#a8a29c", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem" }}>{meta}</span>
                       </div>
                     </div>

@@ -33,9 +33,9 @@ export default function PageNav({ currentPage, navigate }) {
             onMouseLeave={() => setHovered(null)}
             style={{
               background: isActive ? "#c9a96e18" : isHovered && !isCosmetic ? "#ffffff06" : "transparent",
-              border: `1px solid ${isActive ? "#c9a96e50" : isHovered && !isCosmetic ? "#6b6560" : "#1e2330"}`,
+              border: `1px solid ${isActive ? "#c9a96e50" : isHovered && !isCosmetic ? "#a8a29c" : "#1e2330"}`,
               borderRadius: "4px",
-              color: isActive ? "#c9a96e" : isCosmetic ? "#6b6560" : isHovered ? "#8b7d6b" : "#a8a29c",
+              color: isActive ? "#c9a96e" : isCosmetic ? "#a8a29c" : isHovered ? "#8b7d6b" : "#a8a29c",
               cursor: isActive || isCosmetic ? "default" : "pointer",
               fontFamily: "monospace",
               fontSize: "0.7rem",
@@ -56,7 +56,7 @@ export default function PageNav({ currentPage, navigate }) {
           background: "transparent",
           border: "1px solid #1e2330",
           borderRadius: "4px",
-          color: "#6b6560",
+          color: "#a8a29c",
           cursor: "default",
           fontFamily: "monospace",
           fontSize: "0.7rem",

@@ -54,7 +54,7 @@ const navLink = {
 };
 
 const emptyText = {
-  color: "#6b6560",
+  color: "#a8a29c",
   fontFamily: "monospace",
   fontSize: "0.72rem",
   padding: "0.5rem 0",
@@ -221,6 +221,24 @@ export default function DashboardPage({ navigate }) {
     [completionsByMonth]
   );
 
+  // ─── Health score ────────────────────────────────────────────────────────────
+  const healthScore = useMemo(() => {
+    let penalty = 0;
+    overdueItems.forEach(row => {
+      const d = nextDatesMap[keyOf(row)];
+      if (!d) return;
+      const weeksOver = Math.max(0, (today - new Date(d)) / (1000 * 60 * 60 * 24 * 7));
+      penalty += 8 * (1 + Math.log1p(weeksOver));
+    });
+    overdueChores.forEach(c => {
+      const nd = choreNextDate(c);
+      if (!nd) return;
+      const weeksOver = Math.max(0, (today - nd) / (1000 * 60 * 60 * 24 * 7));
+      penalty += 4 * (1 + Math.log1p(weeksOver));
+    });
+    return Math.max(0, Math.min(100, Math.round(100 - penalty)));
+  }, [overdueItems, overdueChores, nextDatesMap, choreNextDates, today]);
+
   // ���� Combined lists ����������������������������������������������������������������������������������������������������������������
   const combinedOverdue = useMemo(() => {
     const maintRows = overdueItems.map(row => ({
@@ -325,7 +343,7 @@ export default function DashboardPage({ navigate }) {
   return (
     <div style={{ background: "#0f1117", color: "#e8e4dd", display: "flex", flexDirection: "column", fontFamily: "monospace", height: "100vh", overflow: "hidden" }}>
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #6b6560", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #a8a29c", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
         <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
           <div>
             <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
@@ -342,7 +360,8 @@ export default function DashboardPage({ navigate }) {
       <div style={{ flex: 1, overflowY: "auto", padding: "2rem" }}>
 
         {/* Stat summary row */}
-        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(4, 1fr)", marginBottom: "1.5rem" }}>
+        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "180px repeat(4, 1fr)", marginBottom: "1.5rem" }}>
+          <HouseScoreWidget score={healthScore} />
           <StatCard
             label="Overdue"
             value={totalOverdue}
@@ -390,7 +409,7 @@ export default function DashboardPage({ navigate }) {
               combinedOverdue.map((item, i) => (
                 <div key={i} style={rowStyle}>
                   <span style={{ color: "#f87171", flexShrink: 0, minWidth: "58px" }}>{formatDateFromDate(item.date)}</span>
-                  <span style={{ color: "#6b6560", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
+                  <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
                   <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
                 </div>
@@ -415,7 +434,7 @@ export default function DashboardPage({ navigate }) {
                 return (
                   <div key={item.key} style={{ ...rowStyle, opacity: done ? 0.3 : 1 }}>
                     <span style={{ color: "#c9a96e", flexShrink: 0, minWidth: "58px" }}>{formatDateFromDate(item.date)}</span>
-                    <span style={{ color: "#6b6560", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
+                    <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
                     <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
                     <span style={{ flex: 1, overflow: "hidden", textDecoration: done ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
                     {!done && <MarkDoneButton onClick={() => handleMarkDone(item)} />}
@@ -577,7 +596,7 @@ function MarkDoneButton({ onClick }) {
         background: "transparent",
         border: `1px solid ${hovered ? "#4ade8060" : "#1e2330"}`,
         borderRadius: "3px",
-        color: hovered ? "#4ade80" : "#6b6560",
+        color: hovered ? "#4ade80" : "#a8a29c",
         cursor: "pointer",
         flexShrink: 0,
         fontFamily: "monospace",
@@ -591,6 +610,91 @@ function MarkDoneButton({ onClick }) {
   );
 }
 
+function HouseScoreWidget({ score }) {
+  const [hovered, setHovered] = useState(false);
+  const color = score >= 80 ? "#4ade80" : score >= 50 ? "#c9a96e" : "#f87171";
+  const band  = score >= 80 ? "On track" : score >= 50 ? "Needs attention" : "Falling behind";
+
+  // House viewBox 0 0 60 62: roof tip (30,2), eaves at y=30, base at y=61
+  // Total fill range: y=2 to y=61 = 59px. Fill from bottom.
+  const fillH   = 59 * (score / 100);
+  const clipTopY = 61 - fillH;
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        alignItems: "center",
+        background: hovered ? "#0f1117" : "#0d0f16",
+        border: `1px solid ${hovered ? "#a8a29c" : "#1e2330"}`,
+        borderRadius: "6px",
+        cursor: "default",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.35rem",
+        justifyContent: "center",
+        padding: "0.85rem 1rem",
+        position: "relative",
+        transition: "all 0.15s",
+      }}
+    >
+      <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+        Home Health
+      </div>
+
+      <svg viewBox="0 0 60 62" width="46" height="47" style={{ display: "block", overflow: "visible" }}>
+        <defs>
+          <clipPath id="hhfill">
+            <rect x="0" y={clipTopY} width="60" height={62} />
+          </clipPath>
+        </defs>
+        {/* Outline layer */}
+        <polygon points="30,2 59,30 1,30" fill="#0d0f16" stroke="#1e2330" strokeWidth="1.5" />
+        <rect x="1" y="29" width="58" height="32" fill="#0d0f16" stroke="#1e2330" strokeWidth="1.5" />
+        <rect x="23" y="43" width="14" height="18" fill="#0d0f16" stroke="#1e2330" strokeWidth="1" />
+        {/* Fill layer */}
+        <g clipPath="url(#hhfill)">
+          <polygon points="30,2 59,30 1,30" fill={color} opacity="0.22" />
+          <rect x="1" y="29" width="58" height="32" fill={color} opacity="0.22" />
+          <polygon points="30,2 59,30 1,30" fill="none" stroke={color} strokeWidth="1.5" opacity="0.55" />
+          <rect x="1" y="29" width="58" height="32" fill="none" stroke={color} strokeWidth="1.5" opacity="0.55" />
+        </g>
+        {/* Door re-drawn on top so fill doesn't bleed into it */}
+        <rect x="23" y="43" width="14" height="18" fill="#0d0f16" stroke="#1e2330" strokeWidth="1" />
+      </svg>
+
+      <div style={{ color, fontFamily: "monospace", fontSize: "1.6rem", fontWeight: 300, lineHeight: 1 }}>
+        {score}<span style={{ color: "#a8a29c", fontSize: "0.7rem" }}>/100</span>
+      </div>
+
+      <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.58rem" }}>{band}</div>
+
+      {hovered && (
+        <div style={{
+          background: "#13161f",
+          border: "1px solid #1e2330",
+          borderRadius: "4px",
+          top: "calc(100% + 8px)",
+          color: "#a8a29c",
+          fontFamily: "monospace",
+          fontSize: "0.62rem",
+          left: "0",
+          lineHeight: 1.55,
+          width: "360px",
+          padding: "0.5rem 0.7rem",
+          pointerEvents: "none",
+          position: "absolute",
+          whiteSpace: "normal",
+          zIndex: 100,
+        }}>
+          Starts at 100. Each overdue maintenance task subtracts points — more the longer it&apos;s overdue. Chores count half as much as maintenance.
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StatCard({ label, value, valueColor, sub, onClick }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -600,7 +704,7 @@ function StatCard({ label, value, valueColor, sub, onClick }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         background: hovered ? "#0f1117" : "#0d0f16",
-        border: `1px solid ${hovered ? "#6b6560" : "#1e2330"}`,
+        border: `1px solid ${hovered ? "#a8a29c" : "#1e2330"}`,
         borderRadius: "6px",
         cursor: "pointer",
         padding: "1rem 1.25rem",
@@ -614,7 +718,7 @@ function StatCard({ label, value, valueColor, sub, onClick }) {
       <div style={{ color: valueColor, fontFamily: "monospace", fontSize: "1.8rem", fontWeight: 300, lineHeight: 1 }}>
         {value}
       </div>
-      <div style={{ color: "#6b6560", fontFamily: "monospace", fontSize: "0.6rem", marginTop: "0.3rem" }}>
+      <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", marginTop: "0.3rem" }}>
         {sub}
       </div>
     </button>

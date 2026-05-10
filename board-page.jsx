@@ -31,7 +31,7 @@ const STATUS_COLUMNS = [
 function navBtnStyle(hovered) {
   return {
     background: "transparent",
-    border: `1px solid ${hovered ? "#c9a96e" : "#6b6560"}`,
+    border: `1px solid ${hovered ? "#c9a96e" : "#a8a29c"}`,
     borderRadius: "3px",
     color: hovered ? "#c9a96e" : "#8b7d6b",
     cursor: "pointer",
@@ -56,7 +56,7 @@ const fieldLabel = {
 
 const fieldInput = {
   background: "#13161f",
-  border: "1px solid #6b6560",
+  border: "1px solid #a8a29c",
   borderRadius: "3px",
   boxSizing: "border-box",
   color: "#e8e4dd",
@@ -105,7 +105,7 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "8px",
+          background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "8px",
           maxHeight: "90vh", maxWidth: 540, overflowY: "auto", padding: "2rem", width: "90%",
         }}
       >
@@ -118,7 +118,7 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
           <input autoFocus value={form.title} onChange={e => set("title", e.target.value)}
             placeholder="What needs to be done?" style={fieldInput}
             onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-            onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }} />
+            onBlur={e => { e.currentTarget.style.borderColor = "#a8a29c"; }} />
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
@@ -127,7 +127,7 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
             placeholder="Additional notes or context..." rows={2}
             style={{ ...fieldInput, resize: "vertical" }}
             onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-            onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }} />
+            onBlur={e => { e.currentTarget.style.borderColor = "#a8a29c"; }} />
         </div>
 
         <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
@@ -162,14 +162,14 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
             <input value={form.assignee} onChange={e => set("assignee", e.target.value)}
               placeholder="Homeowner, contractor..." style={fieldInput}
               onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-              onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }} />
+              onBlur={e => { e.currentTarget.style.borderColor = "#a8a29c"; }} />
           </div>
           <div style={{ flex: 1 }}>
             <label style={fieldLabel}>Est. Cost ($)</label>
             <input type="number" min="0" step="0.01" value={form.estimatedCost}
               onChange={e => set("estimatedCost", e.target.value)} placeholder="0.00" style={fieldInput}
               onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-              onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }} />
+              onBlur={e => { e.currentTarget.style.borderColor = "#a8a29c"; }} />
           </div>
         </div>
 
@@ -209,7 +209,7 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
             onChange={e => set("labels", e.target.value.split(",").map(l => l.trim()).filter(Boolean))}
             placeholder="Plumbing, Seasonal, Cosmetic..." style={fieldInput}
             onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-            onBlur={e => { e.currentTarget.style.borderColor = "#6b6560"; }} />
+            onBlur={e => { e.currentTarget.style.borderColor = "#a8a29c"; }} />
           <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", marginTop: "0.25rem", display: "block" }}>
             Comma-separated
           </span>
@@ -231,12 +231,12 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
           </div>
           <div style={{ display: "flex", gap: "0.75rem" }}>
             <button onClick={onClose} style={{
-              background: "transparent", border: "1px solid #6b6560", borderRadius: "3px",
+              background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px",
               color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem",
               letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s",
             }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#e8e4dd"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}>
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}>
               Cancel
             </button>
             <button
@@ -244,7 +244,7 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
               disabled={!form.title.trim()}
               style={{
                 background: form.title.trim() ? "#c9a96e18" : "transparent",
-                border: `1px solid ${form.title.trim() ? "#c9a96e40" : "#6b6560"}`,
+                border: `1px solid ${form.title.trim() ? "#c9a96e40" : "#a8a29c"}`,
                 borderRadius: "3px", color: form.title.trim() ? "#c9a96e" : "#a8a29c",
                 cursor: form.title.trim() ? "pointer" : "default", fontFamily: "monospace",
                 fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s",
@@ -272,14 +272,14 @@ function TodoCard({ todo, onEdit, isDragging, onDragStart, onDragEnd }) {
       onDragEnd={onDragEnd}
       onClick={onEdit}
       style={{
-        background: "#1a1f2e", border: "1px solid #6b6560",
+        background: "#1a1f2e", border: "1px solid #a8a29c",
         borderLeft: `3px solid ${PRIORITY_COLORS[todo.priority] || "#c9a96e"}`,
         borderRadius: "6px", cursor: "grab", marginBottom: "0.5rem",
         opacity: isDragging ? 0.4 : 1, padding: "0.65rem 0.75rem",
         transition: "border-color 0.15s, opacity 0.15s", userSelect: "none",
       }}
       onMouseEnter={e => { e.currentTarget.style.borderColor = "#3a3f52"; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; }}
     >
       {todo._isOverdueMaintenance && (
         <div style={{ marginBottom: "0.4rem" }}>
@@ -304,7 +304,7 @@ function TodoCard({ todo, onEdit, isDragging, onDragStart, onDragEnd }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem", marginBottom: "0.35rem" }}>
           {todo.labels.map(label => (
             <span key={label} style={{
-              background: "#6b6560", borderRadius: "2px", color: "#8b7d6b",
+              background: "#a8a29c", borderRadius: "2px", color: "#8b7d6b",
               fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.06em", padding: "0.1rem 0.35rem",
             }}>
               {label}
@@ -373,7 +373,7 @@ function MaintenanceCompletionModal({ todo, rowDataByKey, onConfirm, onClose }) 
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: "#1a1f2e", border: "1px solid #6b6560",
+          background: "#1a1f2e", border: "1px solid #a8a29c",
           borderRadius: "8px", maxWidth: 420, padding: "1.75rem 2rem", width: "90%",
         }}
       >
@@ -430,12 +430,12 @@ function MaintenanceCompletionModal({ todo, rowDataByKey, onConfirm, onClose }) 
 
         <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
           <button onClick={onClose} style={{
-            background: "transparent", border: "1px solid #6b6560", borderRadius: "3px",
+            background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px",
             color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem",
             letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s",
           }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#e8e4dd"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}>
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}>
             Cancel
           </button>
           <button
@@ -717,7 +717,7 @@ export default function BoardPage({ navigate }) {
 
   return (
     <div style={{
-      background: "#0f1117", color: "#e8e0d0", display: "flex", flexDirection: "column",
+      background: "#0f1117", color: "#e8e4dd", display: "flex", flexDirection: "column",
       fontFamily: "'Georgia', 'Times New Roman', serif", height: "100vh", overflow: "hidden",
     }}>
 
@@ -741,7 +741,7 @@ export default function BoardPage({ navigate }) {
       {/* Header */}
       <div style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
-        borderBottom: "1px solid #6b6560", flexShrink: 0, padding: "2rem", zIndex: 50,
+        borderBottom: "1px solid #a8a29c", flexShrink: 0, padding: "2rem", zIndex: 50,
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
@@ -800,7 +800,7 @@ export default function BoardPage({ navigate }) {
                   style={{
                     background: selectedProjectId === proj.id ? "#1a2035" : "transparent",
                     borderLeft: `2px solid ${selectedProjectId === proj.id ? "#c9a96e" : "transparent"}`,
-                    color: selectedProjectId === proj.id ? "#c9a96e" : "#a89e8e",
+                    color: selectedProjectId === proj.id ? "#c9a96e" : "#a8a29c",
                     cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem",
                     overflow: "hidden", padding: "0.45rem 0.85rem",
                     textOverflow: "ellipsis", transition: "background 0.1s, color 0.1s", whiteSpace: "nowrap",
@@ -839,7 +839,7 @@ export default function BoardPage({ navigate }) {
                 {["All", ...todoCategories].map(cat => (
                   <button key={cat} onClick={() => setActiveCategory(cat)} style={{
                     background: activeCategory === cat ? "#c9a96e" : "transparent",
-                    border: `1px solid ${activeCategory === cat ? "#c9a96e" : "#6b6560"}`,
+                    border: `1px solid ${activeCategory === cat ? "#c9a96e" : "#a8a29c"}`,
                     borderRadius: "3px", color: activeCategory === cat ? "#0f1117" : "#8b7d6b",
                     cursor: "pointer", fontFamily: "monospace", fontSize: "0.62rem",
                     fontWeight: activeCategory === cat ? "bold" : "normal",
@@ -868,7 +868,7 @@ export default function BoardPage({ navigate }) {
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                      color: "#a89e8e", fontFamily: "monospace", fontSize: "0.72rem",
+                      color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem",
                       overflow: "hidden", textDecoration: todo.status === "done" ? "line-through" : "none",
                       textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>
@@ -903,13 +903,13 @@ export default function BoardPage({ navigate }) {
                   onClick={() => setShowChoresOnly(prev => !prev)}
                   style={{
                     background: showChoresOnly ? "#c9a96e18" : "transparent",
-                    border: `1px solid ${showChoresOnly ? "#c9a96e" : "#6b6560"}`,
+                    border: `1px solid ${showChoresOnly ? "#c9a96e" : "#a8a29c"}`,
                     borderRadius: "3px", color: showChoresOnly ? "#c9a96e" : "#a8a29c",
                     cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem",
                     letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s",
                   }}
                   onMouseEnter={e => { if (!showChoresOnly) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; } }}
-                  onMouseLeave={e => { if (!showChoresOnly) { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#a8a29c"; } }}
+                  onMouseLeave={e => { if (!showChoresOnly) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#a8a29c"; } }}
                 >
                   Chores
                 </button>

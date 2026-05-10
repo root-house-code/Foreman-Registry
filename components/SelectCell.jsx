@@ -47,7 +47,7 @@ export default function SelectCell({ value, options, placeholder, onChange, rend
       {open && (
         <div style={{
           background: "#1a1f2e",
-          border: "1px solid #6b6560",
+          border: "1px solid #a8a29c",
           borderRadius: "2px",
           left: 0,
           maxHeight: 200,
@@ -70,7 +70,7 @@ export default function SelectCell({ value, options, placeholder, onChange, rend
                 padding: "0.3rem 0.6rem",
                 whiteSpace: "nowrap",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#6b6560"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#a8a29c"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
             >
               {opt.label}

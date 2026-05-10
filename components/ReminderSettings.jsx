@@ -23,10 +23,10 @@ const LABEL_STYLE = {
 
 const INPUT_STYLE = {
   background: "#1a1f2e",
-  border: "1px solid #6b6560",
+  border: "1px solid #a8a29c",
   borderRadius: "3px",
   boxSizing: "border-box",
-  color: "#e8e0d0",
+  color: "#e8e4dd",
   fontFamily: "monospace",
   fontSize: "0.82rem",
   outline: "none",
@@ -191,7 +191,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
         onClick={e => e.stopPropagation()}
         style={{
           background: "#0f1117",
-          border: "1px solid #6b6560",
+          border: "1px solid #a8a29c",
           borderRadius: "6px",
           maxWidth: "560px",
           padding: "1.75rem 2rem",
@@ -217,7 +217,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
             {enabledCount} task{enabledCount === 1 ? "" : "s"} enabled
           </div>
         </div>
-        <p id="reminder-settings-desc" style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.6, margin: "0 0 1.5rem" }}>
+        <p id="reminder-settings-desc" style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.6, margin: "0 0 1.5rem" }}>
           Get a daily summary of upcoming maintenance, plus pings the day a task is due. Use the bell on each row to choose how (or if) it reminds you, then sync.
         </p>
 
@@ -235,7 +235,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
               aria-describedby={webhookValid ? "webhook-help" : "webhook-error"}
               style={{
                 ...INPUT_STYLE,
-                borderColor: webhookValid ? "#6b6560" : "#f87171",
+                borderColor: webhookValid ? "#a8a29c" : "#f87171",
               }}
             />
             <button
@@ -245,9 +245,9 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
               aria-pressed={showWebhook}
               style={{
                 background: "transparent",
-                border: "1px solid #6b6560",
+                border: "1px solid #a8a29c",
                 borderRadius: "3px",
-                color: "#a89e8e",
+                color: "#a8a29c",
                 cursor: "pointer",
                 fontFamily: "monospace",
                 fontSize: "0.66rem",
@@ -264,7 +264,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
               That doesn't look like a Discord webhook URL — it should start with https://discord.com/api/webhooks/
             </p>
           )}
-          <p id="webhook-help" style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.66rem", lineHeight: 1.5, margin: "0.4rem 0 0" }}>
+          <p id="webhook-help" style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.66rem", lineHeight: 1.5, margin: "0.4rem 0 0" }}>
             In Discord: Server Settings → Integrations → Webhooks → New Webhook → Copy URL. The URL stays in your browser; only your reminder service sees it.
           </p>
         </div>
@@ -304,7 +304,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
             onChange={e => setLead(parseInt(e.target.value, 10) || 0)}
             style={{ ...INPUT_STYLE, width: "120px" }}
           />
-          <p style={{ color: "#a89e8e", fontFamily: "monospace", fontSize: "0.66rem", margin: "0.4rem 0 0" }}>
+          <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.66rem", margin: "0.4rem 0 0" }}>
             Tasks appear in your daily summary this many days before they're due. With 30, a task due June 30 starts showing up June 1.
           </p>
         </div>
@@ -352,7 +352,7 @@ export default function ReminderSettings({ open, onClose, onSync, enabledCount }
             disabled={busy}
             style={{
               background: "transparent",
-              border: "1px solid #6b6560",
+              border: "1px solid #a8a29c",
               borderRadius: "4px",
               color: "#8b7d6b",
               cursor: busy ? "default" : "pointer",

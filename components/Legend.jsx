@@ -1,10 +1,10 @@
 const FREQ_ITEMS = [
   { label: "Weekly / Monthly",   color: "#4ade80" },
-  { label: "Every 3–6 months",   color: "#34d399" },
+  { label: "Every 3–6 months",   color: "#4ade80" },
   { label: "Twice a year",       color: "#60a5fa" },
   { label: "Annually",           color: "#f59e0b" },
   { label: "Every 2–10 years",   color: "#c084fc" },
-  { label: "As needed",          color: "#94a3b8" },
+  { label: "As needed",          color: "#a8a29c" },
 ];
 
 const SEASON_ITEMS = ["Spring", "Summer", "Fall", "Winter"];

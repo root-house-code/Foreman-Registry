@@ -11,6 +11,7 @@ import { CATEGORY_TIPS, ITEM_TIPS, TASK_TIPS } from "./lib/tooltips.js";
 import { MANUFACTURERS_BY_ITEM } from "./lib/manufacturers.js";
 import { getModels } from "./lib/models.js";
 import { loadItemDetails } from "./lib/itemDetails.js";
+import { loadCategoryFieldSchemas, loadItemFieldSchemas, loadCustomFieldValues } from "./lib/customFields.js";
 import { loadGuideNotes, saveGuideNotes } from "./lib/guideNotes.js";
 
 const SEASON_LABELS = { spring: "Spring", summer: "Summer", fall: "Fall", winter: "Winter" };
@@ -31,7 +32,7 @@ const EDITOR_STYLES = `
 .foreman-note-editor .ProseMirror s { color: #a8a29c; }
 .foreman-note-editor .ProseMirror code {
   background: #1a1f2e;
-  border: 1px solid #6b6560;
+  border: 1px solid #a8a29c;
   border-radius: 2px;
   color: #8b7d6b;
   font-size: 0.7rem;
@@ -39,7 +40,7 @@ const EDITOR_STYLES = `
 }
 .foreman-note-editor .ProseMirror pre {
   background: #1a1f2e;
-  border: 1px solid #6b6560;
+  border: 1px solid #a8a29c;
   border-radius: 3px;
   margin: 0.4rem 0;
   overflow-x: auto;
@@ -51,7 +52,7 @@ const EDITOR_STYLES = `
   padding: 0;
 }
 .foreman-note-editor .ProseMirror blockquote {
-  border-left: 2px solid #6b6560;
+  border-left: 2px solid #a8a29c;
   color: #a8a29c;
   margin: 0;
   padding-left: 0.75rem;
@@ -86,7 +87,7 @@ const EDITOR_STYLES = `
   margin: 0.4rem 0 0.1rem;
 }
 .foreman-note-editor .ProseMirror.is-editor-empty:first-child::before {
-  color: #6b6560;
+  color: #a8a29c;
   content: attr(data-placeholder);
   float: left;
   height: 0;
@@ -108,7 +109,7 @@ function formatPurchaseDate(isoStr) {
   return new Date(isoStr).toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
-// ������ Item Detail Widget ������������������������������������������������������������������������������������������������������������
+// ─── Item Detail Widget ────────────────────────────────────────────────────────────
 
 const PANEL_LABEL = {
   color: "#c9a96e",
@@ -139,7 +140,7 @@ function DetailField({ label, value }) {
   );
 }
 
-function ItemDetailWidget({ selectedItem, itemDetails }) {
+function ItemDetailWidget({ selectedItem, itemDetails, categoryFieldSchemas = {}, itemFieldSchemas = {}, customFieldValues = {} }) {
   if (!selectedItem) {
     return (
       <div style={{
@@ -150,7 +151,7 @@ function ItemDetailWidget({ selectedItem, itemDetails }) {
         justifyContent: "center",
         padding: "1rem",
       }}>
-        <span style={{ color: "#6b6560", fontFamily: "monospace", fontSize: "0.68rem" }}>
+        <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem" }}>
           Select an item
         </span>
       </div>
@@ -159,6 +160,20 @@ function ItemDetailWidget({ selectedItem, itemDetails }) {
 
   const key = `${selectedItem.category}|${selectedItem.item}`;
   const d = itemDetails[key] || {};
+  const catFields = categoryFieldSchemas[selectedItem.category] || [];
+  const itmFields = itemFieldSchemas[key] || [];
+  const allCustomFields = [...catFields, ...itmFields];
+  const cfVals = customFieldValues[key] || {};
+
+  function formatCustomValue(field) {
+    const v = cfVals[field.id];
+    if (!v && v !== 0) return null;
+    if (field.type === "date") {
+      const d = new Date(v);
+      return isNaN(d) ? v : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    }
+    return String(v);
+  }
 
   return (
     <div style={{
@@ -174,21 +189,21 @@ function ItemDetailWidget({ selectedItem, itemDetails }) {
         <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.8rem", marginTop: "0.2rem" }}>
           {selectedItem.item}
           <span style={{ color: "#a8a29c", fontSize: "0.62rem", marginLeft: "0.5rem" }}>
-            � {selectedItem.category}
+            {"◆"} {selectedItem.category}
           </span>
         </div>
       </div>
 
-      {/* Fields � extendable: add new DetailField rows or sections here */}
+      {/* Fields — extendable: add new DetailField rows or sections here */}
       <div style={{ flex: 1, overflowY: "auto", padding: "0.65rem 1rem" }}>
         <DetailField label="Manufacturer" value={d.manufacturer || null} />
         <DetailField label="Model"        value={d.model        || null} />
         <DetailField label="Serial"       value={d.serial       || null} />
         <DetailField label="Purchased"    value={formatPurchaseDate(d.purchaseDate)} />
 
-        {!d.manufacturer && !d.model && !d.serial && !d.purchaseDate && !d.receipt && (
-          <div style={{ color: "#6b6560", fontFamily: "monospace", fontSize: "0.65rem" }}>
-            No details recorded � add them on the Inventory page.
+        {!d.manufacturer && !d.model && !d.serial && !d.purchaseDate && !d.receipt && allCustomFields.length === 0 && (
+          <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.65rem" }}>
+            No details recorded — add them on the Inventory page.
           </div>
         )}
 
@@ -205,12 +220,20 @@ function ItemDetailWidget({ selectedItem, itemDetails }) {
             />
           </div>
         )}
+
+        {allCustomFields.length > 0 && (
+          <div style={{ borderTop: "1px solid #1e2330", marginTop: "0.65rem", paddingTop: "0.65rem" }}>
+            {allCustomFields.map(field => (
+              <DetailField key={field.id} label={field.name} value={formatCustomValue(field)} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ������ Journal Widget ��������������������������������������������������������������������������������������������������������������������
+// ─── Journal Widget ───────────────────────────────────────────────────────────────
 
 function NoteToolbar({ editor }) {
   if (!editor) return null;
@@ -221,7 +244,7 @@ function NoteToolbar({ editor }) {
     { label: "S",  cmd: () => editor.chain().focus().toggleStrike().run(),      isActive: editor.isActive("strike"),      title: "Strikethrough", style: { textDecoration: "line-through" } },
     { label: "<>", cmd: () => editor.chain().focus().toggleCode().run(),        isActive: editor.isActive("code"),        title: "Inline code",   style: {} },
     { label: '"',  cmd: () => editor.chain().focus().toggleBlockquote().run(),  isActive: editor.isActive("blockquote"),  title: "Blockquote",    style: {} },
-    { label: "�0�",  cmd: () => editor.chain().focus().toggleBulletList().run(),  isActive: editor.isActive("bulletList"),  title: "Bullet list",   style: {} },
+    { label: "•",  cmd: () => editor.chain().focus().toggleBulletList().run(),  isActive: editor.isActive("bulletList"),  title: "Bullet list",   style: {} },
     { label: "1.", cmd: () => editor.chain().focus().toggleOrderedList().run(), isActive: editor.isActive("orderedList"), title: "Numbered list", style: {} },
   ];
 
@@ -309,7 +332,7 @@ function JournalWidget({ selectedItem, notes, onSave }) {
       }}>
         <span style={PANEL_LABEL}>Notes</span>
         {noteData?.updatedAt && (
-          <span style={{ color: "#6b6560", fontFamily: "monospace", fontSize: "0.58rem" }}>
+          <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.58rem" }}>
             {timeAgo(noteData.updatedAt)}
           </span>
         )}
@@ -318,7 +341,7 @@ function JournalWidget({ selectedItem, notes, onSave }) {
       {!selectedItem ? (
         <div style={{
           alignItems: "center",
-          color: "#6b6560",
+          color: "#a8a29c",
           display: "flex",
           flex: 1,
           fontFamily: "monospace",
@@ -340,12 +363,15 @@ function JournalWidget({ selectedItem, notes, onSave }) {
   );
 }
 
-// ������ Main Page ������������������������������������������������������������������������������������������������������������������������������
+// ─── Main Page ────────────────────────────────────────────────────────────────────
 
 export default function GuidePage({ navigate }) {
   const [deletedRows, setDeletedRows] = useState(() => loadDeletedRows());
   const [selectedItem, setSelectedItem] = useState(null);
-  const [itemDetails]  = useState(() => loadItemDetails());
+  const [itemDetails]        = useState(() => loadItemDetails());
+  const [categoryFieldSchemas] = useState(() => loadCategoryFieldSchemas());
+  const [itemFieldSchemas]     = useState(() => loadItemFieldSchemas());
+  const [customFieldValues]    = useState(() => loadCustomFieldValues());
   const [notes, setNotes] = useState(() => loadGuideNotes());
 
   const grouped = useMemo(() => {
@@ -426,7 +452,7 @@ export default function GuidePage({ navigate }) {
       <style>{EDITOR_STYLES}</style>
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #6b6560", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #a8a29c", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
         <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
           <div>
             <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
@@ -570,13 +596,13 @@ export default function GuidePage({ navigate }) {
                                 </span>
                                 {row.schedule && <ScheduleBadge schedule={row.schedule} />}
                                 {row.season && (
-                                  <span style={{ background: "#1a1f2e", border: "1px solid #6b6560", borderRadius: "3px", color: "#a8a29c", fontSize: "0.6rem", letterSpacing: "0.08em", padding: "0.15rem 0.4rem" }}>
+                                  <span style={{ background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "3px", color: "#a8a29c", fontSize: "0.6rem", letterSpacing: "0.08em", padding: "0.15rem 0.4rem" }}>
                                     {SEASON_LABELS[row.season] ?? row.season}
                                   </span>
                                 )}
                               </div>
                               {tip && (
-                                <p style={{ color: "#6b6560", fontSize: "0.67rem", lineHeight: 1.7, margin: 0, maxWidth: "720px" }}>
+                                <p style={{ color: "#a8a29c", fontSize: "0.67rem", lineHeight: 1.7, margin: 0, maxWidth: "720px" }}>
                                   {tip}
                                 </p>
                               )}
@@ -619,7 +645,7 @@ export default function GuidePage({ navigate }) {
                         <div key={mfr}>
                           <span style={{ color: "#a8a29c", fontSize: "0.7rem" }}>{mfr}</span>
                           {models.length > 0 && (
-                            <div style={{ color: "#6b6560", fontSize: "0.62rem", letterSpacing: "0.02em", lineHeight: 1.6, marginTop: "0.05rem" }}>
+                            <div style={{ color: "#a8a29c", fontSize: "0.62rem", letterSpacing: "0.02em", lineHeight: 1.6, marginTop: "0.05rem" }}>
                               {models.join("  ·  ")}
                             </div>
                           )}
@@ -642,7 +668,7 @@ export default function GuidePage({ navigate }) {
           overflow: "hidden",
           width: "616px",
         }}>
-          <ItemDetailWidget selectedItem={selectedItem} itemDetails={itemDetails} />
+          <ItemDetailWidget selectedItem={selectedItem} itemDetails={itemDetails} categoryFieldSchemas={categoryFieldSchemas} itemFieldSchemas={itemFieldSchemas} customFieldValues={customFieldValues} />
           <JournalWidget selectedItem={selectedItem} notes={notes} onSave={handleNoteSave} />
         </div>
 
@@ -660,7 +686,7 @@ function RestoreButton({ onRestore }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         background: "transparent",
-        border: `1px solid ${hovered ? "#c9a96e" : "#6b6560"}`,
+        border: `1px solid ${hovered ? "#c9a96e" : "#a8a29c"}`,
         borderRadius: "3px",
         color: hovered ? "#c9a96e" : "#a8a29c",
         cursor: "pointer",

@@ -387,11 +387,11 @@ export default function HomeMaintenanceTable({ navigate }) {
       flexDirection: "column",
       background: "#0f1117",
       fontFamily: "'Georgia', 'Times New Roman', serif",
-      color: "#e8e0d0",
+      color: "#e8e4dd",
     }}>
       <div ref={pageHeaderRef} style={{
         background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
-        borderBottom: "1px solid #6b6560",
+        borderBottom: "1px solid #a8a29c",
         flexShrink: 0,
         padding: "2rem",
         zIndex: 50,
@@ -432,9 +432,9 @@ export default function HomeMaintenanceTable({ navigate }) {
             placeholder="Search items, types, schedules…"
             style={{
               background: "#1a1f2e",
-              border: "1px solid #6b6560",
+              border: "1px solid #a8a29c",
               borderRadius: "4px",
-              color: "#e8e0d0",
+              color: "#e8e4dd",
               fontSize: "0.82rem",
               marginLeft: "auto",
               padding: "0.5rem 0.85rem",
@@ -452,7 +452,7 @@ export default function HomeMaintenanceTable({ navigate }) {
             onMouseLeave={() => setAddRowHovered(false)}
             style={{
               background: "transparent",
-              border: `1px solid ${addRowHovered ? "#c9a96e" : "#6b6560"}`,
+              border: `1px solid ${addRowHovered ? "#c9a96e" : "#a8a29c"}`,
               borderRadius: "3px",
               color: addRowHovered ? "#c9a96e" : "#8b7d6b",
               cursor: "pointer",
@@ -471,7 +471,7 @@ export default function HomeMaintenanceTable({ navigate }) {
             className="foreman-reminders-header-btn"
             style={{
               background: "transparent",
-              border: "1px solid #6b6560",
+              border: "1px solid #a8a29c",
               borderRadius: "3px",
               color: "#8b7d6b",
               cursor: "pointer",
@@ -483,7 +483,7 @@ export default function HomeMaintenanceTable({ navigate }) {
               whiteSpace: "nowrap",
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#6b6560"; e.currentTarget.style.color = "#8b7d6b"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
           >
             REMINDERS
           </button>

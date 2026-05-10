@@ -24,9 +24,9 @@ function formatValue(mode, count, unit, special) {
 
 const INPUT_STYLE = {
   background: "#1a1f2e",
-  border: "1px solid #6b6560",
+  border: "1px solid #a8a29c",
   borderRadius: "2px",
-  color: "#e8e0d0",
+  color: "#e8e4dd",
   fontFamily: "monospace",
   fontSize: "0.78rem",
   outline: "none",
@@ -97,7 +97,7 @@ export default function SchedulePicker({ value, onChange }) {
       ref={popoverRef}
       style={{
         background: "#1a1f2e",
-        border: "1px solid #6b6560",
+        border: "1px solid #a8a29c",
         borderRadius: "3px",
         left: popoverPos.left,
         padding: "0.75rem",
@@ -112,7 +112,7 @@ export default function SchedulePicker({ value, onChange }) {
         onClick={() => setMode("interval")}
         style={{
           alignItems: "center",
-          background: mode === "interval" ? "#6b6560" : "transparent",
+          background: mode === "interval" ? "#a8a29c" : "transparent",
           borderRadius: "2px",
           cursor: "pointer",
           display: "flex",
@@ -121,7 +121,7 @@ export default function SchedulePicker({ value, onChange }) {
           padding: "0.25rem 0.3rem",
         }}
       >
-        <span style={{ color: "#7a7090", flexShrink: 0, fontFamily: "monospace", fontSize: "0.72rem" }}>Every</span>
+        <span style={{ color: "#8b7d6b", flexShrink: 0, fontFamily: "monospace", fontSize: "0.72rem" }}>Every</span>
         <input
           type="number"
           min={1}
@@ -153,9 +153,9 @@ export default function SchedulePicker({ value, onChange }) {
               onMouseDown={e => { e.preventDefault(); handleSpecialClick(s); }}
               style={{
                 background: active ? "#c9a96e18" : "transparent",
-                border: `1px solid ${active ? "#c9a96e" : "#6b6560"}`,
+                border: `1px solid ${active ? "#c9a96e" : "#a8a29c"}`,
                 borderRadius: "2px",
-                color: active ? "#c9a96e" : "#7a7090",
+                color: active ? "#c9a96e" : "#8b7d6b",
                 cursor: "pointer",
                 flex: 1,
                 fontFamily: "monospace",
@@ -175,7 +175,7 @@ export default function SchedulePicker({ value, onChange }) {
           onMouseDown={e => { e.preventDefault(); handleClear(); }}
           style={{
             background: "transparent",
-            border: "1px solid #6b6560",
+            border: "1px solid #a8a29c",
             borderRadius: "2px",
             color: "#a8a29c",
             cursor: "pointer",

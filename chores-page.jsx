@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import PageNav from "./components/PageNav.jsx";
+import AssigneeInput, { AssigneeCellInput } from "./components/AssigneeInput.jsx";
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import SelectCell from "./components/SelectCell.jsx";
 import NoteCell from "./components/NoteCell.jsx";
@@ -345,7 +346,7 @@ function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
 
         <div style={{ marginBottom: "1rem" }}>
           <label style={labelStyle}>Assignee</label>
-          <input value={form.assignee} onChange={e => set("assignee", e.target.value)} placeholder="Who does this chore?" style={inputStyle} />
+          <AssigneeInput value={form.assignee} onChange={v => set("assignee", v)} placeholder="Who does this chore?" />
         </div>
 
         <div style={{ marginBottom: "1.5rem" }}>
@@ -790,7 +791,7 @@ function ChoresTable({ rows, notes, roomOptions, reminderModes, selectedChoreId,
 
                 {/* Assignee */}
                 <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <TitleCell
+                  <AssigneeCellInput
                     value={chore.assignee || ""}
                     placeholder="—"
                     onChange={v => onChoreEdit(chore.id, "assignee", v)}
@@ -819,7 +820,7 @@ function ChoresTable({ rows, notes, roomOptions, reminderModes, selectedChoreId,
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function ChoresPage({ navigate }) {
+export default function ChoresPage({ navigate, navState }) {
   const [chores, setChores]               = useState(() => loadChores());
   const [notes, setNotes]                 = useState(() => loadChoreNotes());
   const [reminderModes, setReminderModes] = useState(() => loadChoreReminderModes());
@@ -833,14 +834,23 @@ export default function ChoresPage({ navigate }) {
   const [confirmChore, setConfirmChore]   = useState(null);
   const [addHovered, setAddHovered]       = useState(false);
 
-  // Room tabs derived from current chores
+  useEffect(() => {
+    if (!navState) return;
+    if (navState.choreId) setSelectedChoreId(navState.choreId);
+    if (navState.search != null) setSearch(navState.search);
+  }, []);
+
+  // Room tabs derived from inventory rooms (so they appear even before any chores exist)
   const rooms = useMemo(() => {
-    const present = new Set(chores.map(c => c.room));
+    const fromInventory = new Set(roomOptions.map(o => o.value));
+    fromInventory.delete("Whole House");
+    // Also include any rooms used on existing chores that aren't in inventory
+    chores.forEach(c => { if (c.room && c.room !== "Whole House") fromInventory.add(c.room); });
     return [
-      ...ROOM_ORDER.filter(r => present.has(r)),
-      ...[...present].filter(r => !ROOM_ORDER.includes(r)).sort(),
+      ...ROOM_ORDER.filter(r => fromInventory.has(r)),
+      ...[...fromInventory].filter(r => !ROOM_ORDER.includes(r)).sort(),
     ];
-  }, [chores]);
+  }, [chores, roomOptions]);
 
   // ── Sort helpers ────────────────────────────────────────────────────────────
   function handleHeaderClick(col, shiftKey) {

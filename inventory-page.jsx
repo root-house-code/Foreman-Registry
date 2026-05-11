@@ -225,19 +225,21 @@ function InlineComboInput({ placeholder = "", onCommit, onCancel, options = [] }
   );
 }
 
-export default function InventoryPage({ navigate }) {
+export default function InventoryPage({ navigate, navState }) {
   const [rows, setRows] = useState(() => loadData());
   const [deletedCategories, setDeletedCategories] = useState(() => loadDeletedCategories());
   const [deletedItems, setDeletedItems] = useState(() => loadDeletedItems());
   const [deletePrompt, setDeletePrompt] = useState(null); // { category, itemCount, taskCount, isDefault } | { category, item, taskCount, isDefault }
   const [newItemIds, setNewItemIds] = useState(() => new Set());
   const [editingCategoryName, setEditingCategoryName] = useState(null);
+  const [editingItemName, setEditingItemName] = useState(null); // { category, item }
+  const [editingTask, setEditingTask] = useState(null); // row being edited, or null
   const [pendingNewCategory, setPendingNewCategory] = useState(null); // { id, groupType }
 
   const CATEGORY_ITEMS = useMemo(() => {
     const map = {};
     rows.forEach(row => {
-      if (deletedCategories.has(row.category)) return;
+      if (!row._isCustom && deletedCategories.has(row.category)) return;
       if (row._isBlankCategory) {
         if (row.category) map[row.category] = map[row.category] || [];
         return;
@@ -255,7 +257,11 @@ export default function InventoryPage({ navigate }) {
   const defaultCategoryTypes = useMemo(() => {
     const map = {};
     rows.forEach(row => {
-      if (row.category && row.categoryType && !map[row.category]) {
+      if (!row.category || !row.categoryType) return;
+      // Custom rows (user-created) take priority over default rows so that
+      // a category added in "Rooms" isn't silently reassigned by a same-named
+      // default category that lives in a different group.
+      if (!map[row.category] || row._isCustom) {
         map[row.category] = row.categoryType;
       }
     });
@@ -299,6 +305,7 @@ export default function InventoryPage({ navigate }) {
   const [collapsedGroups, setCollapsedGroups] = useState(() =>
     Object.fromEntries(GROUP_ORDER.map(g => [g, true]))
   );
+  const [sortedGroups, setSortedGroups] = useState(() => new Set());
   const [navHovered, setNavHovered] = useState(null);
   const [dragging, setDragging] = useState(null);
   const [dragOverGroup, setDragOverGroup] = useState(null);
@@ -315,7 +322,13 @@ export default function InventoryPage({ navigate }) {
   const [addingTask, setAddingTask] = useState(false);
   const [newTask, setNewTask] = useState({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" });
   const [deleteTaskPrompt, setDeleteTaskPrompt] = useState(null);
+  const [deleteTodoPrompt, setDeleteTodoPrompt] = useState(null);
+  const [hoveredTodoId, setHoveredTodoId] = useState(null);
   const [deletedRows, setDeletedRows] = useState(() => loadDeletedRows());
+  const [nextDatesMap, setNextDatesMapInv] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("maintenance-next-dates") || "{}"); }
+    catch { return {}; }
+  });
   const [suggestedTasks, setSuggestedTasks] = useState(null); // null | Array<{task,schedule,season,selected}>
   const [suggestedFor, setSuggestedFor] = useState(null); // { category, item }
   const [fetchingTasks, setFetchingTasks] = useState(false);
@@ -343,6 +356,22 @@ export default function InventoryPage({ navigate }) {
       (t.linkedItem === selectedItem.item || t.linkedItem === null)
     );
   }, [todos, selectedItem]);
+
+  const itemCoverageMap = useMemo(() => {
+    const map = {};
+    rows.forEach(row => {
+      if (row._isBlankCategory || !row.category || !row.item || !row.task) return;
+      if (!row._isCustom && deletedCategories.has(row.category)) return;
+      if (deletedItems.has(`${row.category}|${row.item}`)) return;
+      const drKey = `${row.category}|${row.item}|${row.task}`;
+      if (deletedRows.has(drKey)) return;
+      const itemKey = `${row.category}|${row.item}`;
+      if (!map[itemKey]) map[itemKey] = { total: 0, unscheduled: 0 };
+      map[itemKey].total++;
+      if (!row.schedule && !nextDatesMap[drKey]) map[itemKey].unscheduled++;
+    });
+    return map;
+  }, [rows, deletedCategories, deletedItems, deletedRows, nextDatesMap]);
 
   function handleAddTask() {
     if (!newTask.task.trim() || !selectedItem) return;
@@ -501,6 +530,13 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
     setAddingTodo(false);
   }
 
+  function handleDeleteTodo(todo) {
+    const next = todos.filter(t => t.id !== todo.id);
+    setTodos(next);
+    saveTodos(next);
+    setDeleteTodoPrompt(null);
+  }
+
   function reload() {
     setRows(loadData());
   }
@@ -539,6 +575,12 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
     });
     if (valuesChanged) { saveCustomFieldValues(existingValues); setCustomFieldValues(existingValues); }
     if (schemasChanged) { saveItemFieldSchemas(existingSchemas); setItemFieldSchemas(existingSchemas); }
+  }, []);
+
+  useEffect(() => {
+    if (!navState?.expandAll) return;
+    setCollapsed(Object.fromEntries(CATEGORIES.map(cat => [cat, false])));
+    setCollapsedGroups(Object.fromEntries(GROUP_ORDER.map(g => [g, false])));
   }, []);
 
   useEffect(() => {
@@ -677,11 +719,12 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
         const next = new Set([...deletedCategories, category]);
         saveDeletedCategories(next);
         setDeletedCategories(next);
-      } else {
-        const customs = loadCustomData();
-        saveCustomData(customs.filter(r => r.category !== category));
-        reload();
       }
+      // Always remove custom rows for this category — covers both the pure-custom
+      // case and any user-created rows that co-exist with a same-named default.
+      const customs = loadCustomData();
+      saveCustomData(customs.filter(r => r.category !== category));
+      reload();
     }
   }
 
@@ -726,6 +769,75 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
     }
 
     reload();
+  }
+
+  function handleItemRename(category, oldName, newName) {
+    const trimmed = newName.trim();
+    setEditingItemName(null);
+    if (!trimmed || trimmed === oldName) return;
+
+    const customs = loadCustomData();
+    saveCustomData(customs.map(r => r.category === category && r.item === oldName ? { ...r, item: trimmed } : r));
+
+    const overrides = loadOverrides();
+    defaultData.forEach(row => {
+      if (row.category === category && row.item === oldName) {
+        const key = `${row.category}|${row.item}|${row.task}`;
+        overrides[key] = { ...(overrides[key] || {}), item: trimmed };
+      }
+    });
+    saveOverrides(overrides);
+
+    const oldKey = `${category}|${oldName}`;
+    const newKey = `${category}|${trimmed}`;
+
+    const details = loadItemDetails();
+    if (details[oldKey] !== undefined) { details[newKey] = details[oldKey]; delete details[oldKey]; saveItemDetails(details); setItemDetails(details); }
+
+    const cfVals = loadCustomFieldValues();
+    if (cfVals[oldKey] !== undefined) { cfVals[newKey] = cfVals[oldKey]; delete cfVals[oldKey]; saveCustomFieldValues(cfVals); setCustomFieldValues(cfVals); }
+
+    const cfSchemas = loadItemFieldSchemas();
+    if (cfSchemas[oldKey] !== undefined) { cfSchemas[newKey] = cfSchemas[oldKey]; delete cfSchemas[oldKey]; saveItemFieldSchemas(cfSchemas); setItemFieldSchemas(cfSchemas); }
+
+    const oldPrefix = `${category}|${oldName}|`;
+    const newDels = new Set([...deletedRows].map(k => k.startsWith(oldPrefix) ? `${category}|${trimmed}|${k.slice(oldPrefix.length)}` : k));
+    saveDeletedRows(newDels);
+    setDeletedRows(newDels);
+
+    const nextTodos = todos.map(t => t.linkedCategory === category && t.linkedItem === oldName ? { ...t, linkedItem: trimmed } : t);
+    setTodos(nextTodos);
+    saveTodos(nextTodos);
+
+    if (selectedItem?.category === category && selectedItem?.item === oldName) setSelectedItem({ category, item: trimmed });
+
+    reload();
+  }
+
+  function handleUpdateTask(originalRow) {
+    if (!newTask.task.trim() || !selectedItem) return;
+    const taskName = newTask.task.trim();
+    if (originalRow._isCustom) {
+      const oldKey = `${originalRow.category}|${originalRow.item}|${originalRow.task}`;
+      const newKey = `${originalRow.category}|${originalRow.item}|${taskName}`;
+      const customs = loadCustomData();
+      saveCustomData(customs.map(r => r._id === originalRow._id ? { ...r, task: taskName, schedule: newTask.schedule || "", season: newTask.season || null } : r));
+      if (taskName !== originalRow.task) {
+        ["maintenance-dates", "maintenance-next-dates", "maintenance-notes", "maintenance-follow"].forEach(k => {
+          const d = JSON.parse(localStorage.getItem(k) || "{}");
+          if (d[oldKey] !== undefined) { d[newKey] = d[oldKey]; delete d[oldKey]; localStorage.setItem(k, JSON.stringify(d)); }
+        });
+      }
+    } else {
+      const key = `${originalRow.category}|${originalRow.item}|${originalRow.task}`;
+      const overrides = loadOverrides();
+      overrides[key] = { ...(overrides[key] || {}), schedule: newTask.schedule || "", season: newTask.season || null };
+      saveOverrides(overrides);
+    }
+    reload();
+    setEditingTask(null);
+    setAddingTask(false);
+    setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" });
   }
 
   function handleAddCategory(groupType) {
@@ -805,7 +917,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
     const existingItemSet = new Set(items);
     const itemSuggestions = [...new Set(
       rows
-        .filter(r => r.item && !r._isBlankCategory && !deletedCategories.has(r.category) && !deletedItems.has(`${r.category}|${r.item}`))
+        .filter(r => r.item && !r._isBlankCategory && !deletedItems.has(`${r.category}|${r.item}`))
         .map(r => r.item)
     )].filter(i => !existingItemSet.has(i)).sort();
     const isItemDropTarget = !!draggingItem && dragOverCategory === category && draggingItem.fromCategory !== category;
@@ -946,20 +1058,45 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       transition: "opacity 0.15s, background 0.1s",
                     }}
                   >
-                    <Tooltip text={ITEM_TIPS[item]}>
-                      <span
-                        onClick={e => { e.stopPropagation(); setSelectedItem({ category, item }); }}
-                        style={{
-                          color: isSelected ? "#c9a96e" : "#a8a29c",
-                          cursor: "pointer",
-                          flex: 1,
-                          fontFamily: "monospace",
-                          fontSize: "0.78rem",
+                    {editingItemName?.category === category && editingItemName?.item === item ? (
+                      <input
+                        autoFocus
+                        defaultValue={item}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") { e.preventDefault(); handleItemRename(category, item, e.currentTarget.value); }
+                          if (e.key === "Escape") { e.preventDefault(); setEditingItemName(null); }
                         }}
-                      >
-                        {item}
-                      </span>
-                    </Tooltip>
+                        onBlur={e => handleItemRename(category, item, e.target.value)}
+                        onClick={e => e.stopPropagation()}
+                        style={{ background: "#1a1f2e", border: "1px solid #c9a96e", borderRadius: "2px", color: "#e8e4dd", flex: 1, fontFamily: "monospace", fontSize: "0.78rem", outline: "none", padding: "0.1rem 0.3rem" }}
+                      />
+                    ) : (
+                      <Tooltip text={ITEM_TIPS[item]}>
+                        <span
+                          onClick={e => { e.stopPropagation(); setSelectedItem({ category, item }); }}
+                          onDoubleClick={e => { e.stopPropagation(); setEditingItemName({ category, item }); }}
+                          style={{
+                            color: isSelected ? "#c9a96e" : "#a8a29c",
+                            cursor: "pointer",
+                            flex: 1,
+                            fontFamily: "monospace",
+                            fontSize: "0.78rem",
+                          }}
+                        >
+                          {item}
+                        </span>
+                      </Tooltip>
+                    )}
+                    {(() => {
+                      const cov = itemCoverageMap[`${category}|${item}`];
+                      if (!cov) return (
+                        <span style={{ color: "#3a3548", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem" }}>no tasks</span>
+                      );
+                      if (cov.unscheduled > 0) return (
+                        <span style={{ color: "#5a4a2e", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem" }}>{cov.unscheduled} unscheduled</span>
+                      );
+                      return null;
+                    })()}
                     <button
                       onClick={e => {
                         e.stopPropagation();
@@ -1231,7 +1368,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
       {addingTask && selectedItem && createPortal(
         <div
-          onClick={() => { setAddingTask(false); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }}
+          onClick={() => { setAddingTask(false); setEditingTask(null); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }}
           style={{ alignItems: "center", background: "rgba(0,0,0,0.75)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 1000 }}
         >
           <div
@@ -1240,11 +1377,11 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
           >
             <div style={{ alignItems: "center", borderBottom: "1px solid #1e2330", display: "flex", justifyContent: "space-between", padding: "0.85rem 1.25rem" }}>
               <div>
-                <span style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>Add Maintenance Task</span>
+                <span style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>{editingTask ? "Edit Maintenance Task" : "Add Maintenance Task"}</span>
                 <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.65rem", marginLeft: "0.75rem" }}>{selectedItem.item} — {selectedItem.category}</span>
               </div>
               <button
-                onClick={() => { setAddingTask(false); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }}
+                onClick={() => { setAddingTask(false); setEditingTask(null); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }}
                 style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "1rem", padding: "0.1rem 0.3rem", transition: "color 0.15s" }}
                 onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
                 onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
@@ -1280,13 +1417,14 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                         autoFocus
                         value={newTask.task}
                         placeholder="Task name"
+                        disabled={editingTask && !editingTask._isCustom}
                         onChange={e => setNewTask(t => ({ ...t, task: e.target.value }))}
                         onKeyDown={e => {
-                          if (e.key === "Enter" && newTask.task.trim()) { e.preventDefault(); handleAddTask(); }
-                          if (e.key === "Escape") { e.preventDefault(); setAddingTask(false); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }
+                          if (e.key === "Enter" && newTask.task.trim()) { e.preventDefault(); editingTask ? handleUpdateTask(editingTask) : handleAddTask(); }
+                          if (e.key === "Escape") { e.preventDefault(); setAddingTask(false); setEditingTask(null); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }
                         }}
-                        style={{ background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "2px", boxSizing: "border-box", color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.8rem", outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
-                        onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"}
+                        style={{ background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "2px", boxSizing: "border-box", color: editingTask && !editingTask._isCustom ? "#a8a29c" : "#e8e4dd", fontFamily: "monospace", fontSize: "0.8rem", opacity: editingTask && !editingTask._isCustom ? 0.6 : 1, outline: "none", padding: "0.25rem 0.4rem", width: "100%" }}
+                        onFocus={e => { if (!(editingTask && !editingTask._isCustom)) e.currentTarget.style.borderColor = "#c9a96e"; }}
                         onBlur={e => e.currentTarget.style.borderColor = "#a8a29c"}
                       />
                     </td>
@@ -1351,18 +1489,18 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
             <div style={{ borderTop: "1px solid #1e2330", display: "flex", gap: "0.75rem", justifyContent: "flex-end", padding: "1rem 1.25rem" }}>
               <button
-                onClick={() => { setAddingTask(false); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }}
+                onClick={() => { setAddingTask(false); setEditingTask(null); setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); }}
                 style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#e8e4dd"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
               >Cancel</button>
               <button
-                onClick={handleAddTask}
+                onClick={editingTask ? () => handleUpdateTask(editingTask) : handleAddTask}
                 disabled={!newTask.task.trim()}
                 style={{ background: newTask.task.trim() ? "#c9a96e18" : "transparent", border: `1px solid ${newTask.task.trim() ? "#c9a96e40" : "#a8a29c"}`, borderRadius: "3px", color: newTask.task.trim() ? "#c9a96e" : "#a8a29c", cursor: newTask.task.trim() ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
                 onMouseEnter={e => { if (newTask.task.trim()) { e.currentTarget.style.background = "#c9a96e30"; e.currentTarget.style.borderColor = "#c9a96e"; } }}
                 onMouseLeave={e => { if (newTask.task.trim()) { e.currentTarget.style.background = "#c9a96e18"; e.currentTarget.style.borderColor = "#c9a96e40"; } }}
-              >Add Task</button>
+              >{editingTask ? "Save" : "Add Task"}</button>
             </div>
           </div>
         </div>,
@@ -1392,6 +1530,37 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
               >Cancel</button>
               <button
                 onClick={() => { handleDeleteTask(deleteTaskPrompt); setDeleteTaskPrompt(null); }}
+                style={{ background: "#f8717118", border: "1px solid #f8717140", borderRadius: "3px", color: "#f87171", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f8717130"; e.currentTarget.style.borderColor = "#f87171"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#f8717118"; e.currentTarget.style.borderColor = "#f8717140"; }}
+              >Delete</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {deleteTodoPrompt && createPortal(
+        <div
+          onClick={() => setDeleteTodoPrompt(null)}
+          style={{ alignItems: "center", background: "rgba(0,0,0,0.7)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 1000 }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "8px", maxWidth: 440, padding: "2rem", width: "90%" }}>
+            <div style={{ color: "#f0e6d3", fontSize: "1.05rem", marginBottom: "0.75rem" }}>
+              Delete "{deleteTodoPrompt.title}"?
+            </div>
+            <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.8rem", lineHeight: 1.7, margin: "0 0 1.75rem" }}>
+              This will permanently delete this to do. This action cannot be undone.
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setDeleteTodoPrompt(null)}
+                style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#e8e4dd"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
+              >Cancel</button>
+              <button
+                onClick={() => handleDeleteTodo(deleteTodoPrompt)}
                 style={{ background: "#f8717118", border: "1px solid #f8717140", borderRadius: "3px", color: "#f87171", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.background = "#f8717130"; e.currentTarget.style.borderColor = "#f87171"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "#f8717118"; e.currentTarget.style.borderColor = "#f8717140"; }}
@@ -1461,7 +1630,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
         </div>
 
         {GROUP_ORDER.map(groupType => {
-          const cats = groupedCategories[groupType];
+          const rawCats = groupedCategories[groupType];
+          const isSorted = sortedGroups.has(groupType);
+          const cats = isSorted ? [...rawCats].sort((a, b) => a.localeCompare(b)) : rawCats;
           const isTarget = !!dragging && dragOverGroup === groupType && effectiveCategoryTypes[dragging] !== groupType;
           const isGroupCollapsed = collapsedGroups[groupType];
           const isPendingHere = pendingNewCategory?.groupType === groupType;
@@ -1509,6 +1680,24 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                 <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem" }}>
                   · {cats.length}
                 </span>
+                <button
+                  onClick={e => { e.stopPropagation(); setSortedGroups(prev => { const next = new Set(prev); isSorted ? next.delete(groupType) : next.add(groupType); return next; }); }}
+                  style={{
+                    background: "transparent",
+                    border: `1px solid ${isSorted ? "#c9a96e" : "#3a3548"}`,
+                    borderRadius: "3px",
+                    color: isSorted ? "#c9a96e" : "#5a5468",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                    fontSize: "0.55rem",
+                    letterSpacing: "0.08em",
+                    marginLeft: "auto",
+                    padding: "0.15rem 0.4rem",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  A→Z
+                </button>
               </div>
 
               {!isGroupCollapsed && (
@@ -1735,8 +1924,15 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
           <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "8px" }}>
             {/* ─── Maintenance section ──────────────────────────────────────── */}
-            <div style={{ borderBottom: "1px solid #1e2330", padding: "0.5rem 1rem 0.4rem" }}>
+            <div style={{ alignItems: "center", borderBottom: "1px solid #1e2330", display: "flex", justifyContent: "space-between", padding: "0.5rem 1rem 0.4rem" }}>
               <div style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>Maintenance</div>
+              {selectedItem && (() => {
+                const cov = itemCoverageMap[`${selectedItem.category}|${selectedItem.item}`];
+                if (cov && cov.unscheduled > 0) return (
+                  <span style={{ color: "#5a4a2e", fontFamily: "monospace", fontSize: "0.58rem" }}>{cov.unscheduled} not scheduled</span>
+                );
+                return null;
+              })()}
             </div>
             {!selectedItem ? (
               <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", padding: "1.5rem 1rem", textAlign: "center" }}>Select an item to view maintenance</div>
@@ -1786,8 +1982,40 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                               {row.season}
                             </span>
                           )}
+                          {!row.schedule && !nextDatesMap[`${row.category}|${row.item}|${row.task}`] && (
+                            <span style={{ background: "#16141c", border: "1px solid #2a2535", borderRadius: "3px", color: "#4a4458", fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.04em", padding: "0.1rem 0.35rem" }}>
+                              no schedule
+                            </span>
+                          )}
                         </div>
                       </div>
+                      <button
+                          onClick={() => {
+                            const key = `${row.category}|${row.item}|${row.task}`;
+                            const dates = JSON.parse(localStorage.getItem("maintenance-dates") || "{}");
+                            const nextDates = JSON.parse(localStorage.getItem("maintenance-next-dates") || "{}");
+                            const notes = JSON.parse(localStorage.getItem("maintenance-notes") || "{}");
+                            const follow = JSON.parse(localStorage.getItem("maintenance-follow") || "{}");
+                            const d = dates[key];
+                            setNewTask({ task: row.task, schedule: row.schedule || "", season: row.season || null, lastCompleted: d ? new Date(d).toISOString().slice(0, 10) : null, nextDate: nextDates[key] ? new Date(nextDates[key]).toISOString().slice(0, 10) : null, notes: notes[key] || "", followSchedule: !!follow[key] });
+                            setEditingTask(row);
+                            setAddingTask(true);
+                          }}
+                          title="Edit task"
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#a8a29c",
+                            cursor: "pointer",
+                            flexShrink: 0,
+                            fontFamily: "monospace",
+                            fontSize: "0.68rem",
+                            padding: "0.1rem 0.3rem",
+                            transition: "color 0.15s",
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
+                          onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                        >✎</button>
                       <button
                           onClick={() => setDeleteTaskPrompt(row)}
                           title="Delete task"
@@ -1946,9 +2174,12 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                 )}
                 {selectedTodos.map((todo, idx) => {
                   const isOverdue = todo.dueDate && todo.status !== "done" && new Date(todo.dueDate) < new Date();
+                  const isHovered = hoveredTodoId === todo.id;
                   return (
                     <div
                       key={todo.id}
+                      onMouseEnter={() => setHoveredTodoId(todo.id)}
+                      onMouseLeave={() => setHoveredTodoId(null)}
                       style={{
                         alignItems: "center",
                         background: idx % 2 === 0 ? "#13161f" : "#161920",
@@ -1991,6 +2222,12 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       }}>
                         {todo.status === "not-started" ? "To Do" : todo.status === "in-progress" ? "In Progress" : "Done"}
                       </span>
+                      <button
+                        onClick={() => setDeleteTodoPrompt(todo)}
+                        style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", flexShrink: 0, fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1, opacity: isHovered ? 1 : 0, padding: "0 0.1rem", transition: "color 0.15s, opacity 0.1s" }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
+                      >×</button>
                     </div>
                   );
                 })}

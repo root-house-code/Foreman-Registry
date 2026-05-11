@@ -118,6 +118,9 @@ export default function ProjectsPage({ navigate }) {
   const [rightNewTaskTitle, setRightNewTaskTitle] = useState("");
   const [rightPanelForm, setRightPanelForm] = useState(null);
   const [navHovered, setNavHovered] = useState(null);
+  const [hoveredProjectId, setHoveredProjectId] = useState(null);
+  const [renamingProjectId, setRenamingProjectId] = useState(null);
+  const [confirmDeleteProject, setConfirmDeleteProject] = useState(null);
   const headerRef = useRef(null);
 
   // Inventory data for right panel dropdowns
@@ -172,6 +175,20 @@ export default function ProjectsPage({ navigate }) {
 
   function persistTodos(next) { setTodos(next); saveTodos(next); }
   function persistProjects(next) { setProjects(next); saveProjects(next); }
+
+  function handleRenameProject(id, name) {
+    const trimmed = name.trim();
+    setRenamingProjectId(null);
+    if (!trimmed) return;
+    persistProjects(projects.map(p => p.id === id ? { ...p, name: trimmed } : p));
+  }
+
+  function handleDeleteProject(proj) {
+    persistProjects(projects.filter(p => p.id !== proj.id));
+    persistTodos(todos.map(t => t.projectId === proj.id ? { ...t, projectId: null } : t));
+    if (selectedProjectId === proj.id) setSelectedProjectId(null);
+    setConfirmDeleteProject(null);
+  }
 
   function handleCreateProject() {
     const name = newProjectName.trim();
@@ -273,6 +290,42 @@ export default function ProjectsPage({ navigate }) {
       height: "100vh",
       overflow: "hidden",
     }}>
+      {confirmDeleteProject && (
+        <div
+          style={{ alignItems: "center", background: "rgba(0,0,0,0.6)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 1000 }}
+          onMouseDown={e => { if (e.target === e.currentTarget) setConfirmDeleteProject(null); }}
+        >
+          <div style={{ background: "#0f1117", border: "1px solid #a8a29c", borderRadius: "6px", maxWidth: 420, padding: "1.75rem 2rem", width: "90%" }}>
+            <div style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: "1rem", textTransform: "uppercase" }}>
+              Permanently Delete Project
+            </div>
+            <p style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.82rem", margin: "0 0 0.5rem" }}>
+              <strong>{confirmDeleteProject.name}</strong>
+            </p>
+            <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.78rem", margin: "0 0 1.5rem" }}>
+              This will permanently delete this project. Its to dos will be unlinked but not deleted. This cannot be undone.
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setConfirmDeleteProject(null)}
+                style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.color = "#8b7d6b"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteProject(confirmDeleteProject)}
+                style={{ background: "#f8717118", border: "1px solid #f87171", borderRadius: "3px", color: "#f87171", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "background 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#f8717130"}
+                onMouseLeave={e => e.currentTarget.style.background = "#f8717118"}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div ref={headerRef} style={{
@@ -341,23 +394,61 @@ export default function ProjectsPage({ navigate }) {
                 <div
                   key={proj.id}
                   onClick={() => setSelectedProjectId(proj.id)}
+                  onMouseEnter={() => { setHoveredProjectId(proj.id); }}
+                  onMouseLeave={() => { setHoveredProjectId(null); }}
                   style={{
-                    background: selectedProjectId === proj.id ? "#1a2035" : "transparent",
+                    alignItems: "center",
+                    background: selectedProjectId === proj.id ? "#1a2035" : hoveredProjectId === proj.id ? "#13161f" : "transparent",
                     borderLeft: `2px solid ${selectedProjectId === proj.id ? "#c9a96e" : "transparent"}`,
                     color: selectedProjectId === proj.id ? "#c9a96e" : "#a8a29c",
                     cursor: "pointer",
+                    display: "flex",
                     fontFamily: "monospace",
                     fontSize: "0.75rem",
-                    overflow: "hidden",
-                    padding: "0.45rem 0.85rem",
-                    textOverflow: "ellipsis",
+                    padding: "0.45rem 0.5rem 0.45rem 0.85rem",
                     transition: "background 0.1s, color 0.1s",
-                    whiteSpace: "nowrap",
                   }}
-                  onMouseEnter={e => { if (selectedProjectId !== proj.id) e.currentTarget.style.background = "#13161f"; }}
-                  onMouseLeave={e => { if (selectedProjectId !== proj.id) e.currentTarget.style.background = "transparent"; }}
                 >
-                  {proj.name}
+                  {renamingProjectId === proj.id ? (
+                    <input
+                      autoFocus
+                      defaultValue={proj.name}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") { e.preventDefault(); handleRenameProject(proj.id, e.currentTarget.value); }
+                        if (e.key === "Escape") { e.preventDefault(); setRenamingProjectId(null); }
+                      }}
+                      onBlur={e => handleRenameProject(proj.id, e.target.value)}
+                      onClick={e => e.stopPropagation()}
+                      style={{ background: "#1a1f2e", border: "1px solid #c9a96e", borderRadius: "2px", color: "#e8e4dd", flex: 1, fontFamily: "monospace", fontSize: "0.75rem", outline: "none", padding: "0.1rem 0.3rem" }}
+                    />
+                  ) : (
+                    <span
+                      onDoubleClick={e => { e.stopPropagation(); setRenamingProjectId(proj.id); }}
+                      style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    >
+                      {proj.name}
+                    </span>
+                  )}
+                  <button
+                    onClick={e => { e.stopPropagation(); setConfirmDeleteProject(proj); }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#a8a29c",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                      fontFamily: "monospace",
+                      fontSize: "0.85rem",
+                      lineHeight: 1,
+                      opacity: hoveredProjectId === proj.id ? 1 : 0,
+                      padding: "0 0.25rem",
+                      transition: "color 0.15s, opacity 0.1s",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
               {addingProject && (

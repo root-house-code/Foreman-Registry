@@ -5,6 +5,7 @@ import DatePicker from "react-datepicker";
 import { loadTodos, saveTodos, createTodo } from "./lib/todos.js";
 import { loadProjects, saveProjects, createProject } from "./lib/projects.js";
 import { loadData } from "./lib/data.js";
+import AssigneeInput from "./components/AssigneeInput.jsx";
 import { loadDeletedCategories } from "./lib/deletedCategories.js";
 import { loadDeletedItems } from "./lib/deletedItems.js";
 import { computeNextDate } from "./lib/scheduleInterval.js";
@@ -159,10 +160,12 @@ function TodoModal({ todo, categories, categoryItems, projects, onSave, onClose,
         <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
           <div style={{ flex: 1 }}>
             <label style={fieldLabel}>Assignee</label>
-            <input value={form.assignee} onChange={e => set("assignee", e.target.value)}
-              placeholder="Homeowner, contractor..." style={fieldInput}
-              onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
-              onBlur={e => { e.currentTarget.style.borderColor = "#a8a29c"; }} />
+            <AssigneeInput
+              value={form.assignee}
+              onChange={v => set("assignee", v)}
+              placeholder="Homeowner, contractor..."
+              style={fieldInput}
+            />
           </div>
           <div style={{ flex: 1 }}>
             <label style={fieldLabel}>Est. Cost ($)</label>

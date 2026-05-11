@@ -246,12 +246,14 @@ export default function DashboardPage({ navigate }) {
       date: nextDatesMap[keyOf(row)] ? new Date(nextDatesMap[keyOf(row)]) : null,
       label: row.task,
       sub: row.category,
+      row,
     }));
     const choreRows = overdueChores.map(c => ({
       type: "chore",
       date: choreNextDate(c),
       label: c.title,
       sub: c.room,
+      chore: c,
     }));
     return [...maintRows, ...choreRows]
       .sort((a, b) => (a.date ?? new Date(0)) - (b.date ?? new Date(0)))
@@ -331,6 +333,33 @@ export default function DashboardPage({ navigate }) {
   const combinedOverdueTotal  = overdueItems.length + overdueChores.length;
   const combinedUpcomingTotal = upcomingItems.length + upcomingChores.length;
 
+  // ───── Inventory coverage ────────────────────────────────────────────────────
+  const allInventoryItems = useMemo(() => {
+    const seen = new Set();
+    rows.forEach(row => {
+      if (row._isBlankCategory || !row.category || !row.item) return;
+      if (deletedCategories.has(row.category)) return;
+      if (deletedItems.has(`${row.category}|${row.item}`)) return;
+      seen.add(`${row.category}|${row.item}`);
+    });
+    return seen;
+  }, [rows, deletedCategories, deletedItems]);
+
+  const itemsWithTasksSet = useMemo(() =>
+    new Set(activeRows.map(r => `${r.category}|${r.item}`)),
+    [activeRows]
+  );
+
+  const zeroTaskItemCount = useMemo(() =>
+    [...allInventoryItems].filter(k => !itemsWithTasksSet.has(k)).length,
+    [allInventoryItems, itemsWithTasksSet]
+  );
+
+  const unscheduledTaskCount = useMemo(() =>
+    activeRows.filter(row => !row.schedule && !nextDatesMap[keyOf(row)]).length,
+    [activeRows, nextDatesMap]
+  );
+
   function formatDateFromDate(d) {
     if (!d) return "�";
     return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
@@ -369,21 +398,21 @@ export default function DashboardPage({ navigate }) {
             sub={overdueItems.length > 0 || overdueChores.length > 0
               ? `${overdueItems.length} maint · ${overdueChores.length} chores`
               : "all clear"}
-            onClick={() => navigate("maintenance")}
+            onClick={() => navigate("maintenance", { category: "Overdue" })}
           />
           <StatCard
             label="Upcoming"
             value={upcomingItems.length}
             valueColor="#c9a96e"
             sub="maintenance in 30 days"
-            onClick={() => navigate("maintenance")}
+            onClick={() => navigate("maintenance", { category: "Next 30 Days" })}
           />
           <StatCard
             label="Chores This Week"
             value={upcomingChores.length}
             valueColor={upcomingChores.length > 0 ? "#c9a96e" : "#a8a29c"}
             sub="due in 7 days"
-            onClick={() => navigate("chores")}
+            onClick={() => navigate("chores", { showUpcoming: true })}
           />
           <StatCard
             label="Open To Dos"
@@ -407,7 +436,15 @@ export default function DashboardPage({ navigate }) {
               <div style={emptyText}>All clear</div>
             ) : (
               combinedOverdue.map((item, i) => (
-                <div key={i} style={rowStyle}>
+                <div
+                  key={i}
+                  onClick={() => item.type === "maint"
+                    ? navigate("maintenance", { search: item.row.task })
+                    : navigate("chores", { choreId: item.chore.id })}
+                  style={{ ...rowStyle, cursor: "pointer" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "#e8e4dd"}
+                  onMouseLeave={e => e.currentTarget.style.color = ""}
+                >
                   <span style={{ color: "#f87171", flexShrink: 0, minWidth: "58px" }}>{formatDateFromDate(item.date)}</span>
                   <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
                   <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
@@ -436,7 +473,14 @@ export default function DashboardPage({ navigate }) {
                     <span style={{ color: "#c9a96e", flexShrink: 0, minWidth: "58px" }}>{formatDateFromDate(item.date)}</span>
                     <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
                     <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
-                    <span style={{ flex: 1, overflow: "hidden", textDecoration: done ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
+                    <span
+                      onClick={() => !done && (item.type === "maint"
+                        ? navigate("maintenance", { search: item.row.task })
+                        : navigate("chores", { choreId: item.chore.id }))}
+                      style={{ cursor: done ? "default" : "pointer", flex: 1, overflow: "hidden", textDecoration: done ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                      onMouseEnter={e => { if (!done) e.currentTarget.style.color = "#e8e4dd"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = ""; }}
+                    >{item.label}</span>
                     {!done && <MarkDoneButton onClick={() => handleMarkDone(item)} />}
                   </div>
                 );
@@ -447,6 +491,37 @@ export default function DashboardPage({ navigate }) {
             )}
           </div>
         </div>
+
+        {/* Coverage */}
+        {(zeroTaskItemCount > 0 || unscheduledTaskCount > 0) && (
+          <div style={{ ...card, display: "flex", gap: "2rem", marginBottom: "1rem" }}>
+            <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.55rem", flexShrink: 0, letterSpacing: "0.12em", paddingTop: "0.1rem", textTransform: "uppercase" }}>Coverage</div>
+            <div style={{ display: "flex", flex: 1, gap: "1.5rem" }}>
+              {zeroTaskItemCount > 0 && (
+                <button
+                  onClick={() => navigate("inventory", { expandAll: true })}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}
+                  onMouseEnter={e => e.currentTarget.querySelector("span.val").style.color = "#a8a29c"}
+                  onMouseLeave={e => e.currentTarget.querySelector("span.val").style.color = "#4a4458"}
+                >
+                  <span className="val" style={{ color: "#4a4458", fontFamily: "monospace", fontSize: "1.4rem", fontWeight: 300, transition: "color 0.12s" }}>{zeroTaskItemCount}</span>
+                  <span style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.6rem", marginLeft: "0.4rem" }}>items with no tasks</span>
+                </button>
+              )}
+              {unscheduledTaskCount > 0 && (
+                <button
+                  onClick={() => navigate("inventory", { expandAll: true })}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}
+                  onMouseEnter={e => e.currentTarget.querySelector("span.val").style.color = "#a8a29c"}
+                  onMouseLeave={e => e.currentTarget.querySelector("span.val").style.color = "#5a4a2e"}
+                >
+                  <span className="val" style={{ color: "#5a4a2e", fontFamily: "monospace", fontSize: "1.4rem", fontWeight: 300, transition: "color 0.12s" }}>{unscheduledTaskCount}</span>
+                  <span style={{ color: "#4a3a20", fontFamily: "monospace", fontSize: "0.6rem", marginLeft: "0.4rem" }}>tasks not scheduled</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* To Dos + Projects */}
         <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1fr", marginBottom: "1rem" }}>

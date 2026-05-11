@@ -39,7 +39,7 @@ function saveDates(key, dates) {
   ));
 }
 
-export default function HomeMaintenanceTable({ navigate }) {
+export default function HomeMaintenanceTable({ navigate, navState }) {
   const [rows, setRows] = useState(() => loadData());
   const [activeCategory, setActiveCategory] = useState("All");
   const [search, setSearch] = useState("");
@@ -62,23 +62,34 @@ export default function HomeMaintenanceTable({ navigate }) {
     return () => obs.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!navState) return;
+    if (navState.category) setActiveCategory(navState.category);
+    if (navState.search != null) setSearch(navState.search);
+  }, []);
+
   const categoryGroups = useMemo(() => {
     // Scan ALL rows (including blank sentinels) so custom categories pick up
     // the categoryType stored on their sentinel row.
     const catTypeMap = {};
     rows.forEach(row => {
       if (!row.category) return;
-      if (deletedCategories.has(row.category)) return;
-      if (!catTypeMap[row.category] && row.categoryType) {
-        catTypeMap[row.category] = row.categoryType;
+      if (!row._isCustom && deletedCategories.has(row.category)) return;
+      if (!catTypeMap[row.category] || row._isCustom) {
+        if (row.categoryType) catTypeMap[row.category] = row.categoryType;
       }
     });
 
-    // Only show categories that have at least one real (non-sentinel) row.
+    // Show categories that have tasks, plus any user-created categories (even
+    // if they have no tasks yet — user created them and expects to see them).
     const catsWithContent = new Set();
     rows.forEach(row => {
-      if (!row.category || row._isBlankCategory) return;
-      if (deletedCategories.has(row.category)) return;
+      if (!row.category) return;
+      if (!row._isCustom && deletedCategories.has(row.category)) return;
+      if (row._isBlankCategory) {
+        if (row._isCustom) catsWithContent.add(row.category);
+        return;
+      }
       catsWithContent.add(row.category);
     });
 
@@ -96,6 +107,30 @@ export default function HomeMaintenanceTable({ navigate }) {
         }),
     }));
   }, [rows, deletedCategories, categoryTypeOverrides]);
+
+  const activeTaskCount = useMemo(() => {
+    let count = 0;
+    rows.forEach(row => {
+      if (row._isBlankCategory || !row.category || !row.item || !row.task) return;
+      if (!row._isCustom && deletedCategories.has(row.category)) return;
+      if (deletedItems.has(`${row.category}|${row.item}`)) return;
+      if (deletedRows.has(`${row.category}|${row.item}|${row.task}`)) return;
+      count++;
+    });
+    return count;
+  }, [rows, deletedCategories, deletedItems, deletedRows]);
+
+  const activeCategoryCount = useMemo(() => {
+    const seen = new Set();
+    rows.forEach(row => {
+      if (row._isBlankCategory || !row.category || !row.item || !row.task) return;
+      if (!row._isCustom && deletedCategories.has(row.category)) return;
+      if (deletedItems.has(`${row.category}|${row.item}`)) return;
+      if (deletedRows.has(`${row.category}|${row.item}|${row.task}`)) return;
+      seen.add(row.category);
+    });
+    return seen.size;
+  }, [rows, deletedCategories, deletedItems, deletedRows]);
 
   const rowDataByKey = useMemo(() => Object.fromEntries(
     rows.map(row => [
@@ -311,7 +346,8 @@ export default function HomeMaintenanceTable({ navigate }) {
     return dir === "asc" ? raw : -raw;
   }
 
-  const isNext30View = activeCategory === "Next 30 Days";
+  const isNext30View  = activeCategory === "Next 30 Days";
+  const isOverdueView = activeCategory === "Overdue";
 
   const filtered = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -322,11 +358,20 @@ export default function HomeMaintenanceTable({ navigate }) {
 
       if (isNext30View) {
         if (row._isBlankCategory) return false;
-        if (deletedCategories.has(row.category)) return false;
+        if (!row._isCustom && deletedCategories.has(row.category)) return false;
         if (deletedItems.has(`${row.category}|${row.item}`)) return false;
         if (deletedRows.has(key)) return false;
         const nd = nextDates[key];
         return nd && nd >= today && nd <= in30Days;
+      }
+
+      if (isOverdueView) {
+        if (row._isBlankCategory) return false;
+        if (!row._isCustom && deletedCategories.has(row.category)) return false;
+        if (deletedItems.has(`${row.category}|${row.item}`)) return false;
+        if (deletedRows.has(key)) return false;
+        const nd = nextDates[key];
+        return nd && nd < today;
       }
 
       if (row._isBlankCategory) {
@@ -334,7 +379,7 @@ export default function HomeMaintenanceTable({ navigate }) {
         const q = search.toLowerCase();
         return !q || (row.category || "").toLowerCase().includes(q);
       }
-      if (deletedCategories.has(row.category)) return false;
+      if (!row._isCustom && deletedCategories.has(row.category)) return false;
       if (deletedItems.has(`${row.category}|${row.item}`)) return false;
       if (deletedRows.has(key)) return false;
 
@@ -376,7 +421,7 @@ export default function HomeMaintenanceTable({ navigate }) {
       if (a._isCustom !== b._isCustom) return a._isCustom ? -1 : 1;
       return 0;
     });
-  }, [rows, activeCategory, isNext30View, activeFrequencies, activeSeasons, search, deletedRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
+  }, [rows, activeCategory, isNext30View, isOverdueView, activeFrequencies, activeSeasons, search, deletedRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
 
 
   return (
@@ -424,7 +469,7 @@ export default function HomeMaintenanceTable({ navigate }) {
       <div style={{ flex: 1, overflowY: "auto", padding: "2rem 2rem 4rem" }}>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", marginBottom: "1.25rem" }}>
           <p style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.85rem", margin: 0 }}>
-            {defaultData.length} maintenance items across {CATEGORY_TABS.filter(t => t !== "All" && t !== "User" && t !== "Hidden" && !deletedCategories.has(t)).length} categories
+            {activeTaskCount} maintenance item{activeTaskCount !== 1 ? "s" : ""} across {activeCategoryCount} categor{activeCategoryCount !== 1 ? "ies" : "y"}
           </p>
           <input
             value={search}
@@ -489,7 +534,7 @@ export default function HomeMaintenanceTable({ navigate }) {
           </button>
         </div>
         <CategoryTabs
-          special={["All", "User", "Next 30 Days"]}
+          special={["All", "User", "Next 30 Days", "Overdue"]}
           groups={categoryGroups}
           active={activeCategory}
           onSelect={setActiveCategory}

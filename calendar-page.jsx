@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import PageNav from "./components/PageNav.jsx";
 import CategoryTabs from "./components/CategoryTabs.jsx";
+import ChoreDetailModal from "./components/ChoreDetailModal.jsx";
 import {
   loadChores, saveChores, createChore,
   loadChoreNextDates, saveChoreNextDates,
@@ -15,6 +16,9 @@ import { parseMonths, isComputable } from "./lib/scheduleInterval.js";
 import {
   loadMaintenanceStartDates, saveMaintenanceStartDates, maintenanceKey,
 } from "./lib/maintenance.js";
+import {
+  loadChoreCompletions, saveChoreCompletions, isChoreCompleted, toggleChoreCompletion,
+} from "./lib/choreCompletions.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -207,7 +211,8 @@ function getMaintenanceUpcoming(startDateStr, schedule, n = 3) {
 }
 
 // Combined upcoming from chores + maintenance, sorted chronologically.
-function buildGlobalUpcoming(chores, maintenanceRows, maintenanceStartDates, n = 16) {
+function buildGlobalUpcoming(chores, maintenanceRows, maintenanceStartDates, maintenanceNextDates, n = 16) {
+  const now    = new Date();
   const events = [];
   for (const chore of chores) {
     if (!chore.startDate || !chore.schedule) continue;
@@ -218,10 +223,17 @@ function buildGlobalUpcoming(chores, maintenanceRows, maintenanceStartDates, n =
   for (const row of maintenanceRows) {
     const key    = maintenanceKey(row);
     const anchor = maintenanceStartDates[key];
-    if (!anchor) continue;
-    getMaintenanceUpcoming(anchor, row.schedule, 2).forEach(date =>
-      events.push({ date, type: "maintenance", label: `${row.item} › ${row.task}`, color: getScheduleColor(row.schedule), meta: row.category })
-    );
+    if (anchor) {
+      getMaintenanceUpcoming(anchor, row.schedule, 2).forEach(date =>
+        events.push({ date, type: "maintenance", label: `${row.item} › ${row.task}`, color: getScheduleColor(row.schedule), meta: row.category })
+      );
+    } else {
+      const nextStr = maintenanceNextDates[key];
+      if (!nextStr) continue;
+      const nextDate = new Date(nextStr);
+      if (nextDate >= now)
+        events.push({ date: nextDate, type: "maintenance", label: `${row.item} › ${row.task}`, color: getScheduleColor(row.schedule), meta: row.category });
+    }
   }
   events.sort((a, b) => a.date - b.date);
   return events.slice(0, n);
@@ -283,13 +295,16 @@ export default function CalendarPage({ navigate }) {
     );
   });
   const [maintenanceStartDates, setMaintenanceStartDates] = useState(() => loadMaintenanceStartDates());
-  const [maintenanceDates]      = useState(() => JSON.parse(localStorage.getItem("maintenance-dates") || "{}"));
+  const [maintenanceDates]      = useState(() => { try { return JSON.parse(localStorage.getItem("maintenance-dates") || "{}"); } catch { return {}; } });
+  const [maintenanceNextDates]  = useState(() => { try { return JSON.parse(localStorage.getItem("maintenance-next-dates") || "{}"); } catch { return {}; } });
   const [view, setView]         = useState({ y: todayYear, m: todayMonth });
   const [selectedDay, setSelectedDay]     = useState(null);
   const [createDate, setCreateDate]       = useState(null);
   const [selectedTaskKey, setSelectedTaskKey] = useState(null); // maintenance task awaiting start date
   const [activeFilter, setActiveFilter] = useState("All");
   const [roomOptions]           = useState(() => buildRoomOptions());
+  const [choreCompletions, setChoreCompletions] = useState(() => loadChoreCompletions());
+  const [detailEvent, setDetailEvent] = useState(null); // { chore, date } | null
 
   const atYearStart = view.y === CURRENT_YEAR && view.m === 0;
   const atYearEnd   = view.y === CURRENT_YEAR && view.m === 11;
@@ -331,22 +346,33 @@ export default function CalendarPage({ navigate }) {
       if (!chore.startDate || !chore.schedule) continue;
       if (activeFilter !== "All" && chore.room !== activeFilter) continue;
       const days = getChoreMonthOccurrences(chore.startDate, chore.schedule, chore.dayOfWeek, view.y, view.m);
-      for (const day of days) push(day, { type: "chore", chore, isCompleted: false });
+      for (const day of days) {
+        const date = new Date(view.y, view.m, day);
+        push(day, { type: "chore", chore, date, isCompleted: isChoreCompleted(choreCompletions, chore.id, date) });
+      }
     }
 
     for (const row of maintenanceRows) {
       const key    = maintenanceKey(row);
       const anchor = maintenanceStartDates[key];
-      if (!anchor) continue;
       if (activeFilter !== "All" && row.category !== activeFilter) continue;
-      const days = getMaintenanceMonthOccurrences(anchor, row.schedule, row.season, view.y, view.m);
-      for (const day of days) {
-        const projectedDate = new Date(view.y, view.m, day);
-        push(day, { type: "maintenance", row, key, isCompleted: checkMaintenanceCompleted(key, projectedDate, row.schedule, maintenanceDates) });
+      if (anchor) {
+        const days = getMaintenanceMonthOccurrences(anchor, row.schedule, row.season, view.y, view.m);
+        for (const day of days) {
+          const projectedDate = new Date(view.y, view.m, day);
+          push(day, { type: "maintenance", row, key, isCompleted: checkMaintenanceCompleted(key, projectedDate, row.schedule, maintenanceDates) });
+        }
+      } else {
+        // No recurring start date — show next due date as a one-time event if it falls in this month.
+        const nextStr = maintenanceNextDates[key];
+        if (!nextStr) continue;
+        const nextDate = new Date(nextStr);
+        if (nextDate.getFullYear() === view.y && nextDate.getMonth() === view.m)
+          push(nextDate.getDate(), { type: "maintenance", row, key, isCompleted: false });
       }
     }
     return map;
-  }, [chores, maintenanceRows, maintenanceStartDates, maintenanceDates, view, activeFilter]);
+  }, [chores, maintenanceRows, maintenanceStartDates, maintenanceDates, maintenanceNextDates, choreCompletions, view, activeFilter]);
 
   // Maintenance tasks that have no start date yet (need scheduling)
   const unscheduledMaintenance = useMemo(() =>
@@ -361,8 +387,8 @@ export default function CalendarPage({ navigate }) {
     : null;
 
   const globalUpcoming = useMemo(
-    () => buildGlobalUpcoming(chores, maintenanceRows, maintenanceStartDates),
-    [chores, maintenanceRows, maintenanceStartDates]
+    () => buildGlobalUpcoming(chores, maintenanceRows, maintenanceStartDates, maintenanceNextDates),
+    [chores, maintenanceRows, maintenanceStartDates, maintenanceNextDates]
   );
 
   function handleCellClick(day) {
@@ -411,6 +437,20 @@ export default function CalendarPage({ navigate }) {
           date={createDate} roomOptions={roomOptions}
           onSave={(form, date) => { handleCreateChore(form, date); setCreateDate(null); }}
           onClose={() => setCreateDate(null)}
+        />
+      )}
+
+      {detailEvent && (
+        <ChoreDetailModal
+          chore={detailEvent.chore}
+          date={detailEvent.date}
+          isDone={isChoreCompleted(choreCompletions, detailEvent.chore.id, detailEvent.date)}
+          onToggleDone={() => {
+            const next = toggleChoreCompletion(choreCompletions, detailEvent.chore.id, detailEvent.date);
+            saveChoreCompletions(next);
+            setChoreCompletions(next);
+          }}
+          onClose={() => setDetailEvent(null)}
         />
       )}
 
@@ -521,8 +561,15 @@ export default function CalendarPage({ navigate }) {
                     const label = evt.type === "chore"
                       ? evt.chore.title
                       : `${evt.row.item} › ${evt.row.task}`;
+                    const clickable = evt.type === "chore";
                     return (
-                      <div key={idx} style={{ alignItems: "baseline", display: "flex", gap: "3px", marginBottom: "2px", overflow: "hidden", padding: "0 1px" }}>
+                      <div
+                        key={idx}
+                        onClick={clickable ? e => { e.stopPropagation(); setDetailEvent({ chore: evt.chore, date: evt.date }); } : undefined}
+                        style={{ alignItems: "baseline", borderRadius: "2px", cursor: clickable ? "pointer" : "default", display: "flex", gap: "3px", marginBottom: "2px", overflow: "hidden", padding: "0 1px" }}
+                        onMouseEnter={clickable ? e => e.currentTarget.style.background = "#ffffff08" : undefined}
+                        onMouseLeave={clickable ? e => e.currentTarget.style.background = "transparent" : undefined}
+                      >
                         <span style={{ background: color, borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "6px", marginTop: "2px", opacity: evt.isCompleted ? 0.4 : 1, width: "6px" }} />
                         <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", opacity: evt.isCompleted ? 0.45 : 1, overflow: "hidden", textDecoration: evt.isCompleted ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {label}
@@ -571,10 +618,16 @@ export default function CalendarPage({ navigate }) {
                       <>
                         <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase" }}>Chores</div>
                         {selectedDayEvents.filter(e => e.type === "chore").map((evt, idx) => (
-                          <div key={idx} style={{ alignItems: "flex-start", borderBottom: "1px solid #1e2330", display: "flex", gap: "0.5rem", marginBottom: "0.5rem", paddingBottom: "0.5rem" }}>
+                          <div
+                            key={idx}
+                            onClick={() => setDetailEvent({ chore: evt.chore, date: evt.date })}
+                            style={{ alignItems: "flex-start", borderBottom: "1px solid #1e2330", cursor: "pointer", display: "flex", gap: "0.5rem", marginBottom: "0.5rem", opacity: evt.isCompleted ? 0.5 : 1, paddingBottom: "0.5rem", transition: "opacity 0.15s" }}
+                            onMouseEnter={e => e.currentTarget.style.background = "#ffffff05"}
+                            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                          >
                             <span style={{ background: getScheduleColor(evt.chore.schedule), borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "7px", marginTop: "4px", width: "7px" }} />
                             <div>
-                              <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.75rem" }}>{evt.chore.title}</div>
+                              <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.75rem", textDecoration: evt.isCompleted ? "line-through" : "none" }}>{evt.chore.title}</div>
                               <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.63rem" }}>
                                 {evt.chore.room}{evt.chore.timeOfDay && ` · ${formatTimeOfDay(evt.chore.timeOfDay)}`}{evt.chore.assignee && ` · ${evt.chore.assignee}`}
                               </div>

@@ -40,6 +40,20 @@
   {
     "category": "HVAC",
     "categoryType": "system",
+    "item": "Mini-Split / Ductless System",
+    "task": "Clean indoor unit filters",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
+    "item": "Mini-Split / Ductless System",
+    "task": "Professional inspection & tune-up",
+    "schedule": "Annually"
+  },
+  {
+    "category": "HVAC",
+    "categoryType": "system",
     "item": "Ductwork",
     "task": "Inspect for leaks and seal",
     "schedule": "Every 3–5 years"
@@ -107,6 +121,20 @@
     "categoryType": "system",
     "item": "Water Heater (Tankless)",
     "task": "Descale / flush system",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Water Heater (Tankless)",
+    "task": "Test pressure relief valve",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Plumbing",
+    "categoryType": "system",
+    "item": "Water Heater (Tankless)",
+    "task": "Inspect venting and combustion air supply",
     "schedule": "Annually"
   },
   {
@@ -401,6 +429,13 @@
   {
     "category": "Electrical",
     "categoryType": "system",
+    "item": "AFCI Breakers",
+    "task": "Test all AFCI breakers",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Electrical",
+    "categoryType": "system",
     "item": "Electrical Panel",
     "task": "Visual inspection for corrosion/heat damage",
     "schedule": "Annually"
@@ -446,6 +481,48 @@
     "item": "Backup Generator",
     "task": "Test run and oil change",
     "schedule": "Every 6 months"
+  },
+  {
+    "category": "Smart Home",
+    "categoryType": "system",
+    "item": "Smart Thermostat",
+    "task": "Update firmware and calibrate settings",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Smart Home",
+    "categoryType": "system",
+    "item": "Smart Smoke / CO Detector",
+    "task": "Test units and check battery",
+    "schedule": "Monthly"
+  },
+  {
+    "category": "Smart Home",
+    "categoryType": "system",
+    "item": "Smart Smoke / CO Detector",
+    "task": "Replace entire unit",
+    "schedule": "Every 7–10 years"
+  },
+  {
+    "category": "Smart Home",
+    "categoryType": "system",
+    "item": "Video Doorbell",
+    "task": "Clean lens and check battery or wiring",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Smart Home",
+    "categoryType": "system",
+    "item": "Network Router / Hub",
+    "task": "Restart and check for firmware updates",
+    "schedule": "Every 6 months"
+  },
+  {
+    "category": "Smart Home",
+    "categoryType": "system",
+    "item": "Smart Lock",
+    "task": "Replace batteries and test operation",
+    "schedule": "Annually"
   },
   {
     "category": "Roof",
@@ -495,6 +572,34 @@
     "item": "Flat Roof / EPDM",
     "task": "Inspect membrane and seams",
     "schedule": "Twice a year"
+  },
+  {
+    "category": "Roof",
+    "categoryType": "structure",
+    "item": "Metal Roof",
+    "task": "Inspect for loose fasteners, sealant and rust",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Roof",
+    "categoryType": "structure",
+    "item": "Tile Roof (Clay / Concrete)",
+    "task": "Inspect for cracked or slipped tiles",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Roof",
+    "categoryType": "structure",
+    "item": "Slate Roof",
+    "task": "Inspect for cracked, missing or slipped slates",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Roof",
+    "categoryType": "structure",
+    "item": "Wood Shake / Shingle Roof",
+    "task": "Inspect for splits, moss or curling; treat if needed",
+    "schedule": "Annually"
   },
   {
     "category": "Gutters & Drainage",
@@ -758,15 +863,43 @@
     "schedule": "Annually"
   },
   {
+    "category": "Attic",
+    "categoryType": "room",
+    "item": "Insulation",
+    "task": "Inspect depth and condition",
+    "schedule": "Every 5 years"
+  },
+  {
+    "category": "Attic",
+    "categoryType": "room",
+    "item": "Ventilation",
+    "task": "Inspect soffit and ridge vents for blockages",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Attic",
+    "categoryType": "room",
+    "item": "Ventilation",
+    "task": "Check for moisture, condensation or mold",
+    "schedule": "Annually"
+  },
+  {
+    "category": "Attic",
+    "categoryType": "room",
+    "item": "Structural Framing",
+    "task": "Inspect rafters and sheathing for damage or rot",
+    "schedule": "Every 5 years"
+  },
+  {
     "category": "Garage",
-    "categoryType": "structure",
+    "categoryType": "room",
     "item": "Garage Floor",
     "task": "Seal concrete or touch up epoxy",
     "schedule": "Every 3–5 years"
   },
   {
     "category": "Garage",
-    "categoryType": "structure",
+    "categoryType": "room",
     "item": "Garage Ventilation",
     "task": "Clear vents of obstructions",
     "schedule": "Annually"
@@ -805,13 +938,6 @@
     "item": "Ceiling Fans",
     "task": "Reverse direction seasonally; clean blades",
     "schedule": "Twice a year"
-  },
-  {
-    "category": "Interior",
-    "categoryType": "general",
-    "item": "Attic",
-    "task": "Inspect insulation and ventilation for moisture",
-    "schedule": "Annually"
   },
   {
     "category": "Interior",

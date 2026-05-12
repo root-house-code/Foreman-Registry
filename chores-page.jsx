@@ -16,8 +16,14 @@ import {
   loadChoreNotes, saveChoreNotes,
   computeChoreNextDate, computeNextOccurrenceFromStart,
 } from "./lib/chores.js";
-import { loadData } from "./lib/data.js";
-import { loadRoomCategories } from "./lib/categoryTypes.js";
+import { loadData, loadCustomData, saveCustomData } from "./lib/data.js";
+import { loadDeletedCategories } from "./lib/deletedCategories.js";
+import { loadDeletedItems } from "./lib/deletedItems.js";
+import { loadRoomCategories, loadRoomSubtypes, formatRoomLabel } from "./lib/categoryTypes.js";
+import {
+  loadChoreCompletions, saveChoreCompletions, isChoreCompleted, toggleChoreCompletion,
+} from "./lib/choreCompletions.js";
+import ChoreDetailModal from "./components/ChoreDetailModal.jsx";
 import {
   loadChoreReminderModes, saveChoreReminderModes,
   loadReminderModes, REMINDER_MODES, syncReminders,
@@ -34,6 +40,7 @@ const ROOM_ORDER = [
 
 function buildRoomOptions() {
   const fromInventory = loadRoomCategories();
+  const subtypes = loadRoomSubtypes();
   const all = ["Whole House", ...fromInventory.filter(r => r !== "Whole House")];
   return all
     .sort((a, b) => {
@@ -46,7 +53,22 @@ function buildRoomOptions() {
       if (bRank !== -1) return 1;
       return a.localeCompare(b);
     })
-    .map(r => ({ value: r, label: r }));
+    .map(r => ({ value: r, label: formatRoomLabel(r, subtypes) }));
+}
+
+function buildRoomItemsMap() {
+  const rows = loadData();
+  const deleted = loadDeletedCategories();
+  const deletedItems = loadDeletedItems();
+  const map = {};
+  rows.forEach(row => {
+    if (!row.category || !row.item || row._isBlankCategory) return;
+    if (!row._isCustom && deleted.has(row.category)) return;
+    if (deletedItems.has(`${row.category}|${row.item}`)) return;
+    if (!map[row.category]) map[row.category] = [];
+    if (!map[row.category].includes(row.item)) map[row.category].push(row.item);
+  });
+  return map;
 }
 
 const DAY_OPTIONS = [
@@ -91,44 +113,63 @@ const FREQ_ITEMS = [
 
 const COLUMNS = [
   { label: "Room",     width: "9%",  sortKey: "room"      },
-  { label: "Chore",    width: "22%", sortKey: "title"     },
-  { label: "Schedule", width: "13%", sortKey: "schedule"  },
-  { label: "Day",      width: "7%",  sortKey: "dayOfWeek" },
-  { label: "Time",     width: "8%",  sortKey: "timeOfDay" },
+  { label: "Item",     width: "10%", sortKey: "item"      },
+  { label: "Chore",    width: "18%", sortKey: "title"     },
+  { label: "Schedule", width: "11%", sortKey: "schedule"  },
+  { label: "Day",      width: "6%",  sortKey: "dayOfWeek" },
+  { label: "Time",     width: "7%",  sortKey: "timeOfDay" },
   { label: "",         width: "4%",  sortKey: null        },  // bell
-  { label: "Notes",    width: "24%", sortKey: "notes"     },
+  { label: "Notes",    width: "18%", sortKey: "notes"     },
   { label: "Assignee", width: "9%",  sortKey: "assignee"  },
   { label: "",         width: "4%",  sortKey: null        },  // delete
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function TitleCell({ value, onChange, placeholder = "Chore name" }) {
+function TitleCell({ value, onChange, placeholder = "Chore name", suggestions = [] }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  function startEdit() { setDraft(value || ""); setEditing(true); }
-  function commit() { setEditing(false); if (draft !== value) onChange(draft); }
+  function startEdit() { setDraft(value || ""); setEditing(true); setShowSuggestions(true); }
+  function commit() { setEditing(false); setShowSuggestions(false); if (draft !== value) onChange(draft); }
+
+  const filtered = suggestions.filter(s => s.toLowerCase().includes(draft.toLowerCase()) && s !== draft);
 
   if (!editing) {
     return (
       <span
         onClick={startEdit}
-        style={{ color: value ? "#a8a29c" : "#a8a29c", cursor: "text", display: "block", fontFamily: "inherit", fontSize: "inherit", minHeight: "1.2em" }}
+        style={{ color: "#a8a29c", cursor: "text", display: "block", fontFamily: "inherit", fontSize: "inherit", minHeight: "1.2em" }}
       >
-        {value || placeholder}
+        {value || <span style={{ color: "#3a3548" }}>{placeholder}</span>}
       </span>
     );
   }
   return (
-    <input
-      autoFocus
-      value={draft}
-      onChange={e => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); commit(); } if (e.key === "Escape") setEditing(false); }}
-      style={{ background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "2px", color: "#e8e4dd", fontFamily: "inherit", fontSize: "inherit", outline: "none", padding: "0.1rem 0.3rem", width: "100%" }}
-    />
+    <div style={{ position: "relative" }}>
+      <input
+        autoFocus
+        value={draft}
+        onChange={e => { setDraft(e.target.value); setShowSuggestions(true); }}
+        onBlur={() => setTimeout(commit, 120)}
+        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); commit(); } if (e.key === "Escape") { setEditing(false); setShowSuggestions(false); } }}
+        style={{ background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "2px", color: "#e8e4dd", fontFamily: "inherit", fontSize: "inherit", outline: "none", padding: "0.1rem 0.3rem", width: "100%" }}
+      />
+      {showSuggestions && filtered.length > 0 && (
+        <div style={{ background: "#13161f", border: "1px solid #a8a29c", borderRadius: "2px", left: 0, maxHeight: "120px", overflowY: "auto", position: "absolute", right: 0, top: "calc(100% + 2px)", zIndex: 50 }}>
+          {filtered.map(s => (
+            <div
+              key={s}
+              onMouseDown={e => { e.preventDefault(); setDraft(s); onChange(s); setEditing(false); setShowSuggestions(false); }}
+              style={{ color: "#e8e4dd", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.25rem 0.4rem" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#1a1f2e"}
+              onMouseLeave={e => e.currentTarget.style.background = ""}
+            >{s}</div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -255,18 +296,46 @@ const MODAL_SCHEDULE_OPTIONS = [
   { value: "every 1 years",   label: "Every year"      },
 ];
 
-function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
+function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInventory, onSave, onClose }) {
   const [form, setForm] = useState({
     title:     "",
     room:      roomOptions[0]?.value ?? "Whole House",
+    item:      "",
     schedule:  "every 1 weeks",
     dayOfWeek: date ? date.getDay() : null,
     timeOfDay: null,
     assignee:  "",
     notes:     "",
   });
+  const [itemInput, setItemInput]           = useState("");
+  const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
+  const [addToInventoryPrompt, setAddToInventoryPrompt] = useState(null); // { room, item }
 
   function set(field, val) { setForm(prev => ({ ...prev, [field]: val })); }
+
+  function handleRoomChange(room) {
+    set("room", room);
+    set("item", "");
+    setItemInput("");
+    setAddToInventoryPrompt(null);
+  }
+
+  function commitItem(val) {
+    const trimmed = val.trim();
+    set("item", trimmed);
+    setItemInput(trimmed);
+    setItemDropdownOpen(false);
+    if (!trimmed || form.room === "Whole House") return;
+    const roomItems = roomItemsMap[form.room] ?? [];
+    if (trimmed && !roomItems.some(i => i.toLowerCase() === trimmed.toLowerCase())) {
+      setAddToInventoryPrompt({ room: form.room, item: trimmed });
+    } else {
+      setAddToInventoryPrompt(null);
+    }
+  }
+
+  const itemSuggestions = (form.room !== "Whole House" ? (roomItemsMap[form.room] ?? []) : [])
+    .filter(i => i.toLowerCase().includes(itemInput.toLowerCase()));
 
   const dateLabel = date
     ? date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
@@ -294,12 +363,14 @@ function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
       onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div style={{ background: "#0f1117", border: "1px solid #a8a29c", borderRadius: "6px", maxWidth: 480, padding: "1.75rem 2rem", width: "90%" }}>
-        <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: "0.2rem", textTransform: "uppercase" }}>
+        <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: dateLabel ? "0.2rem" : "1.5rem", textTransform: "uppercase" }}>
           New Chore
         </div>
-        <div style={{ color: "#c9a96e", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.05rem", marginBottom: "1.5rem" }}>
-          {dateLabel}
-        </div>
+        {dateLabel && (
+          <div style={{ color: "#c9a96e", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.05rem", marginBottom: "1.5rem" }}>
+            {dateLabel}
+          </div>
+        )}
 
         <div style={{ marginBottom: "1rem" }}>
           <label style={labelStyle}>Chore Name</label>
@@ -308,17 +379,62 @@ function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
             value={form.title}
             onChange={e => set("title", e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && canSave) onSave(form, date); if (e.key === "Escape") onClose(); }}
-            placeholder="e.g. Vacuum all floors"
+            placeholder="e.g. Clean the toilet"
             style={inputStyle}
           />
         </div>
 
-        <div style={{ marginBottom: "1rem" }}>
-          <label style={labelStyle}>Room</label>
-          <select value={form.room} onChange={e => set("room", e.target.value)} style={selectStyle}>
-            {roomOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
-          </select>
+        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1fr", marginBottom: "1rem" }}>
+          <div>
+            <label style={labelStyle}>Room</label>
+            <select value={form.room} onChange={e => handleRoomChange(e.target.value)} style={selectStyle}>
+              {roomOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </div>
+          <div style={{ position: "relative" }}>
+            <label style={labelStyle}>Item <span style={{ color: "#5a5468", textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+            <input
+              value={itemInput}
+              onChange={e => { setItemInput(e.target.value); set("item", e.target.value.trim()); setItemDropdownOpen(true); setAddToInventoryPrompt(null); }}
+              onFocus={() => setItemDropdownOpen(true)}
+              onBlur={() => { setTimeout(() => { commitItem(itemInput); setItemDropdownOpen(false); }, 120); }}
+              placeholder={form.room !== "Whole House" ? "e.g. Toilet" : "Select a room first"}
+              disabled={form.room === "Whole House"}
+              style={{ ...inputStyle, color: form.room === "Whole House" ? "#3a3548" : "#e8e4dd" }}
+            />
+            {itemDropdownOpen && itemSuggestions.length > 0 && (
+              <div style={{ background: "#13161f", border: "1px solid #a8a29c", borderRadius: "2px", left: 0, maxHeight: "140px", overflowY: "auto", position: "absolute", right: 0, top: "calc(100% + 2px)", zIndex: 10 }}>
+                {itemSuggestions.map(s => (
+                  <div
+                    key={s}
+                    onMouseDown={e => { e.preventDefault(); commitItem(s); }}
+                    style={{ color: "#e8e4dd", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#1a1f2e"}
+                    onMouseLeave={e => e.currentTarget.style.background = ""}
+                  >{s}</div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
+        {addToInventoryPrompt && (
+          <div style={{ alignItems: "flex-start", background: "#1a1f2e", border: "1px solid #c9a96e40", borderRadius: "3px", display: "flex", gap: "0.75rem", justifyContent: "space-between", marginBottom: "1rem", padding: "0.6rem 0.75rem" }}>
+            <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.7rem", lineHeight: 1.4 }}>
+              <span style={{ color: "#c9a96e" }}>{addToInventoryPrompt.item}</span> isn&apos;t in your {addToInventoryPrompt.room} inventory. Add it?
+            </span>
+            <div style={{ display: "flex", flexShrink: 0, gap: "0.4rem" }}>
+              <button
+                onMouseDown={e => { e.preventDefault(); onAddItemToInventory?.(addToInventoryPrompt.room, addToInventoryPrompt.item); setAddToInventoryPrompt(null); }}
+                style={{ background: "#c9a96e22", border: "1px solid #c9a96e", borderRadius: "2px", color: "#c9a96e", cursor: "pointer", fontFamily: "monospace", fontSize: "0.65rem", padding: "0.2rem 0.5rem" }}
+              >Add</button>
+              <button
+                onMouseDown={e => { e.preventDefault(); setAddToInventoryPrompt(null); }}
+                style={{ background: "transparent", border: "1px solid #3a3548", borderRadius: "2px", color: "#5a5468", cursor: "pointer", fontFamily: "monospace", fontSize: "0.65rem", padding: "0.2rem 0.5rem" }}
+              >Skip</button>
+            </div>
+          </div>
+        )}
 
         <div style={{ marginBottom: "1rem" }}>
           <label style={labelStyle}>Schedule</label>
@@ -372,7 +488,7 @@ function CreateChoreModal({ date, roomOptions, onSave, onClose }) {
   );
 }
 
-function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, onSetStartDate, onClearDate }) {
+function CalendarWidget({ chores, roomOptions, roomItemsMap, onAddItemToInventory, selectedChoreId, onCreateChore, onSetStartDate, onClearDate, choreCompletions = {}, onToggleCompletion }) {
   const todayRaw   = new Date();
   const todayYear  = todayRaw.getFullYear();
   const todayMonth = todayRaw.getMonth();
@@ -383,6 +499,7 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
   const [view, setView] = useState({ y: todayYear, m: todayMonth });
   const [createDate, setCreateDate] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [detailEvent, setDetailEvent] = useState(null); // { chore, date } | null
 
   useEffect(() => {
     if (selectedChore?.startDate) {
@@ -428,8 +545,20 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
         <CreateChoreModal
           date={createDate}
           roomOptions={roomOptions}
+          roomItemsMap={roomItemsMap}
+          onAddItemToInventory={onAddItemToInventory}
           onSave={(form, date) => { onCreateChore(form, date); setCreateDate(null); }}
           onClose={() => setCreateDate(null)}
+        />
+      )}
+
+      {detailEvent && (
+        <ChoreDetailModal
+          chore={detailEvent.chore}
+          date={detailEvent.date}
+          isDone={isChoreCompleted(choreCompletions, detailEvent.chore.id, detailEvent.date)}
+          onToggleDone={() => onToggleCompletion(detailEvent.chore.id, detailEvent.date)}
+          onClose={() => setDetailEvent(null)}
         />
       )}
 
@@ -523,14 +652,19 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
                 {/* Chore chips */}
                 {visible.map(chore => {
                   const color = getScheduleColor(chore.schedule);
+                  const chipDate = new Date(view.y, view.m, day);
+                  const done = isChoreCompleted(choreCompletions, chore.id, chipDate);
                   return (
                     <div
                       key={chore.id}
+                      onClick={e => { e.stopPropagation(); setDetailEvent({ chore, date: chipDate }); }}
                       style={{
                         alignItems: "baseline",
+                        cursor: "pointer",
                         display: "flex",
                         gap: "4px",
                         marginBottom: "2px",
+                        opacity: done ? 0.55 : 1,
                         overflow: "hidden",
                         padding: "0 2px",
                       }}
@@ -548,6 +682,7 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
                         fontFamily: "monospace",
                         fontSize: "0.58rem",
                         overflow: "hidden",
+                        textDecoration: done ? "line-through" : "none",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
                       }}>
@@ -658,7 +793,7 @@ function CalendarWidget({ chores, roomOptions, selectedChoreId, onCreateChore, o
   );
 }
 
-function ChoresTable({ rows, notes, roomOptions, reminderModes, selectedChoreId, onChoreEdit, onNoteChange, onCycleReminderMode, onDelete, onChoreSelect, sortCols, onHeaderClick }) {
+function ChoresTable({ rows, notes, roomOptions, roomItemsMap = {}, reminderModes, selectedChoreId, onChoreEdit, onNoteChange, onCycleReminderMode, onDelete, onChoreSelect, sortCols, onHeaderClick }) {
   return (
     <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", overflowX: "auto" }}>
       <table style={{ borderCollapse: "collapse", fontSize: "0.82rem", width: "100%" }}>
@@ -733,6 +868,16 @@ function ChoresTable({ rows, notes, roomOptions, reminderModes, selectedChoreId,
                     options={roomOptions}
                     placeholder="Room"
                     onChange={v => onChoreEdit(chore.id, "room", v)}
+                  />
+                </td>
+
+                {/* Item */}
+                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
+                  <TitleCell
+                    value={chore.item || ""}
+                    onChange={v => onChoreEdit(chore.id, "item", v)}
+                    placeholder="—"
+                    suggestions={chore.room && chore.room !== "Whole House" ? (roomItemsMap[chore.room] ?? []) : []}
                   />
                 </td>
 
@@ -827,12 +972,15 @@ export default function ChoresPage({ navigate, navState }) {
   const [remindersOpen, setRemindersOpen] = useState(false);
   const [selectedChoreId, setSelectedChoreId] = useState(null);
   const [roomOptions]                     = useState(() => buildRoomOptions());
+  const [roomItemsMap, setRoomItemsMap]   = useState(() => buildRoomItemsMap());
   const [activeRoom, setActiveRoom]       = useState("All");
   const [activeFrequencies, setActiveFrequencies] = useState(new Set());
   const [search, setSearch]               = useState("");
   const [sortCols, setSortCols]           = useState([]);
   const [confirmChore, setConfirmChore]   = useState(null);
+  const [addChoreModalOpen, setAddChoreModalOpen] = useState(false);
   const [addHovered, setAddHovered]       = useState(false);
+  const [choreCompletions, setChoreCompletions] = useState(() => loadChoreCompletions());
 
   useEffect(() => {
     if (!navState) return;
@@ -846,11 +994,14 @@ export default function ChoresPage({ navigate, navState }) {
     fromInventory.delete("Whole House");
     // Also include any rooms used on existing chores that aren't in inventory
     chores.forEach(c => { if (c.room && c.room !== "Whole House") fromInventory.add(c.room); });
-    return [
-      ...ROOM_ORDER.filter(r => fromInventory.has(r)),
-      ...[...fromInventory].filter(r => !ROOM_ORDER.includes(r)).sort(),
-    ];
+    return [...fromInventory].sort((a, b) => a.localeCompare(b));
   }, [chores, roomOptions]);
+
+  // Map category key → display label for room tabs (derived from roomOptions which already formats labels)
+  const roomLabels = useMemo(() =>
+    Object.fromEntries(roomOptions.filter(o => o.label !== o.value).map(o => [o.value, o.label])),
+    [roomOptions]
+  );
 
   // ── Sort helpers ────────────────────────────────────────────────────────────
   function handleHeaderClick(col, shiftKey) {
@@ -868,6 +1019,7 @@ export default function ChoresPage({ navigate, navState }) {
   function getSortValue(chore, col) {
     switch (col) {
       case "room":      return (chore.room  || "").toLowerCase();
+      case "item":      return (chore.item  || "").toLowerCase();
       case "title":     return (chore.title || "").toLowerCase();
       case "schedule":  return parseMonths(chore.schedule) ?? 999;
       case "dayOfWeek": return chore.dayOfWeek ?? 7;
@@ -898,8 +1050,9 @@ export default function ChoresPage({ navigate, navState }) {
       if (search.trim()) {
         const q = search.toLowerCase();
         if (
-          !(chore.room    || "").toLowerCase().includes(q) &&
-          !(chore.title   || "").toLowerCase().includes(q) &&
+          !(chore.room     || "").toLowerCase().includes(q) &&
+          !(chore.item     || "").toLowerCase().includes(q) &&
+          !(chore.title    || "").toLowerCase().includes(q) &&
           !(chore.schedule || "").toLowerCase().includes(q)
         ) return false;
       }
@@ -939,10 +1092,23 @@ export default function ChoresPage({ navigate, navState }) {
   }
 
   function handleAddChore() {
-    const newChore = createChore({ title: "", room: "Whole House", schedule: "every 1 weeks", dayOfWeek: null, timeOfDay: null });
+    setAddChoreModalOpen(true);
+  }
+
+  function handleAddChoreModalSave(form) {
+    const newChore = createChore({ ...form });
     const updated = [newChore, ...chores];
     setChores(updated);
     saveChores(updated);
+    setSelectedChoreId(newChore.id);
+    setAddChoreModalOpen(false);
+  }
+
+  function handleAddItemToInventory(room, item) {
+    const customs = loadCustomData();
+    const newRow = { category: room, categoryType: "room", item, _isCustom: true };
+    saveCustomData([...customs, newRow]);
+    setRoomItemsMap(buildRoomItemsMap());
   }
 
   function handleDeleteChore(chore) {
@@ -1000,6 +1166,12 @@ export default function ChoresPage({ navigate, navState }) {
     setSelectedChoreId(newChore.id);
   }
 
+  function handleToggleChoreCompletion(choreId, date) {
+    const next = toggleChoreCompletion(choreCompletions, choreId, date);
+    saveChoreCompletions(next);
+    setChoreCompletions(next);
+  }
+
   function handleClearStartDate(choreId) {
     const updated = chores.map(c => c.id === choreId ? { ...c, startDate: null } : c);
     setChores(updated);
@@ -1025,6 +1197,17 @@ export default function ChoresPage({ navigate, navState }) {
           chore={confirmChore}
           onConfirm={() => handleDeleteChore(confirmChore)}
           onClose={() => setConfirmChore(null)}
+        />
+      )}
+
+      {addChoreModalOpen && (
+        <CreateChoreModal
+          date={null}
+          roomOptions={roomOptions}
+          roomItemsMap={roomItemsMap}
+          onAddItemToInventory={handleAddItemToInventory}
+          onSave={handleAddChoreModalSave}
+          onClose={() => setAddChoreModalOpen(false)}
         />
       )}
 
@@ -1113,6 +1296,7 @@ export default function ChoresPage({ navigate, navState }) {
           rows={filtered}
           notes={notes}
           roomOptions={roomOptions}
+          roomItemsMap={roomItemsMap}
           reminderModes={reminderModes}
           selectedChoreId={selectedChoreId}
           onChoreEdit={handleChoreEdit}
@@ -1128,10 +1312,14 @@ export default function ChoresPage({ navigate, navState }) {
         <CalendarWidget
           chores={chores}
           roomOptions={roomOptions}
+          roomItemsMap={roomItemsMap}
+          onAddItemToInventory={handleAddItemToInventory}
           selectedChoreId={selectedChoreId}
           onCreateChore={handleCreateChoreFromCalendar}
           onSetStartDate={handleSetStartDate}
           onClearDate={handleClearStartDate}
+          choreCompletions={choreCompletions}
+          onToggleCompletion={handleToggleChoreCompletion}
         />
       </div>
       </div>

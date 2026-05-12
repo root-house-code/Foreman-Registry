@@ -23,12 +23,33 @@ const Trigger = forwardRef(({ value, onClick }, ref) => (
 
 export default function DateCell({ date, onChange }) {
   return (
-    <DatePicker
-      selected={date}
-      onChange={onChange}
-      dateFormat="MMM d, yyyy"
-      customInput={<Trigger />}
-      popperPlacement="bottom-start"
-    />
+    <div style={{ alignItems: "center", display: "flex", gap: "0.25rem" }}>
+      <DatePicker
+        selected={date}
+        onChange={onChange}
+        dateFormat="MMM d, yyyy"
+        customInput={<Trigger />}
+        popperPlacement="bottom-start"
+      />
+      {date && (
+        <button
+          onClick={() => onChange(null)}
+          title="Clear date"
+          style={{
+            background: "none",
+            border: "none",
+            color: "#a8a29c",
+            cursor: "pointer",
+            fontFamily: "monospace",
+            fontSize: "0.72rem",
+            lineHeight: 1,
+            padding: "0.1rem 0.2rem",
+            transition: "color 0.15s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
+          onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+        >×</button>
+      )}
+    </div>
   );
 }

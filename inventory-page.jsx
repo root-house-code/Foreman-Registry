@@ -10,6 +10,7 @@ import {
   loadCustomData, saveCustomData,
   loadOverrides, saveOverrides,
 } from "./lib/data.js";
+import { getCategoriesForGroup, getAllDefaultItems } from "./lib/categoryData.js";
 import { loadDeletedCategories, saveDeletedCategories } from "./lib/deletedCategories.js";
 import { loadDeletedItems, saveDeletedItems } from "./lib/deletedItems.js";
 import { loadDeletedRows, saveDeletedRows } from "./lib/deletedRows.js";
@@ -19,6 +20,9 @@ import { UNIVERSAL_FIELDS, ITEM_FIELDS } from "./lib/fieldLibrary.js";
 import {
   loadCategoryTypeOverrides,
   saveCategoryTypeOverrides,
+  loadRoomSubtypes,
+  saveRoomSubtypes,
+  ROOM_SUBTYPES,
   GROUP_ORDER,
   GROUP_LABELS,
 } from "./lib/categoryTypes.js";
@@ -27,6 +31,7 @@ import { getModels } from "./lib/models.js";
 import { SEASON_OPTIONS } from "./lib/scheduleOptions.js";
 import FollowButton from "./components/FollowButton.jsx";
 import SchedulePicker from "./components/SchedulePicker.jsx";
+import AddTaskModal from "./components/AddTaskModal.jsx";
 
 const PRIORITY_COLORS = {
   low:    "#4ade80",
@@ -225,6 +230,63 @@ function InlineComboInput({ placeholder = "", onCommit, onCancel, options = [] }
   );
 }
 
+function ModelComboField({ value = "", models = [], fieldStyle, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos]   = useState(null);
+  const inputRef        = useRef(null);
+
+  const filtered = models.filter(m => !value || m.toLowerCase().includes(value.toLowerCase()));
+
+  function openDropdown() {
+    const r = inputRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom, left: r.left, width: r.width });
+    setOpen(true);
+  }
+
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        ref={inputRef}
+        value={value}
+        placeholder="—"
+        onChange={e => { onChange(e.target.value); openDropdown(); }}
+        onFocus={openDropdown}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        style={{ ...fieldStyle }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = "#c9a96e"}
+        onMouseLeave={e => { if (document.activeElement !== e.currentTarget) e.currentTarget.style.borderColor = "#a8a29c"; }}
+      />
+      {open && filtered.length > 0 && pos && createPortal(
+        <div style={{
+          background: "#13161f",
+          border: "1px solid #a8a29c",
+          borderRadius: "0 0 2px 2px",
+          left: pos.left,
+          maxHeight: 200,
+          overflowY: "auto",
+          position: "fixed",
+          top: pos.top,
+          width: pos.width,
+          zIndex: 9998,
+        }}>
+          {filtered.map(m => (
+            <div
+              key={m}
+              onMouseDown={() => { onChange(m); setOpen(false); }}
+              style={{ color: "#c9a96e", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.3rem 0.4rem" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#a8a29c30"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+            >
+              {m}
+            </div>
+          ))}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 export default function InventoryPage({ navigate, navState }) {
   const [rows, setRows] = useState(() => loadData());
   const [deletedCategories, setDeletedCategories] = useState(() => loadDeletedCategories());
@@ -320,6 +382,7 @@ export default function InventoryPage({ navigate, navState }) {
   const [addingTodo, setAddingTodo] = useState(false);
   const [newTodoTitle, setNewTodoTitle] = useState("");
   const [addingTask, setAddingTask] = useState(false);
+  const [addTaskModalOpen, setAddTaskModalOpen] = useState(false);
   const [newTask, setNewTask] = useState({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" });
   const [deleteTaskPrompt, setDeleteTaskPrompt] = useState(null);
   const [deleteTodoPrompt, setDeleteTodoPrompt] = useState(null);
@@ -337,6 +400,7 @@ export default function InventoryPage({ navigate, navState }) {
   const [customFieldValues, setCustomFieldValues] = useState(() => loadCustomFieldValues());
   const [showFieldPicker, setShowFieldPicker] = useState(false);
   const [newField, setNewField] = useState({ name: "", type: "text", options: "" });
+  const [roomSubtypes, setRoomSubtypes] = useState(() => loadRoomSubtypes());
 
   const itemTasks = useMemo(() => {
     if (!selectedItem) return [];
@@ -345,9 +409,11 @@ export default function InventoryPage({ navigate, navState }) {
       r.item === selectedItem.item &&
       !r._isBlankCategory &&
       r.task &&
+      !(!r._isCustom && deletedCategories.has(r.category)) &&
+      !deletedItems.has(`${r.category}|${r.item}`) &&
       !deletedRows.has(`${r.category}|${r.item}|${r.task}`)
     );
-  }, [rows, selectedItem, deletedRows]);
+  }, [rows, selectedItem, deletedRows, deletedCategories, deletedItems]);
 
   const selectedTodos = useMemo(() => {
     if (!selectedItem) return [];
@@ -412,6 +478,46 @@ export default function InventoryPage({ navigate, navState }) {
     reload();
     setAddingTask(false);
     setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" });
+  }
+
+  function handleAddTaskFromModal(form) {
+    if (!selectedItem) return;
+    const taskName = form.task.trim();
+    const key = `${selectedItem.category}|${selectedItem.item}|${taskName}`;
+    const newRow = {
+      _id: `custom-${Date.now()}`,
+      _isCustom: true,
+      _defaultKey: null,
+      category: selectedItem.category,
+      item: selectedItem.item,
+      task: taskName,
+      schedule: form.schedule || "",
+      season: form.season || null,
+    };
+    const customs = loadCustomData();
+    saveCustomData([...customs, newRow]);
+    if (form.lastCompleted) {
+      const dates = JSON.parse(localStorage.getItem("maintenance-dates") || "{}");
+      dates[key] = new Date(form.lastCompleted).toISOString();
+      localStorage.setItem("maintenance-dates", JSON.stringify(dates));
+    }
+    if (form.nextDate) {
+      const nextDates = JSON.parse(localStorage.getItem("maintenance-next-dates") || "{}");
+      nextDates[key] = new Date(form.nextDate).toISOString();
+      localStorage.setItem("maintenance-next-dates", JSON.stringify(nextDates));
+    }
+    if (form.notes) {
+      const notes = JSON.parse(localStorage.getItem("maintenance-notes") || "{}");
+      notes[key] = form.notes;
+      localStorage.setItem("maintenance-notes", JSON.stringify(notes));
+    }
+    if (form.followSchedule) {
+      const follow = JSON.parse(localStorage.getItem("maintenance-follow") || "{}");
+      follow[key] = true;
+      localStorage.setItem("maintenance-follow", JSON.stringify(follow));
+    }
+    reload();
+    setAddTaskModalOpen(false);
   }
 
   function handleDeleteTask(row) {
@@ -598,12 +704,22 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
     setCollapsedGroups(prev => ({ ...prev, [groupType]: !prev[groupType] }));
   }
 
-  const allCollapsed = CATEGORIES.every(cat => collapsed[cat]) && GROUP_ORDER.every(g => collapsedGroups[g]);
+  const allGroupsCollapsed = GROUP_ORDER.every(g => collapsedGroups[g]);
+  const allCatsCollapsed   = CATEGORIES.every(cat => collapsed[cat]);
+  // 0 = fully collapsed, 1 = groups open + categories closed, 2 = fully open
+  const expandLevel = (allGroupsCollapsed && allCatsCollapsed) ? 0 : allCatsCollapsed ? 1 : 2;
 
-  function toggleAll() {
-    const next = allCollapsed ? false : true;
-    setCollapsed(Object.fromEntries(CATEGORIES.map(cat => [cat, next])));
-    setCollapsedGroups(Object.fromEntries(GROUP_ORDER.map(g => [g, next])));
+  function cycleExpand() {
+    if (expandLevel === 0) {
+      setCollapsedGroups(Object.fromEntries(GROUP_ORDER.map(g => [g, false])));
+      setCollapsed(Object.fromEntries(CATEGORIES.map(cat => [cat, true])));
+    } else if (expandLevel === 1) {
+      setCollapsedGroups(Object.fromEntries(GROUP_ORDER.map(g => [g, false])));
+      setCollapsed(Object.fromEntries(CATEGORIES.map(cat => [cat, false])));
+    } else {
+      setCollapsedGroups(Object.fromEntries(GROUP_ORDER.map(g => [g, true])));
+      setCollapsed(Object.fromEntries(CATEGORIES.map(cat => [cat, true])));
+    }
   }
 
   function handleItemDrop(toCategory) {
@@ -873,6 +989,14 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
     setPendingNewCategory(null);
   }
 
+  function handleSetRoomSubtype(category, subtype) {
+    const next = { ...roomSubtypes };
+    if (subtype) next[category] = subtype;
+    else delete next[category];
+    saveRoomSubtypes(next);
+    setRoomSubtypes(next);
+  }
+
   function handleAddItem(category) {
     const newId = `custom-${Date.now()}`;
     const newRow = {
@@ -915,11 +1039,10 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
     const hasContent = !isCollapsed || pendingItems.length > 0;
     const isCategoryDefault = rows.some(r => r.category === category && !r._isCustom);
     const existingItemSet = new Set(items);
-    const itemSuggestions = [...new Set(
-      rows
-        .filter(r => r.item && !r._isBlankCategory && !deletedItems.has(`${r.category}|${r.item}`))
-        .map(r => r.item)
-    )].filter(i => !existingItemSet.has(i)).sort();
+    const itemSuggestions = [...new Set([
+      ...getAllDefaultItems(),
+      ...rows.filter(r => r.item && !r._isBlankCategory).map(r => r.item),
+    ])].filter(i => !existingItemSet.has(i)).sort();
     const isItemDropTarget = !!draggingItem && dragOverCategory === category && draggingItem.fromCategory !== category;
 
     return (
@@ -987,6 +1110,27 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
           {!isEditing && (
             <>
+              {effectiveCategoryTypes[category] === "room" && (
+                <select
+                  value={roomSubtypes[category] ?? ""}
+                  onClick={e => e.stopPropagation()}
+                  onChange={e => { e.stopPropagation(); handleSetRoomSubtype(category, e.target.value || null); }}
+                  style={{
+                    background: "#0f1117",
+                    border: `1px solid ${roomSubtypes[category] ? "#3a4055" : "#2a3040"}`,
+                    borderRadius: "3px",
+                    color: roomSubtypes[category] ? "#8b7d6b" : "#4a5060",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                    fontSize: "0.6rem",
+                    letterSpacing: "0.04em",
+                    padding: "0.1rem 0.25rem",
+                  }}
+                >
+                  <option value="">— type —</option>
+                  {ROOM_SUBTYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              )}
               <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem" }}>
                 {items.length} {items.length === 1 ? "item" : "items"}
               </span>
@@ -1507,6 +1651,18 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
         document.body
       )}
 
+      {addTaskModalOpen && selectedItem && (
+        <AddTaskModal
+          categories={[]}
+          rows={[]}
+          lockCategoryItem
+          initialCategory={selectedItem.category}
+          initialItem={selectedItem.item}
+          onSave={handleAddTaskFromModal}
+          onClose={() => setAddTaskModalOpen(false)}
+        />
+      )}
+
       {deleteTaskPrompt && createPortal(
         <div
           onClick={() => setDeleteTaskPrompt(null)}
@@ -1605,11 +1761,11 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
       <div style={{ display: "flex", flex: 1, flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", flex: 1, gap: "2rem", overflow: "hidden", padding: "2rem 2rem 0" }}>
-        <div style={{ flex: "0 0 58%", minWidth: 0, overflowY: "auto", paddingBottom: "4rem" }}>
+        <div style={{ flex: "0 0 58%", minWidth: 0, overflowY: "auto", paddingBottom: "4rem", scrollbarGutter: "stable" }}>
 
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "2rem" }}>
           <button
-            onClick={toggleAll}
+            onClick={cycleExpand}
             style={{
               background: "transparent",
               border: "1px solid #a8a29c",
@@ -1621,11 +1777,12 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
               letterSpacing: "0.08em",
               padding: "0.3rem 0.7rem",
               transition: "all 0.15s",
+              width: "5.5rem",
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
           >
-            {allCollapsed ? "Expand All" : "Collapse All"}
+            {expandLevel === 2 ? "Collapse" : "Expand"}
           </button>
         </div>
 
@@ -1636,6 +1793,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
           const isTarget = !!dragging && dragOverGroup === groupType && effectiveCategoryTypes[dragging] !== groupType;
           const isGroupCollapsed = collapsedGroups[groupType];
           const isPendingHere = pendingNewCategory?.groupType === groupType;
+          const existingCatSet = new Set(CATEGORIES);
+          const categorySuggestions = getCategoriesForGroup(groupType)
+            .filter(c => !existingCatSet.has(c));
 
           return (
             <div
@@ -1717,8 +1877,9 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                       }}>
                         <span style={{ color: "#a8a29c", flexShrink: 0, fontSize: "0.7rem" }}>⠿</span>
                         <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.65rem", width: 14 }}>▶</span>
-                        <InlineInput
+                        <InlineComboInput
                           placeholder="Category name..."
+                          options={categorySuggestions}
                           onCommit={name => handleCommitNewCategory(name, pendingNewCategory.id)}
                           onCancel={() => handleCancelNewCategory(pendingNewCategory.id)}
                         />
@@ -1806,23 +1967,12 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
                   if (field.id === "manufacturer") {
                     const mfrs = getManufacturers(selectedItem.item);
-                    if (mfrs.length > 0) return (
-                      <select value={val} onChange={e => onChange(e.target.value)} style={{ ...fieldStyle, appearance: "none", backgroundImage: svgArrow, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.5rem center", cursor: "pointer", paddingRight: "1.5rem" }} onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"} onBlur={e => e.currentTarget.style.borderColor = "#a8a29c"}>
-                        <option value="">—</option>
-                        {mfrs.map(m => <option key={m} value={m}>{m}</option>)}
-                        <option value="Other">Other</option>
-                      </select>
-                    );
+                    return <ModelComboField value={val} models={mfrs} fieldStyle={fieldStyle} onChange={onChange} />;
                   }
                   if (field.id === "model") {
                     const mfr = vals.manufacturer || "";
                     const models = getModels(mfr, selectedItem.item);
-                    if (models.length > 0) return (
-                      <select value={val} onChange={e => onChange(e.target.value)} style={{ ...fieldStyle, appearance: "none", backgroundImage: svgArrow, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.5rem center", cursor: "pointer", paddingRight: "1.5rem" }} onFocus={e => e.currentTarget.style.borderColor = "#c9a96e"} onBlur={e => e.currentTarget.style.borderColor = "#a8a29c"}>
-                        <option value="">—</option>
-                        {models.map(m => <option key={m} value={m}>{m}</option>)}
-                      </select>
-                    );
+                    return <ModelComboField value={val} models={models} fieldStyle={fieldStyle} onChange={onChange} />;
                   }
                   if (field.type === "receipt") {
                     const receipt = vals[field.id];
@@ -2111,7 +2261,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
               <div style={{ alignItems: "center", borderTop: itemTasks.length > 0 || suggestedTasks ? "1px solid #1e2330" : "none", display: "flex", padding: "0.5rem 1rem" }}>
                 <button
-                  onClick={() => { setNewTask({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" }); setAddingTask(true); }}
+                  onClick={() => setAddTaskModalOpen(true)}
                   style={{
                     background: "none",
                     border: "none",

@@ -5,8 +5,10 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
 import PageNav from "./components/PageNav.jsx";
 import ScheduleBadge from "./components/ScheduleBadge.jsx";
-import { defaultData } from "./lib/data.js";
+import { defaultData, loadCustomData, loadUseDefaultData } from "./lib/data.js";
+import { getCategoryTree } from "./lib/categoryData.js";
 import { loadDeletedRows, saveDeletedRows } from "./lib/deletedRows.js";
+import { loadRoomSubtypes, formatRoomLabel } from "./lib/categoryTypes.js";
 import { CATEGORY_TIPS, ITEM_TIPS, TASK_TIPS } from "./lib/tooltips.js";
 import { MANUFACTURERS_BY_ITEM } from "./lib/manufacturers.js";
 import { getModels } from "./lib/models.js";
@@ -140,7 +142,7 @@ function DetailField({ label, value }) {
   );
 }
 
-function ItemDetailWidget({ selectedItem, itemDetails, categoryFieldSchemas = {}, itemFieldSchemas = {}, customFieldValues = {} }) {
+function ItemDetailWidget({ selectedItem, itemDetails, categoryFieldSchemas = {}, itemFieldSchemas = {}, customFieldValues = {}, roomSubtypes = {} }) {
   if (!selectedItem) {
     return (
       <div style={{
@@ -189,7 +191,7 @@ function ItemDetailWidget({ selectedItem, itemDetails, categoryFieldSchemas = {}
         <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.8rem", marginTop: "0.2rem" }}>
           {selectedItem.item}
           <span style={{ color: "#a8a29c", fontSize: "0.62rem", marginLeft: "0.5rem" }}>
-            {"◆"} {selectedItem.category}
+            {"◆"} {formatRoomLabel(selectedItem.category, roomSubtypes)}
           </span>
         </div>
       </div>
@@ -373,41 +375,40 @@ export default function GuidePage({ navigate }) {
   const [itemFieldSchemas]     = useState(() => loadItemFieldSchemas());
   const [customFieldValues]    = useState(() => loadCustomFieldValues());
   const [notes, setNotes] = useState(() => loadGuideNotes());
+  const [roomSubtypes]   = useState(() => loadRoomSubtypes());
+
+  const useDefaultData = useMemo(() => loadUseDefaultData(), []);
 
   const grouped = useMemo(() => {
-    const catOrder = [];
-    const catItemOrder = {};
-    const taskMap = {};
+    if (useDefaultData) return getCategoryTree();
 
-    defaultData.forEach(row => {
-      if (!catOrder.includes(row.category)) {
-        catOrder.push(row.category);
-        catItemOrder[row.category] = [];
+    // Blank slate: derive tree from user's custom rows only
+    const customs = loadCustomData().filter(r => r.category && r.item && r.task && !r._isBlankCategory);
+    const catOrder = [], catItems = {}, taskMap = {};
+    customs.forEach(row => {
+      if (!catOrder.includes(row.category)) { catOrder.push(row.category); catItems[row.category] = []; }
+      if (!catItems[row.category].includes(row.item)) {
+        catItems[row.category].push(row.item);
+        taskMap[`${row.category}||${row.item}`] = [];
       }
-      const itemKey = `${row.category}||${row.item}`;
-      if (!catItemOrder[row.category].includes(row.item)) {
-        catItemOrder[row.category].push(row.item);
-        taskMap[itemKey] = [];
-      }
-      taskMap[itemKey].push(row);
+      taskMap[`${row.category}||${row.item}`].push(row);
     });
-
     return catOrder.map(cat => ({
       category: cat,
-      items: catItemOrder[cat].map(item => ({
-        item,
-        tasks: taskMap[`${cat}||${item}`],
-      })),
+      categoryType: null,
+      items: catItems[cat].map(item => ({ item, tasks: taskMap[`${cat}||${item}`] })),
     }));
-  }, []);
+  }, [useDefaultData]);
 
   const [activeCategory, setActiveCategory] = useState(grouped[0]?.category ?? null);
   const contentRef   = useRef(null);
   const sectionRefs  = useRef({});
 
   const deletedCount = useMemo(() =>
-    defaultData.filter(row => deletedRows.has(`${row.category}|${row.item}|${row.task}`)).length,
-    [deletedRows]
+    useDefaultData
+      ? defaultData.filter(row => deletedRows.has(`${row.category}|${row.item}|${row.task}`)).length
+      : 0,
+    [deletedRows, useDefaultData]
   );
 
   function scrollTo(category) {
@@ -473,8 +474,19 @@ export default function GuidePage({ navigate }) {
         </div>
       )}
 
+      {/* Empty state for blank-slate profiles */}
+      {!useDefaultData && grouped.length === 0 && (
+        <div style={{ alignItems: "center", display: "flex", flex: 1, flexDirection: "column", justifyContent: "center", padding: "4rem 2rem" }}>
+          <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.2em", marginBottom: "0.75rem", textTransform: "uppercase" }}>Guide</div>
+          <div style={{ color: "#f0e6d3", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "1.1rem", marginBottom: "0.5rem" }}>Your guide is empty</div>
+          <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.75rem", lineHeight: 1.7, maxWidth: "340px", textAlign: "center" }}>
+            Your guide will populate as you add items and maintenance tasks to your inventory.
+          </div>
+        </div>
+      )}
+
       {/* Body */}
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      {(useDefaultData || grouped.length > 0) && <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
         {/* Table of contents */}
         <div style={{ borderRight: "1px solid #13161f", flexShrink: 0, overflowY: "auto", padding: "2rem 0 4rem", width: "180px" }}>
@@ -502,7 +514,7 @@ export default function GuidePage({ navigate }) {
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = "#a8a29c"; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = "#a8a29c"; }}
               >
-                {category}
+                {formatRoomLabel(category, roomSubtypes)}
               </button>
             );
           })}
@@ -541,7 +553,7 @@ export default function GuidePage({ navigate }) {
           {grouped.map(({ category, items }) => (
             <div key={category} ref={el => sectionRefs.current[category] = el} style={{ marginBottom: "4rem" }}>
               <h2 style={{ color: "#c9a96e", fontSize: "1rem", fontWeight: 400, letterSpacing: "0.08em", margin: "0 0 0.35rem" }}>
-                {category}
+                {formatRoomLabel(category, roomSubtypes)}
               </h2>
               {CATEGORY_TIPS[category] && (
                 <p style={{ color: "#a8a29c", fontSize: "0.7rem", lineHeight: 1.7, margin: "0 0 1.75rem", maxWidth: "780px" }}>
@@ -668,11 +680,12 @@ export default function GuidePage({ navigate }) {
           overflow: "hidden",
           width: "616px",
         }}>
-          <ItemDetailWidget selectedItem={selectedItem} itemDetails={itemDetails} categoryFieldSchemas={categoryFieldSchemas} itemFieldSchemas={itemFieldSchemas} customFieldValues={customFieldValues} />
+          <ItemDetailWidget selectedItem={selectedItem} itemDetails={itemDetails} categoryFieldSchemas={categoryFieldSchemas} itemFieldSchemas={itemFieldSchemas} customFieldValues={customFieldValues} roomSubtypes={roomSubtypes} />
           <JournalWidget selectedItem={selectedItem} notes={notes} onSave={handleNoteSave} />
         </div>
 
-      </div>
+      </div>}
+
     </div>
   );
 }

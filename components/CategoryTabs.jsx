@@ -1,4 +1,4 @@
-function TabButton({ cat, active, onSelect }) {
+function TabButton({ cat, label, active, onSelect }) {
   return (
     <button
       onClick={() => onSelect(cat)}
@@ -16,12 +16,12 @@ function TabButton({ cat, active, onSelect }) {
         transition: "all 0.15s",
       }}
     >
-      {cat}
+      {label ?? cat}
     </button>
   );
 }
 
-export default function CategoryTabs({ categories = [], special = [], groups = [], active, onSelect }) {
+export default function CategoryTabs({ categories = [], special = [], groups = [], labels = {}, active, onSelect }) {
   if (groups.length > 0) {
     return (
       <div style={{ marginBottom: "1.5rem" }}>
@@ -43,7 +43,7 @@ export default function CategoryTabs({ categories = [], special = [], groups = [
               {label}
             </span>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-              {tabs.map(cat => <TabButton key={cat} cat={cat} active={active} onSelect={onSelect} />)}
+              {tabs.map(cat => <TabButton key={cat} cat={cat} label={labels[cat]} active={active} onSelect={onSelect} />)}
             </div>
           </div>
         ))}
@@ -53,7 +53,7 @@ export default function CategoryTabs({ categories = [], special = [], groups = [
 
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "1.5rem" }}>
-      {categories.map(cat => <TabButton key={cat} cat={cat} active={active} onSelect={onSelect} />)}
+      {categories.map(cat => <TabButton key={cat} cat={cat} label={labels[cat]} active={active} onSelect={onSelect} />)}
     </div>
   );
 }

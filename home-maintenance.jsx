@@ -14,7 +14,8 @@ import { getScheduleColor } from "./lib/scheduleColor.js";
 import { loadDeletedRows, saveDeletedRows } from "./lib/deletedRows.js";
 import { loadDeletedCategories } from "./lib/deletedCategories.js";
 import { loadDeletedItems } from "./lib/deletedItems.js";
-import { GROUP_ORDER, GROUP_LABELS, loadCategoryTypeOverrides } from "./lib/categoryTypes.js";
+import { GROUP_ORDER, GROUP_LABELS, loadCategoryTypeOverrides, loadRoomSubtypes, formatRoomLabel } from "./lib/categoryTypes.js";
+import AddTaskModal from "./components/AddTaskModal.jsx";
 
 const DEFAULT_CAT_SET = new Set(defaultData.map(d => d.category));
 const CATEGORY_TABS = ["All", "User", "Hidden", ...Array.from(new Set(defaultData.map(d => d.category)))];
@@ -46,11 +47,13 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
   const [activeFrequencies, setActiveFrequencies] = useState(new Set());
   const [activeSeasons, setActiveSeasons] = useState(new Set());
   const [addRowHovered, setAddRowHovered] = useState(false);
+  const [addTaskModalOpen, setAddTaskModalOpen] = useState(false);
   const [sortCols, setSortCols] = useState([]);
   const [deletedRows, setDeletedRows] = useState(() => loadDeletedRows());
   const [deletedCategories] = useState(() => loadDeletedCategories());
   const [deletedItems] = useState(() => loadDeletedItems());
   const [categoryTypeOverrides] = useState(() => loadCategoryTypeOverrides());
+  const [roomSubtypes] = useState(() => loadRoomSubtypes());
   const pageHeaderRef = useRef(null);
   const [pageHeaderHeight, setPageHeaderHeight] = useState(0);
 
@@ -98,15 +101,21 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
       label: GROUP_LABELS[type],
       tabs: Array.from(catsWithContent)
         .filter(cat => (categoryTypeOverrides[cat] ?? catTypeMap[cat] ?? "general") === type)
-        .sort((a, b) => {
-          const aDefault = DEFAULT_CAT_SET.has(a);
-          const bDefault = DEFAULT_CAT_SET.has(b);
-          if (aDefault !== bDefault) return aDefault ? -1 : 1;
-          if (aDefault) return DEFAULT_CAT_ORDER.indexOf(a) - DEFAULT_CAT_ORDER.indexOf(b);
-          return a.localeCompare(b);
-        }),
+        .sort((a, b) => a.localeCompare(b)),
     }));
   }, [rows, deletedCategories, categoryTypeOverrides]);
+
+  const categoryLabels = useMemo(() => {
+    const labels = {};
+    categoryGroups.forEach(group => {
+      if (group.type !== "room") return;
+      group.tabs.forEach(cat => {
+        const label = formatRoomLabel(cat, roomSubtypes);
+        if (label !== cat) labels[cat] = label;
+      });
+    });
+    return labels;
+  }, [categoryGroups, roomSubtypes]);
 
   const activeTaskCount = useMemo(() => {
     let count = 0;
@@ -190,20 +199,53 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
     return syncReminders({ rows, nextDates, modes: reminderModes });
   }
 
-  function handleAddRow() {
+  function handleSaveNewTask(form) {
     const newRow = {
       _id: `custom-${Date.now()}`,
       _isCustom: true,
       _defaultKey: null,
-      category: "",
-      item: "",
-      task: "",
-      schedule: "",
-      season: null,
+      category: form.category.trim(),
+      item:     form.item.trim(),
+      task:     form.task.trim(),
+      schedule: form.schedule,
+      season:   form.season ?? null,
     };
     const customs = loadCustomData();
     saveCustomData([newRow, ...customs]);
     setRows(prev => [newRow, ...prev]);
+
+    const key = `${newRow.category}|${newRow.item}|${newRow.task}`;
+    if (form.lastCompleted) {
+      setCompletedDates(prev => {
+        const next = { ...prev, [key]: new Date(form.lastCompleted) };
+        saveDates("maintenance-dates", next);
+        return next;
+      });
+    }
+    if (form.nextDate) {
+      setNextDates(prev => {
+        const next = { ...prev, [key]: new Date(form.nextDate) };
+        saveDates("maintenance-next-dates", next);
+        return next;
+      });
+    }
+    if (form.notes) {
+      setNotes(prev => {
+        const next = { ...prev, [key]: form.notes };
+        localStorage.setItem("maintenance-notes", JSON.stringify(next));
+        return next;
+      });
+    }
+    if (form.followSchedule) {
+      setFollowSchedule(prev => {
+        const next = { ...prev, [key]: true };
+        localStorage.setItem("maintenance-follow", JSON.stringify(next));
+        return next;
+      });
+    }
+
+    setActiveCategory(newRow.category);
+    setAddTaskModalOpen(false);
   }
 
   function handleRowEdit(rowId, field, value) {
@@ -225,16 +267,17 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
 
   function handleDateChange(key, date) {
     setCompletedDates(prev => {
-      const next = { ...prev, [key]: date };
+      const next = { ...prev };
+      if (date) next[key] = date; else delete next[key];
       saveDates("maintenance-dates", next);
       return next;
     });
 
-    if (followSchedule[key]) {
+    if (date && followSchedule[key]) {
       const entry = rowDataByKey[key];
       if (entry) {
         const { schedule, season } = entry;
-        const computed = computeNextDate(date ?? new Date(), schedule, season);
+        const computed = computeNextDate(date, schedule, season);
         if (computed) {
           setNextDates(prev => {
             const next = { ...prev, [key]: computed };
@@ -247,7 +290,7 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
   }
 
   function handleNextDateChange(key, date) {
-    if (followSchedule[key]) {
+    if (date && followSchedule[key]) {
       setFollowSchedule(prev => {
         const next = { ...prev, [key]: false };
         localStorage.setItem("maintenance-follow", JSON.stringify(next));
@@ -255,7 +298,8 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
       });
     }
     setNextDates(prev => {
-      const next = { ...prev, [key]: date };
+      const next = { ...prev };
+      if (date) next[key] = date; else delete next[key];
       saveDates("maintenance-next-dates", next);
       return next;
     });
@@ -379,6 +423,7 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
         const q = search.toLowerCase();
         return !q || (row.category || "").toLowerCase().includes(q);
       }
+      if (!row.task) return false;
       if (!row._isCustom && deletedCategories.has(row.category)) return false;
       if (deletedItems.has(`${row.category}|${row.item}`)) return false;
       if (deletedRows.has(key)) return false;
@@ -492,7 +537,7 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
             {filtered.length} results
           </span>
           <button
-            onClick={handleAddRow}
+            onClick={() => setAddTaskModalOpen(true)}
             onMouseEnter={() => setAddRowHovered(true)}
             onMouseLeave={() => setAddRowHovered(false)}
             style={{
@@ -572,6 +617,15 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
         onSync={handleSyncReminders}
         enabledCount={Object.values(reminderModes).filter(m => m && m !== "off").length}
       />
+
+      {addTaskModalOpen && (
+        <AddTaskModal
+          categories={categoryGroups.flatMap(g => g.tabs)}
+          rows={rows}
+          onSave={handleSaveNewTask}
+          onClose={() => setAddTaskModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -159,14 +159,12 @@ function ProfileSettings() {
   function buildSnap() {
     const snap = {};
     for (const k of PROFILE_DATA_KEYS) snap[k] = null;
-    snap["foreman-chores"]   = JSON.stringify([]);
-    snap["foreman-todos"]    = JSON.stringify([]);
-    snap["foreman-projects"] = JSON.stringify([]);
+    snap["foreman-chores"]           = JSON.stringify([]);
+    snap["foreman-todos"]            = JSON.stringify([]);
+    snap["foreman-projects"]         = JSON.stringify([]);
+    snap["foreman-use-default-data"] = JSON.stringify(seedInventory);
 
-    if (!seedInventory) {
-      const allCats = [...new Set(defaultData.map(r => r.category).filter(Boolean))];
-      snap["foreman-deleted-categories"] = JSON.stringify(allCats);
-    } else if (!seedTasks) {
+    if (seedInventory && !seedTasks) {
       const taskKeys = defaultData
         .filter(r => r.category && r.item && r.task)
         .map(r => `${r.category}|${r.item}|${r.task}`);

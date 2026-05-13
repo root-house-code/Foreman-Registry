@@ -4,6 +4,7 @@ import DatePicker from "react-datepicker";
 import PageNav from "./components/PageNav.jsx";
 import Tooltip from "./components/Tooltip.jsx";
 import { loadTodos, saveTodos, createTodo } from "./lib/todos.js";
+import { loadProjects, saveProjects, createProject } from "./lib/projects.js";
 import { CATEGORY_TIPS, ITEM_TIPS } from "./lib/tooltips.js";
 import {
   loadData, defaultData,
@@ -381,6 +382,11 @@ export default function InventoryPage({ navigate, navState }) {
   const [todos, setTodos] = useState(() => loadTodos());
   const [addingTodo, setAddingTodo] = useState(false);
   const [newTodoTitle, setNewTodoTitle] = useState("");
+  const [projects, setProjects] = useState(() => loadProjects());
+  const [addingProject, setAddingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [deleteProjectPrompt, setDeleteProjectPrompt] = useState(null);
+  const [hoveredProjectId, setHoveredProjectId] = useState(null);
   const [addingTask, setAddingTask] = useState(false);
   const [addTaskModalOpen, setAddTaskModalOpen] = useState(false);
   const [newTask, setNewTask] = useState({ task: "", schedule: "", season: null, lastCompleted: null, nextDate: null, followSchedule: false, notes: "" });
@@ -422,6 +428,14 @@ export default function InventoryPage({ navigate, navState }) {
       (t.linkedItem === selectedItem.item || t.linkedItem === null)
     );
   }, [todos, selectedItem]);
+
+  const selectedProjects = useMemo(() => {
+    if (!selectedItem) return [];
+    return projects.filter(p =>
+      p.linkedCategory === selectedItem.category &&
+      (p.linkedItem === selectedItem.item || p.linkedItem === null)
+    );
+  }, [projects, selectedItem]);
 
   const itemCoverageMap = useMemo(() => {
     const map = {};
@@ -641,6 +655,27 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
     setTodos(next);
     saveTodos(next);
     setDeleteTodoPrompt(null);
+  }
+
+  function handleAddProject() {
+    const name = newProjectName.trim();
+    if (!name || !selectedItem) return;
+    const next = [...projects, createProject({
+      name,
+      linkedCategory: selectedItem.category,
+      linkedItem: selectedItem.item,
+    })];
+    setProjects(next);
+    saveProjects(next);
+    setNewProjectName("");
+    setAddingProject(false);
+  }
+
+  function handleDeleteProject(project) {
+    const next = projects.filter(p => p.id !== project.id);
+    setProjects(next);
+    saveProjects(next);
+    setDeleteProjectPrompt(null);
   }
 
   function reload() {
@@ -1110,7 +1145,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
           {!isEditing && (
             <>
-              {effectiveCategoryTypes[category] === "room" && (
+              {effectiveCategoryTypes[category] === "room" && !isCollapsed && (
                 <select
                   value={roomSubtypes[category] ?? ""}
                   onClick={e => e.stopPropagation()}
@@ -1696,6 +1731,37 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
         document.body
       )}
 
+      {deleteProjectPrompt && createPortal(
+        <div
+          onClick={() => setDeleteProjectPrompt(null)}
+          style={{ alignItems: "center", background: "rgba(0,0,0,0.7)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 1000 }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "8px", maxWidth: 440, padding: "2rem", width: "90%" }}>
+            <div style={{ color: "#f0e6d3", fontSize: "1.05rem", marginBottom: "0.75rem" }}>
+              Delete "{deleteProjectPrompt.name}"?
+            </div>
+            <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.8rem", lineHeight: 1.7, margin: "0 0 1.75rem" }}>
+              This will permanently delete this project. This action cannot be undone.
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setDeleteProjectPrompt(null)}
+                style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#e8e4dd"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
+              >Cancel</button>
+              <button
+                onClick={() => handleDeleteProject(deleteProjectPrompt)}
+                style={{ background: "#f8717118", border: "1px solid #f8717140", borderRadius: "3px", color: "#f87171", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f8717130"; e.currentTarget.style.borderColor = "#f87171"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#f8717118"; e.currentTarget.style.borderColor = "#f8717140"; }}
+              >Delete</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {deleteTodoPrompt && createPortal(
         <div
           onClick={() => setDeleteTodoPrompt(null)}
@@ -1862,7 +1928,32 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
               {!isGroupCollapsed && (
                 <>
-                  {cats.map(category => renderCategory(category))}
+                  {groupType === "room" ? (() => {
+                    // Group by subtype, sorted alphabetically; untyped rooms rendered last with no label
+                    const bySubtype = {};
+                    cats.forEach(cat => {
+                      const sub = roomSubtypes[cat] || null;
+                      const sortKey = sub ?? "\xff";
+                      if (!bySubtype[sortKey]) bySubtype[sortKey] = { label: sub, cats: [] };
+                      bySubtype[sortKey].cats.push(cat);
+                    });
+                    return Object.keys(bySubtype)
+                      .sort((a, b) => a.localeCompare(b))
+                      .map(key => {
+                        const { label, cats: groupCats } = bySubtype[key];
+                        const sortedCats = [...groupCats].sort((a, b) => a.localeCompare(b));
+                        return (
+                          <div key={key}>
+                            {label && (
+                              <div style={{ color: "#4a5060", fontFamily: "monospace", fontSize: "0.56rem", letterSpacing: "0.14em", margin: "0.6rem 0 0.3rem 0.25rem", textTransform: "uppercase" }}>
+                                {label}
+                              </div>
+                            )}
+                            {sortedCats.map(category => renderCategory(category))}
+                          </div>
+                        );
+                      });
+                  })() : cats.map(category => renderCategory(category))}
 
                   {isPendingHere && (
                     <div style={{ marginBottom: "0.5rem" }}>
@@ -2296,6 +2387,135 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
               </div>
             </>
           )}
+          </div>
+
+          <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "8px" }}>
+            <div style={{ borderBottom: "1px solid #1e2330", padding: "0.75rem 1rem 0.6rem" }}>
+              <div style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                Projects
+              </div>
+            </div>
+
+            {!selectedItem ? (
+              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", padding: "1.5rem 1rem", textAlign: "center" }}>
+                Select an item to view projects
+              </div>
+            ) : (
+              <>
+                {selectedProjects.length === 0 && !addingProject && (
+                  <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", padding: "1.25rem 1rem 0.5rem", textAlign: "center" }}>
+                    No projects
+                  </div>
+                )}
+                {selectedProjects.map((proj, idx) => {
+                  const isHovered = hoveredProjectId === proj.id;
+                  return (
+                    <div
+                      key={proj.id}
+                      onMouseEnter={() => setHoveredProjectId(proj.id)}
+                      onMouseLeave={() => setHoveredProjectId(null)}
+                      style={{
+                        alignItems: "center",
+                        background: idx % 2 === 0 ? "#13161f" : "#161920",
+                        borderBottom: "1px solid #1e2330",
+                        display: "flex",
+                        gap: "0.5rem",
+                        padding: "0.5rem 0.75rem",
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          color: proj.status === "done" ? "#a8a29c" : "#e8e4dd",
+                          fontFamily: "monospace",
+                          fontSize: "0.75rem",
+                          overflow: "hidden",
+                          textDecoration: proj.status === "done" ? "line-through" : "none",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}>
+                          {proj.name}
+                        </div>
+                        {proj.dueDate && (
+                          <div style={{ color: proj.status !== "done" && new Date(proj.dueDate) < new Date() ? "#f87171" : "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem" }}>
+                            {new Date(proj.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </div>
+                        )}
+                      </div>
+                      <span style={{
+                        background: proj.status === "done" ? "#4ade8018" : proj.status === "in-progress" ? "#c9a96e18" : "#a8a29c",
+                        border: `1px solid ${proj.status === "done" ? "#4ade8040" : proj.status === "in-progress" ? "#c9a96e40" : "#a8a29c"}`,
+                        borderRadius: "2px",
+                        color: proj.status === "done" ? "#4ade80" : proj.status === "in-progress" ? "#c9a96e" : "#a8a29c",
+                        flexShrink: 0,
+                        fontFamily: "monospace",
+                        fontSize: "0.58rem",
+                        letterSpacing: "0.06em",
+                        padding: "0.1rem 0.35rem",
+                        textTransform: "uppercase",
+                      }}>
+                        {proj.status === "not-started" ? "To Do" : proj.status === "in-progress" ? "In Progress" : "Done"}
+                      </span>
+                      <button
+                        onClick={() => setDeleteProjectPrompt(proj)}
+                        style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", flexShrink: 0, fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1, opacity: isHovered ? 1 : 0, padding: "0 0.1rem", transition: "color 0.15s, opacity 0.1s" }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
+                      >×</button>
+                    </div>
+                  );
+                })}
+
+                {addingProject ? (
+                  <div style={{ padding: "0.5rem 0.75rem" }}>
+                    <input
+                      autoFocus
+                      value={newProjectName}
+                      onChange={e => setNewProjectName(e.target.value)}
+                      placeholder="Project name..."
+                      onKeyDown={e => {
+                        if (e.key === "Enter") { e.preventDefault(); handleAddProject(); }
+                        if (e.key === "Escape") { e.preventDefault(); setAddingProject(false); setNewProjectName(""); }
+                      }}
+                      onBlur={handleAddProject}
+                      style={{
+                        background: "#13161f",
+                        border: "1px solid #a8a29c",
+                        borderRadius: "3px",
+                        boxSizing: "border-box",
+                        color: "#e8e4dd",
+                        fontFamily: "monospace",
+                        fontSize: "0.75rem",
+                        outline: "none",
+                        padding: "0.3rem 0.5rem",
+                        width: "100%",
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div style={{ padding: "0.5rem 0.75rem" }}>
+                    <button
+                      onClick={() => setAddingProject(true)}
+                      style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.05em", padding: "0.2rem 0", transition: "color 0.15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
+                    >
+                      + Add Project
+                    </button>
+                  </div>
+                )}
+
+                <div style={{ borderTop: "1px solid #1e2330", padding: "0.4rem 0.75rem", textAlign: "right" }}>
+                  <button
+                    onClick={() => navigate("projects")}
+                    style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.08em", padding: "0.1rem 0", transition: "color 0.15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
+                  >
+                    View all on Projects →
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "8px" }}>

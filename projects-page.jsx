@@ -117,6 +117,10 @@ export default function ProjectsPage({ navigate }) {
   const [rightAddingTask, setRightAddingTask] = useState(false);
   const [rightNewTaskTitle, setRightNewTaskTitle] = useState("");
   const [rightPanelForm, setRightPanelForm] = useState(null);
+  const [rightPanelType, setRightPanelType] = useState(null); // "todo" | "project" | null
+  const [rightProjectForm, setRightProjectForm] = useState(null);
+  const [rightProjectAddingTask, setRightProjectAddingTask] = useState(false);
+  const [rightProjectNewTaskTitle, setRightProjectNewTaskTitle] = useState("");
   const [navHovered, setNavHovered] = useState(null);
   const [hoveredProjectId, setHoveredProjectId] = useState(null);
   const [renamingProjectId, setRenamingProjectId] = useState(null);
@@ -156,6 +160,7 @@ export default function ProjectsPage({ navigate }) {
   }, [todos, activeCategory]);
 
   const linkedItems = rightPanelForm?.linkedCategory ? (categoryItems[rightPanelForm.linkedCategory] || []) : [];
+  const projectLinkedItems = rightProjectForm?.linkedCategory ? (categoryItems[rightProjectForm.linkedCategory] || []) : [];
 
   // Sync right panel form when selected To Do changes
   useEffect(() => {
@@ -173,8 +178,70 @@ export default function ProjectsPage({ navigate }) {
     setRightNewTaskTitle("");
   }, [selectedTodoId]); // intentionally not depending on todos — form is source of truth while editing
 
+  useEffect(() => {
+    if (rightPanelType !== "project") return;
+    const proj = projects.find(p => p.id === selectedProjectId) || null;
+    if (proj) {
+      setRightProjectForm({
+        ...proj,
+        labelsText: (proj.labels || []).join(", "),
+        estimatedCostText: proj.estimatedCost != null ? String(proj.estimatedCost) : "",
+      });
+    } else {
+      setRightProjectForm(null);
+    }
+    setRightProjectAddingTask(false);
+    setRightProjectNewTaskTitle("");
+  }, [selectedProjectId, rightPanelType]); // intentionally not depending on projects
+
   function persistTodos(next) { setTodos(next); saveTodos(next); }
   function persistProjects(next) { setProjects(next); saveProjects(next); }
+
+  function saveProjectField(field, value) {
+    if (!selectedProjectId) return;
+    persistProjects(projects.map(p => p.id === selectedProjectId ? { ...p, [field]: value } : p));
+  }
+  function setProjectField(field, value) {
+    setRightProjectForm(f => f ? { ...f, [field]: value } : f);
+  }
+  function handleProjectBlur(field) {
+    if (!rightProjectForm || !selectedProjectId) return;
+    if (field === "labels") {
+      const parsed = rightProjectForm.labelsText.split(",").map(l => l.trim()).filter(Boolean);
+      saveProjectField("labels", parsed);
+    } else if (field === "estimatedCost") {
+      const parsed = rightProjectForm.estimatedCostText !== "" ? parseFloat(rightProjectForm.estimatedCostText) : null;
+      saveProjectField("estimatedCost", isNaN(parsed) ? null : parsed);
+    } else {
+      saveProjectField(field, rightProjectForm[field]);
+    }
+  }
+  function handleProjectSelectChange(field, value) {
+    setProjectField(field, value);
+    saveProjectField(field, value);
+  }
+  function handleToggleProjectTask(taskId) {
+    persistProjects(projects.map(p =>
+      p.id === selectedProjectId
+        ? { ...p, tasks: (p.tasks || []).map(t => t.id === taskId ? { ...t, completed: !t.completed } : t) }
+        : p
+    ));
+  }
+  function handleDeleteProjectTask(taskId) {
+    persistProjects(projects.map(p =>
+      p.id === selectedProjectId
+        ? { ...p, tasks: (p.tasks || []).filter(t => t.id !== taskId) }
+        : p
+    ));
+  }
+  function handleRightProjectAddTask() {
+    const title = rightProjectNewTaskTitle.trim();
+    setRightProjectAddingTask(false);
+    setRightProjectNewTaskTitle("");
+    if (!title || !selectedProjectId) return;
+    const task = { id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`, title, completed: false };
+    persistProjects(projects.map(p => p.id === selectedProjectId ? { ...p, tasks: [...(p.tasks || []), task] } : p));
+  }
 
   function handleRenameProject(id, name) {
     const trimmed = name.trim();
@@ -393,7 +460,7 @@ export default function ProjectsPage({ navigate }) {
               {projects.map(proj => (
                 <div
                   key={proj.id}
-                  onClick={() => setSelectedProjectId(proj.id)}
+                  onClick={() => { setSelectedProjectId(proj.id); setSelectedTodoId(null); setRightPanelType("project"); }}
                   onMouseEnter={() => { setHoveredProjectId(proj.id); }}
                   onMouseLeave={() => { setHoveredProjectId(null); }}
                   style={{
@@ -516,7 +583,7 @@ export default function ProjectsPage({ navigate }) {
                   return (
                     <div
                       key={todo.id}
-                      onClick={() => setSelectedTodoId(todo.id)}
+                      onClick={() => { setSelectedTodoId(todo.id); setRightPanelType("todo"); }}
                       style={{
                         alignItems: "center",
                         background: selectedTodoId === todo.id ? "#1a2035" : "transparent",
@@ -599,7 +666,7 @@ export default function ProjectsPage({ navigate }) {
                   return (
                     <div key={todo.id} style={{ borderBottom: "1px solid #1e2330" }}>
                       <div
-                        onClick={() => setSelectedTodoId(isSelected ? null : todo.id)}
+                        onClick={() => { const next = isSelected ? null : todo.id; setSelectedTodoId(next); if (next) setRightPanelType("todo"); }}
                         style={{
                           alignItems: "center",
                           background: isSelected ? "#1a2035" : "transparent",
@@ -755,14 +822,206 @@ export default function ProjectsPage({ navigate }) {
           overflow: "hidden",
           width: 300,
         }}>
-          {!rightPanelForm ? (
-            <div style={{ alignItems: "center", display: "flex", flex: 1, flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", padding: "1rem", textAlign: "center" }}>
-                Select a To Do to view details
+          {rightPanelType === "project" && rightProjectForm ? (
+            <div style={{ flex: 1, overflowY: "auto", padding: "1.25rem 1rem 2rem" }}>
+
+              {/* Type label */}
+              <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.15em", marginBottom: "0.75rem", textTransform: "uppercase" }}>
+                Project Details
+              </div>
+
+              {/* Name */}
+              <input
+                value={rightProjectForm.name || ""}
+                onChange={e => setProjectField("name", e.target.value)}
+                onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                onBlur={e => { e.currentTarget.style.borderColor = "#a8a29c"; handleProjectBlur("name"); }}
+                style={{ ...fieldInput, fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "1rem", marginBottom: "1.1rem", padding: "0.4rem 0.5rem" }}
+              />
+
+              {/* Status + Priority */}
+              <div style={{ display: "flex", gap: "0.6rem", marginBottom: "0.75rem" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={fieldLabel}>Status</label>
+                  <select value={rightProjectForm.status || "not-started"} onChange={e => handleProjectSelectChange("status", e.target.value)} style={fieldSelect}>
+                    <option value="not-started">Not Started</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="done">Done</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={fieldLabel}>Priority</label>
+                  <select value={rightProjectForm.priority || "medium"} onChange={e => handleProjectSelectChange("priority", e.target.value)} style={fieldSelect}>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Due Date */}
+              <div style={{ marginBottom: "0.75rem" }}>
+                <label style={fieldLabel}>Due Date</label>
+                <DatePicker
+                  selected={rightProjectForm.dueDate ? new Date(rightProjectForm.dueDate) : null}
+                  onChange={date => {
+                    const val = date ? date.toISOString() : null;
+                    setProjectField("dueDate", val);
+                    saveProjectField("dueDate", val);
+                  }}
+                  dateFormat="MMM d, yyyy"
+                  customInput={<DueDateBtn value={rightProjectForm.dueDate ? new Date(rightProjectForm.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null} />}
+                  popperPlacement="bottom-start"
+                  isClearable
+                />
+              </div>
+
+              {/* Assignee + Cost */}
+              <div style={{ display: "flex", gap: "0.6rem", marginBottom: "0.75rem" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={fieldLabel}>Assignee</label>
+                  <input
+                    value={rightProjectForm.assignee || ""}
+                    onChange={e => setProjectField("assignee", e.target.value)}
+                    onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = "#a8a29c"; handleProjectBlur("assignee"); }}
+                    placeholder="—"
+                    style={fieldInput}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={fieldLabel}>Est. Cost ($)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={rightProjectForm.estimatedCostText || ""}
+                    onChange={e => setProjectField("estimatedCostText", e.target.value)}
+                    onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = "#a8a29c"; handleProjectBlur("estimatedCost"); }}
+                    placeholder="—"
+                    style={fieldInput}
+                  />
+                </div>
+              </div>
+
+              {/* Category + Item */}
+              <div style={{ display: "flex", gap: "0.6rem", marginBottom: "0.75rem" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={fieldLabel}>Category</label>
+                  <select
+                    value={rightProjectForm.linkedCategory || ""}
+                    onChange={e => {
+                      handleProjectSelectChange("linkedCategory", e.target.value || null);
+                      if (!e.target.value) handleProjectSelectChange("linkedItem", null);
+                    }}
+                    style={fieldSelect}
+                  >
+                    <option value="">None</option>
+                    {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={fieldLabel}>Item</label>
+                  <select
+                    value={rightProjectForm.linkedItem || ""}
+                    onChange={e => handleProjectSelectChange("linkedItem", e.target.value || null)}
+                    style={{ ...fieldSelect, opacity: !rightProjectForm.linkedCategory ? 0.4 : 1 }}
+                    disabled={!rightProjectForm.linkedCategory}
+                  >
+                    <option value="">Category-level</option>
+                    {projectLinkedItems.map(item => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Labels */}
+              <div style={{ marginBottom: "0.75rem" }}>
+                <label style={fieldLabel}>Labels</label>
+                <input
+                  value={rightProjectForm.labelsText || ""}
+                  onChange={e => setProjectField("labelsText", e.target.value)}
+                  onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = "#a8a29c"; handleProjectBlur("labels"); }}
+                  placeholder="Renovation, Seasonal..."
+                  style={fieldInput}
+                />
+              </div>
+
+              {/* Description */}
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={fieldLabel}>Description</label>
+                <textarea
+                  value={rightProjectForm.description || ""}
+                  onChange={e => setProjectField("description", e.target.value)}
+                  onFocus={e => { e.currentTarget.style.borderColor = "#c9a96e"; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = "#a8a29c"; handleProjectBlur("description"); }}
+                  placeholder="Notes..."
+                  rows={3}
+                  style={{ ...fieldInput, resize: "vertical" }}
+                />
+              </div>
+
+              {/* Tasks */}
+              <div style={{ borderTop: "1px solid #1e2330", paddingTop: "0.85rem" }}>
+                <label style={{ ...fieldLabel, marginBottom: "0.5rem" }}>Tasks</label>
+                {(rightProjectForm.tasks || []).map(task => (
+                  <div key={task.id} style={{ alignItems: "center", display: "flex", gap: "0.5rem", marginBottom: "0.3rem" }}>
+                    <TaskCheckbox completed={task.completed} onToggle={() => handleToggleProjectTask(task.id)} />
+                    <span style={{
+                      color: "#a8a29c",
+                      flex: 1,
+                      fontFamily: "monospace",
+                      fontSize: "0.72rem",
+                      textDecoration: task.completed ? "line-through" : "none",
+                    }}>
+                      {task.title}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteProjectTask(task.id)}
+                      style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.7rem", padding: "0 0.1rem", transition: "color 0.15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {rightProjectAddingTask ? (
+                  <div style={{ alignItems: "center", display: "flex", gap: "0.5rem", marginTop: "0.3rem" }}>
+                    <div style={{ border: "1px solid #a8a29c", borderRadius: "3px", flexShrink: 0, height: 16, width: 16 }} />
+                    <input
+                      autoFocus
+                      value={rightProjectNewTaskTitle}
+                      onChange={e => setRightProjectNewTaskTitle(e.target.value)}
+                      placeholder="Task title..."
+                      onKeyDown={e => {
+                        if (e.key === "Enter") { e.preventDefault(); handleRightProjectAddTask(); }
+                        if (e.key === "Escape") { setRightProjectAddingTask(false); setRightProjectNewTaskTitle(""); }
+                      }}
+                      onBlur={handleRightProjectAddTask}
+                      style={{ ...fieldInput, flex: 1, fontSize: "0.72rem", padding: "0.2rem 0.4rem" }}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setRightProjectAddingTask(true)}
+                    style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.05em", marginTop: "0.25rem", padding: "0.2rem 0", transition: "color 0.15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#c9a96e"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; }}
+                  >
+                    + Add task
+                  </button>
+                )}
               </div>
             </div>
-          ) : (
+          ) : rightPanelType === "todo" && rightPanelForm ? (
             <div style={{ flex: 1, overflowY: "auto", padding: "1.25rem 1rem 2rem" }}>
+
+              {/* Type label */}
+              <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.15em", marginBottom: "0.75rem", textTransform: "uppercase" }}>
+                To Do Details
+              </div>
 
               {/* Title */}
               <input
@@ -916,7 +1175,7 @@ export default function ProjectsPage({ navigate }) {
                   <div key={task.id} style={{ alignItems: "center", display: "flex", gap: "0.5rem", marginBottom: "0.3rem" }}>
                     <TaskCheckbox completed={task.completed} onToggle={() => selectedTodo && handleToggleTask(selectedTodo.id, task.id)} />
                     <span style={{
-                      color: task.completed ? "#a8a29c" : "#a8a29c",
+                      color: "#a8a29c",
                       flex: 1,
                       fontFamily: "monospace",
                       fontSize: "0.72rem",
@@ -961,6 +1220,12 @@ export default function ProjectsPage({ navigate }) {
                     + Add task
                   </button>
                 )}
+              </div>
+            </div>
+          ) : (
+            <div style={{ alignItems: "center", display: "flex", flex: 1, flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", padding: "1rem", textAlign: "center" }}>
+                Select a project or to do to view details
               </div>
             </div>
           )}

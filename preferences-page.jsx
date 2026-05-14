@@ -8,7 +8,17 @@ import {
   exportProfile, importProfileData, hasProfileSnapshot,
   createProfile, deleteUserProfile, renameUserProfile,
 } from "./lib/profiles.js";
-import { defaultData } from "./lib/data.js";
+import { defaultData, loadCustomData, saveCustomData } from "./lib/data.js";
+import { loadDeletedCategories } from "./lib/deletedCategories.js";
+import { loadDeletedItems } from "./lib/deletedItems.js";
+import { loadCustomFieldValues, saveCustomFieldValues } from "./lib/customFields.js";
+import { extractPdfText, renderSpecificPages, chunkPageTexts } from "./lib/pdfExtract.js";
+import { extractChunk, mergeResults, resolveAppliance, associateImages } from "./lib/inspectionGroq.js";
+import { storeImageFromDataUrl } from "./lib/images.js";
+import { loadTodos, saveTodos, createTodo } from "./lib/todos.js";
+import { loadProjects, saveProjects, createProject } from "./lib/projects.js";
+import { loadCategoryTypeOverrides, saveCategoryTypeOverrides } from "./lib/categoryTypes.js";
+import InspectionReview from "./components/InspectionReview.jsx";
 import {
   getWebhookUrl, setWebhookUrl,
   getSendHourLocal, setSendHourLocal,
@@ -1078,13 +1088,36 @@ function HouseholdSettings() {
 function UploadInspectionSettings() {
   const fileInputRef = useRef(null);
 
-  // Metadata persists across sessions; the file itself lives in component state only.
   const [meta, setMeta] = useState(() => {
     try { return JSON.parse(localStorage.getItem(INSPECTION_META_KEY) || "null"); }
     catch { return null; }
   });
-  const [file, setFile] = useState(null); // File object, cleared on reload
+  const [file, setFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [phase, setPhase] = useState("idle"); // "idle"|"extracting"|"calling"|"review"|"success"
+  const [extractedData, setExtractedData] = useState(null);
+  const [progress, setProgress] = useState({ chunk: 0, total: 0 });
+  const [importSummary, setImportSummary] = useState(null);
+  const [processError, setProcessError] = useState(null);
+
+  const { reviewCategories, reviewCategoryItems, reviewProjects } = (() => {
+    const rows = loadCustomData();
+    const deletedCats = loadDeletedCategories();
+    const deletedItems = loadDeletedItems();
+    const map = {};
+    rows.forEach(row => {
+      if (deletedCats.has(row.category)) return;
+      if (row._isBlankCategory || !row.category || !row.item) return;
+      if (deletedItems.has(`${row.category}|${row.item}`)) return;
+      if (!map[row.category]) map[row.category] = [];
+      if (!map[row.category].includes(row.item)) map[row.category].push(row.item);
+    });
+    return {
+      reviewCategories: Object.keys(map),
+      reviewCategoryItems: map,
+      reviewProjects: loadProjects(),
+    };
+  })();
 
   function saveMeta(m) {
     setMeta(m);
@@ -1095,11 +1128,10 @@ function UploadInspectionSettings() {
   function handleFile(f) {
     if (!f || f.type !== "application/pdf") return;
     setFile(f);
-    saveMeta({
-      name: f.name,
-      sizeMb: (f.size / 1024 / 1024).toFixed(1),
-      uploadedAt: new Date().toISOString(),
-    });
+    setPhase("idle");
+    setProcessError(null);
+    setImportSummary(null);
+    saveMeta({ name: f.name, sizeMb: (f.size / 1024 / 1024).toFixed(1), uploadedAt: new Date().toISOString() });
   }
 
   function handleInputChange(e) {
@@ -1117,7 +1149,144 @@ function UploadInspectionSettings() {
 
   function handleRemove() {
     setFile(null);
+    setPhase("idle");
+    setProcessError(null);
+    setImportSummary(null);
     saveMeta(null);
+  }
+
+  async function handleProcess() {
+    if (!file) return;
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    if (!apiKey) { setProcessError("Groq API key not configured. Set VITE_GROQ_API_KEY in your .env file."); return; }
+
+    setProcessError(null);
+    setPhase("extracting");
+    let pages;
+    try {
+      pages = await extractPdfText(file);
+    } catch (err) {
+      setProcessError(`Failed to read PDF: ${err.message}`);
+      setPhase("idle");
+      return;
+    }
+
+    const chunks = chunkPageTexts(pages);
+    setProgress({ chunk: 0, total: chunks.length });
+    setPhase("calling");
+
+    const results = [];
+    for (let i = 0; i < chunks.length; i++) {
+      setProgress({ chunk: i + 1, total: chunks.length });
+      try {
+        results.push(await extractChunk(chunks[i], apiKey));
+      } catch (err) {
+        const msg = err?.message || String(err);
+        // Rate limit or auth error — stop immediately and tell the user
+        if (msg.includes("429") || msg.includes("401") || msg.includes("403")) {
+          setProcessError(`Groq API error: ${msg}`);
+          setPhase("idle");
+          return;
+        }
+        // Other errors (timeout, parse failure) — skip chunk but continue
+        results.push({ appliances: [], todos: [], projects: [] });
+      }
+    }
+
+    const merged = mergeResults(results);
+
+    // Render only the pages Groq identified as containing findings
+    const neededPages = new Set();
+    [...merged.todos, ...merged.projects].forEach(item => {
+      (item.sourcePages || []).forEach(p => neededPages.add(p));
+    });
+
+    const renderedPages = await renderSpecificPages(file, [...neededPages]);
+
+    const pageImageIds = new Map();
+    for (const [pageNum, dataUrl] of renderedPages) {
+      const id = storeImageFromDataUrl(dataUrl, `inspection-p${pageNum}.jpg`);
+      pageImageIds.set(pageNum, [id]);
+    }
+
+    setExtractedData(associateImages(merged, pageImageIds));
+    setPhase("review");
+  }
+
+  function handleImport(selected) {
+    // Appliances → custom inventory rows + field values
+    const customRows = loadCustomData();
+    const existingKeys = new Set(customRows.map(r => `${r.category}|${r.item}`));
+    const newRows = [];
+    const cfValues = loadCustomFieldValues();
+
+    selected.appliances.forEach(a => {
+      const resolved = resolveAppliance(a);
+      const catKey = `${resolved.category}|`;
+      const itemKey = `${resolved.category}|${resolved.item}`;
+
+      if (!existingKeys.has(catKey) && !customRows.some(r => r.category === resolved.category && r._isBlankCategory)) {
+        newRows.push({ _id: `insp-cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, _isCustom: true, _isBlankCategory: true, category: resolved.category, item: "", task: "", schedule: "", season: null, categoryType: "system" });
+      }
+      if (!existingKeys.has(itemKey)) {
+        newRows.push({ _id: `insp-item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, _isCustom: true, category: resolved.category, item: resolved.item, task: "", schedule: "", season: null, categoryType: "system" });
+        existingKeys.add(itemKey);
+      }
+
+      const cfKey = `${resolved.category}|${resolved.item}`;
+      cfValues[cfKey] = {
+        ...(cfValues[cfKey] || {}),
+        ...(a.manufacturer ? { manufacturer: a.manufacturer } : {}),
+        ...(a.model        ? { model: a.model }               : {}),
+        ...(a.age          ? { age_note: a.age }               : {}),
+      };
+    });
+
+    if (newRows.length > 0) saveCustomData([...customRows, ...newRows]);
+    saveCustomFieldValues(cfValues);
+
+    // Category type overrides for new categories
+    if (selected.appliances.length > 0) {
+      const overrides = loadCategoryTypeOverrides();
+      const updated = { ...overrides };
+      selected.appliances.forEach(a => {
+        const resolved = resolveAppliance(a);
+        if (!updated[resolved.category]) updated[resolved.category] = "system";
+      });
+      saveCategoryTypeOverrides(updated);
+    }
+
+    // To Dos
+    if (selected.todos.length > 0) {
+      const newTodos = selected.todos.map(t => createTodo({
+        title: t.title,
+        description: t.description || "",
+        priority: t.priority,
+        status: "not-started",
+        linkedCategory: t.linkedCategory || null,
+        linkedItem: t.linkedItem || null,
+        labels: t.labels || [],
+      }));
+      saveTodos([...loadTodos(), ...newTodos]);
+    }
+
+    // Projects
+    if (selected.projects.length > 0) {
+      const newProjects = selected.projects.map(p => ({
+        ...createProject({ name: p.name, linkedCategory: p.linkedCategory || null, linkedItem: p.linkedItem || null }),
+        description: p.description || "",
+        priority: p.priority || "medium",
+        status: "not-started",
+      }));
+      saveProjects([...loadProjects(), ...newProjects]);
+    }
+
+    setImportSummary({
+      appliances: selected.appliances.length,
+      todos: selected.todos.length,
+      projects: selected.projects.length,
+    });
+    setPhase("success");
   }
 
   function formatDate(iso) {
@@ -1130,9 +1299,21 @@ function UploadInspectionSettings() {
 
   return (
     <div style={{ maxWidth: "560px" }}>
+      {phase === "review" && extractedData && createPortal(
+        <InspectionReview
+          data={extractedData}
+          categories={reviewCategories}
+          categoryItems={reviewCategoryItems}
+          allProjects={reviewProjects}
+          onImport={handleImport}
+          onCancel={() => setPhase("idle")}
+        />,
+        document.body
+      )}
+
       <h2 style={{ color: "#e8e4dd", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.25rem", fontWeight: "normal", margin: "0 0 0.3rem" }}>Upload Inspection</h2>
       <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.75rem", margin: "0 0 2rem" }}>
-        Upload a PDF copy of your home inspection report. Conversion tools will use it to populate your Foreman inventory, maintenance tasks, projects, and to dos.
+        Upload a PDF copy of your home inspection report. Foreman will extract appliances, to dos, and projects for your review before adding anything to your profile.
       </p>
 
       {hasFile ? (
@@ -1154,23 +1335,64 @@ function UploadInspectionSettings() {
                 {meta.sizeMb} MB · Uploaded {formatDate(meta.uploadedAt)}
               </div>
             </div>
-            <button
-              onClick={handleRemove}
-              title="Remove"
-              style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", flexShrink: 0, fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.12s" }}
-              onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-              onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
-            >×</button>
+            {phase === "idle" || phase === "success" ? (
+              <button
+                onClick={handleRemove}
+                title="Remove"
+                style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", flexShrink: 0, fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.12s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
+                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+              >×</button>
+            ) : null}
           </div>
 
-          <div style={{ alignItems: "center", background: "#0f1117", border: "1px solid #1e2330", borderRadius: "4px", display: "flex", gap: "0.5rem", marginTop: "1rem", padding: "0.65rem 0.85rem" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b7d6b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <span style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.68rem", lineHeight: 1.4 }}>
-              Conversion tools are coming soon. Your report is ready to be processed.
-            </span>
-          </div>
+          {/* Phase-specific content below the file card */}
+          {phase === "idle" && (
+            <div style={{ marginTop: "1rem" }}>
+              {processError && (
+                <div style={{ background: "#f8717118", border: "1px solid #f8717140", borderRadius: "4px", color: "#f87171", fontFamily: "monospace", fontSize: "0.68rem", marginBottom: "0.75rem", padding: "0.6rem 0.85rem" }}>
+                  {processError}
+                </div>
+              )}
+              <button
+                onClick={handleProcess}
+                style={{ background: "#c9a96e18", border: "1px solid #c9a96e", borderRadius: "3px", color: "#c9a96e", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.1em", padding: "0.55rem 1.5rem", textTransform: "uppercase", transition: "all 0.15s", width: "100%" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#c9a96e28"}
+                onMouseLeave={e => e.currentTarget.style.background = "#c9a96e18"}
+              >
+                Process Report →
+              </button>
+            </div>
+          )}
+
+          {(phase === "extracting" || phase === "calling") && (
+            <div style={{ alignItems: "center", background: "#0f1117", border: "1px solid #1e2330", borderRadius: "4px", display: "flex", gap: "0.5rem", marginTop: "1rem", padding: "0.65rem 0.85rem" }}>
+              <span style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.68rem" }}>
+                {phase === "extracting"
+                  ? "Reading PDF…"
+                  : `Analyzing with AI… (chunk ${progress.chunk} of ${progress.total})`}
+              </span>
+            </div>
+          )}
+
+          {phase === "success" && importSummary && (
+            <div style={{ background: "#4ade8012", border: "1px solid #4ade8030", borderRadius: "4px", marginTop: "1rem", padding: "0.75rem 1rem" }}>
+              <div style={{ color: "#4ade80", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.06em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
+                Import complete
+              </div>
+              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem" }}>
+                Added {importSummary.appliances} {importSummary.appliances === 1 ? "appliance" : "appliances"}, {importSummary.todos} {importSummary.todos === 1 ? "to do" : "to dos"}, and {importSummary.projects} {importSummary.projects === 1 ? "project" : "projects"} to your profile.
+              </div>
+              <button
+                onClick={() => { setPhase("idle"); setImportSummary(null); }}
+                style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.65rem", marginTop: "0.5rem", padding: 0, transition: "color 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
+                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+              >
+                Process another report
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         /* ── Upload area ── */

@@ -6,6 +6,7 @@ import { loadProjects, saveProjects, createProject } from "./lib/projects.js";
 import { loadData } from "./lib/data.js";
 import { loadDeletedCategories } from "./lib/deletedCategories.js";
 import { loadDeletedItems } from "./lib/deletedItems.js";
+import ImageAttachments from "./components/ImageAttachments.jsx";
 
 const PRIORITY_COLORS = {
   low: "#4ade80", medium: "#c9a96e", high: "#f59e0b", urgent: "#f87171",
@@ -959,6 +960,17 @@ export default function ProjectsPage({ navigate }) {
                   placeholder="Notes..."
                   rows={3}
                   style={{ ...fieldInput, resize: "vertical" }}
+                />
+              </div>
+
+              {/* Images */}
+              <div style={{ marginBottom: "1rem" }}>
+                <ImageAttachments
+                  imageIds={rightProjectForm.images || []}
+                  onChange={ids => {
+                    setProjectField("images", ids);
+                    saveProjectField("images", ids);
+                  }}
                 />
               </div>
 

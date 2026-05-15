@@ -453,7 +453,7 @@ export default function GuidePage({ navigate }) {
       <style>{EDITOR_STYLES}</style>
 
       {/* Header */}
-      <FmHeader active="Guide" tagline="knowledge that outlasts the doer" />
+      <FmHeader active="Guide" tagline="Guide" />
 
       {deletedCount > 0 && (
         <div style={{ borderBottom: "1px solid #1a1d26", flexShrink: 0, padding: "0.4rem 2rem" }}>

@@ -1212,7 +1212,7 @@ export default function ChoresPage({ navigate, navState }) {
       )}
 
       {/* Header */}
-      <FmHeader active="Chores" tagline="keep it clean" />
+      <FmHeader active="Chores" tagline="Chores" />
 
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "2rem 2rem 4rem" }}>

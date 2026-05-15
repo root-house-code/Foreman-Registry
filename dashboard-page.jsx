@@ -373,7 +373,7 @@ export default function DashboardPage({ navigate }) {
 
   return (
     <div style={{ background: "var(--fm-bg)", color: "var(--fm-ink)", display: "flex", flexDirection: "column", fontFamily: "monospace", height: "100vh", overflow: "hidden" }}>
-      <FmHeader active="Dashboard" tagline="your house, in order" />
+      <FmHeader active="Dashboard" tagline="Dashboard" />
 
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "var(--fm-spacing-5xl)" }}>

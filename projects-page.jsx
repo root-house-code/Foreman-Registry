@@ -397,7 +397,7 @@ export default function ProjectsPage({ navigate }) {
 
       {/* Header */}
       <div ref={headerRef}>
-        <FmHeader active="Projects" tagline="bigger work, broken down" />
+        <FmHeader active="Projects" tagline="Projects" />
       </div>
 
       {/* Body */}

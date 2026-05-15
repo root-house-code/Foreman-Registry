@@ -455,7 +455,7 @@ export default function CalendarPage({ navigate }) {
       )}
 
       {/* Header */}
-      <FmHeader active="Calendar" tagline="when, in one place" />
+      <FmHeader active="Calendar" tagline="Calendar" />
 
       {/* Controls + filter bar — mirrors stats-row → CategoryTabs pattern of Maintenance/Chores */}
       <div style={{ flexShrink: 0, padding: "2rem 2rem 0" }}>

@@ -480,7 +480,7 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
       color: "var(--fm-ink)",
     }}>
       <div ref={pageHeaderRef}>
-        <FmHeader active="Maintenance" />
+        <FmHeader active="Maintenance" tagline="Maintenance" />
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "var(--fm-spacing-5xl) var(--fm-spacing-5xl) 4rem" }}>

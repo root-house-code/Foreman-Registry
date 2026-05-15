@@ -518,7 +518,7 @@ export default function BoardPage({ navigate }) {
         />
       )}
 
-      <FmHeader active="To Dos" tagline="ad-hoc work in flight" />
+      <FmHeader active="To Dos" tagline="To Dos" />
 
       {/* Body */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>

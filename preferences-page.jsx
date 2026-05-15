@@ -1467,7 +1467,7 @@ export default function PreferencesPage({ navigate }) {
     <div style={{ background: "#0f1117", color: "#e8e4dd", display: "flex", flexDirection: "column", fontFamily: "'Georgia','Times New Roman',serif", height: "100vh", overflow: "hidden" }}>
 
       {/* Header */}
-      <FmHeader active="Preferences" tagline="how Foreman behaves" />
+      <FmHeader active="Preferences" tagline="Preferences" />
 
       {/* Body */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>

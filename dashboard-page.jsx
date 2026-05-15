@@ -671,7 +671,9 @@ function CircleHealthDial({ score }) {
         transition: "all 0.15s",
       }}
     >
-      <div style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>Home Health</div>
+      <div style={{ alignSelf: "stretch", borderBottom: "1px solid var(--fm-hairline)", marginBottom: "0.25rem", paddingBottom: "0.5rem" }}>
+        <span style={sectionTitle}>Home Health</span>
+      </div>
       <svg viewBox="0 0 100 104" width="88" height="88" style={{ display: "block" }}>
         <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--fm-hairline2)" strokeWidth={7}
           strokeDasharray={`${arcLen} ${circ - arcLen}`} strokeLinecap="round"

@@ -407,95 +407,85 @@ export default function DashboardPage({ navigate }) {
 
       <div style={{ flex: 1, overflowY: "auto", padding: "var(--fm-spacing-5xl)" }}>
 
-        {/* Stat row */}
-        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "180px repeat(4, 1fr)", marginBottom: "1.5rem" }}>
-          <CircleHealthDial score={healthScore} />
-          <StatCard
-            label="Overdue"
-            value={totalOverdue}
-            valueColor={totalOverdue > 0 ? "var(--fm-red)" : "var(--fm-green)"}
-            sub={totalOverdue > 0 ? `${overdueItems.length} maint · ${overdueChores.length} chores` : "all clear"}
-            onClick={() => navigate("maintenance")}
-          />
-          <StatCard
-            label="Upcoming"
-            value={upcomingItems.length}
-            valueColor="var(--fm-amber)"
-            sub="maintenance in 30 days"
-            onClick={() => navigate("maintenance")}
-          />
-          <StatCard
-            label="Chores This Week"
-            value={upcomingChores.length}
-            valueColor={upcomingChores.length > 0 ? "var(--fm-amber)" : "var(--fm-ink-dim)"}
-            sub="due in 7 days"
-            onClick={() => navigate("chores")}
-          />
-          <StatCard
-            label="Open To Dos"
-            value={openTodosCount}
-            valueColor="var(--fm-ink-mute)"
-            sub={`${todoStatusCounts["in-progress"]} in progress`}
-            onClick={() => navigate("board")}
-          />
-        </div>
+        {/* Top row: health dial · stat summary · triage queue */}
+        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "180px 180px 1fr", marginBottom: "1rem" }}>
 
-        {/* Triage queue */}
-        <div style={{ ...card, marginBottom: "1rem" }}>
-          <div style={sectionHeader}>
-            <span style={sectionTitle}>Triage · Overdue + Due This Week</span>
-            <button style={navLink} onClick={() => navigate("maintenance")}>&rarr; Maintenance</button>
+          <CircleHealthDial score={healthScore} />
+
+          {/* Compact stat summary */}
+          <div style={{ ...card, display: "flex", flexDirection: "column", gap: "0.55rem", justifyContent: "center" }}>
+            {[
+              { label: "Overdue",  value: totalOverdue,         color: totalOverdue > 0 ? "var(--fm-red)" : "var(--fm-green)",           sub: totalOverdue > 0 ? `${overdueItems.length}m · ${overdueChores.length}c` : "all clear",        nav: () => navigate("maintenance") },
+              { label: "Upcoming", value: upcomingItems.length, color: "var(--fm-amber)",                                                 sub: "maint / 30 days",                                                                              nav: () => navigate("maintenance") },
+              { label: "Chores",   value: upcomingChores.length,color: upcomingChores.length > 0 ? "var(--fm-amber)" : "var(--fm-ink-dim)", sub: "due this week",                                                                             nav: () => navigate("chores") },
+              { label: "To Dos",   value: openTodosCount,       color: "var(--fm-ink-mute)",                                              sub: `${todoStatusCounts["in-progress"]} in progress`,                                               nav: () => navigate("board") },
+            ].map(s => (
+              <button key={s.label} onClick={s.nav}
+                style={{ alignItems: "baseline", background: "transparent", border: "none", cursor: "pointer", display: "flex", gap: "0.5rem", padding: 0, textAlign: "left", width: "100%" }}
+                onMouseEnter={e => e.currentTarget.querySelector(".stat-label").style.color = "var(--fm-brass-dim)"}
+                onMouseLeave={e => e.currentTarget.querySelector(".stat-label").style.color = "var(--fm-ink-mute)"}
+              >
+                <span className="stat-label" style={{ color: "var(--fm-ink-mute)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", transition: "color 0.12s", width: "52px" }}>{s.label}</span>
+                <span style={{ color: s.color, fontFamily: "var(--fm-serif)", fontSize: "1.15rem", fontWeight: 300, lineHeight: 1 }}>{s.value}</span>
+                <span style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.55rem", lineHeight: 1.3 }}>{s.sub}</span>
+              </button>
+            ))}
           </div>
-          {triageItems.length === 0 ? (
-            <div style={emptyText}>All clear — nothing overdue or due this week</div>
-          ) : triageItems.map(item => {
-            const isOverdue = item.date < today;
-            const tag = item.type === "chore" ? "CHORE" : getSysTag(item.sub);
-            const isActive = logItKey === item.key;
-            return (
-              <div key={item.key} style={rowStyle}>
-                <div style={{ background: isOverdue ? "var(--fm-red)" : "var(--fm-amber)", borderRadius: "50%", flexShrink: 0, height: "5px", width: "5px" }} />
-                <span style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-hairline2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.55rem", letterSpacing: "0.06em", padding: "0.1rem 0.35rem" }}>
-                  {tag}
-                </span>
-                <span style={{ flex: 1, fontFamily: "var(--fm-sans)", fontSize: "0.78rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {item.type === "maint" && item.sub && <span style={{ color: "var(--fm-ink-mute)" }}>{item.sub} · </span>}
-                  {item.label}
-                </span>
-                <span style={{ color: isOverdue ? "var(--fm-red)" : "var(--fm-amber)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.65rem", minWidth: "58px", textAlign: "right" }}>
-                  {fmtDaysStatus(item.date)}
-                </span>
-                <div style={{ flexShrink: 0 }}>
-                  {isActive ? (
-                    <div style={{ alignItems: "center", display: "flex", gap: "0.35rem" }}>
-                      <DatePicker
-                        selected={logItDate}
-                        onChange={date => setLogItDate(date)}
-                        dateFormat="MM/dd/yy"
-                        popperPlacement="top-end"
-                        customInput={<LogItInput />}
-                      />
-                      <button
-                        onClick={() => handleLogIt(item, logItDate)}
-                        style={{ background: "transparent", border: "1px solid var(--fm-green)", borderRadius: "var(--fm-radius)", color: "var(--fm-green)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", padding: "0.15rem 0.35rem" }}
-                      >✓</button>
-                      <button
-                        onClick={() => setLogItKey(null)}
-                        style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", padding: "0.15rem 0.35rem" }}
-                      >✕</button>
+
+          {/* Triage queue */}
+          <div style={{ ...card, display: "flex", flexDirection: "column", minHeight: 0 }}>
+            <div style={{ ...sectionHeader, flexShrink: 0 }}>
+              <span style={sectionTitle}>Triage · Overdue + Due This Week</span>
+              <button style={navLink} onClick={() => navigate("maintenance")}>&rarr; Maintenance</button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              {triageItems.length === 0 ? (
+                <div style={emptyText}>All clear — nothing overdue or due this week</div>
+              ) : triageItems.map(item => {
+                const isOverdue = item.date < today;
+                const tag = item.type === "chore" ? "CHORE" : getSysTag(item.sub);
+                const isActive = logItKey === item.key;
+                return (
+                  <div key={item.key} style={rowStyle}>
+                    <div style={{ background: isOverdue ? "var(--fm-red)" : "var(--fm-amber)", borderRadius: "50%", flexShrink: 0, height: "5px", width: "5px" }} />
+                    <span style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-hairline2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.55rem", letterSpacing: "0.06em", padding: "0.1rem 0.35rem" }}>
+                      {tag}
+                    </span>
+                    <span style={{ flex: 1, fontFamily: "var(--fm-sans)", fontSize: "0.78rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {item.type === "maint" && item.sub && <span style={{ color: "var(--fm-ink-mute)" }}>{item.sub} · </span>}
+                      {item.label}
+                    </span>
+                    <span style={{ color: isOverdue ? "var(--fm-red)" : "var(--fm-amber)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.65rem", minWidth: "58px", textAlign: "right" }}>
+                      {fmtDaysStatus(item.date)}
+                    </span>
+                    <div style={{ flexShrink: 0 }}>
+                      {isActive ? (
+                        <div style={{ alignItems: "center", display: "flex", gap: "0.35rem" }}>
+                          <DatePicker
+                            selected={logItDate}
+                            onChange={date => setLogItDate(date)}
+                            dateFormat="MM/dd/yy"
+                            popperPlacement="top-end"
+                            customInput={<LogItInput />}
+                          />
+                          <button onClick={() => handleLogIt(item, logItDate)} style={{ background: "transparent", border: "1px solid var(--fm-green)", borderRadius: "var(--fm-radius)", color: "var(--fm-green)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", padding: "0.15rem 0.35rem" }}>✓</button>
+                          <button onClick={() => setLogItKey(null)} style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", padding: "0.15rem 0.35rem" }}>✕</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setLogItKey(item.key); setLogItDate(new Date()); }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-brass)"; e.currentTarget.style.color = "var(--fm-brass)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-hairline2)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
+                          style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", letterSpacing: "0.06em", padding: "0.15rem 0.55rem", transition: "all 0.12s" }}
+                        >Log it</button>
+                      )}
                     </div>
-                  ) : (
-                    <button
-                      onClick={() => { setLogItKey(item.key); setLogItDate(new Date()); }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-brass)"; e.currentTarget.style.color = "var(--fm-brass)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-hairline2)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
-                      style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", letterSpacing: "0.06em", padding: "0.15rem 0.55rem", transition: "all 0.12s" }}
-                    >Log it</button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
 
         {/* Architecture: Systems + Rooms */}
@@ -703,29 +693,6 @@ function CircleHealthDial({ score }) {
   );
 }
 
-function StatCard({ label, value, valueColor, sub, onClick }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: hovered ? "var(--fm-bg-raised)" : "var(--fm-bg-panel)",
-        border: `1px solid ${hovered ? "var(--fm-hairline2)" : "var(--fm-hairline)"}`,
-        borderRadius: "var(--fm-radius-lg)",
-        cursor: "pointer",
-        padding: "1rem 1.25rem",
-        textAlign: "left",
-        transition: "all 0.15s",
-      }}
-    >
-      <div style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.55rem", letterSpacing: "0.12em", marginBottom: "0.4rem", textTransform: "uppercase" }}>{label}</div>
-      <div style={{ color: valueColor, fontFamily: "var(--fm-serif)", fontSize: "1.8rem", fontWeight: 300, lineHeight: 1 }}>{value}</div>
-      <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", marginTop: "0.3rem" }}>{sub}</div>
-    </button>
-  );
-}
 
 function HealthBar({ score }) {
   const cells = 10;

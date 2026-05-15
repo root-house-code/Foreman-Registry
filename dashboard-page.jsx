@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, forwardRef } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import FmHeader from "./src/components/FmHeader.jsx";
-import { V1HealthDial, V1QueueRow, V1SystemRow, V1ActivityChart, V1SectionLabel } from "./src/components/DashboardComponents.jsx";
-import { FmH } from "./lib/dashboardHelpers.js";
 import { loadTodos } from "./lib/todos.js";
 import { loadProjects } from "./lib/projects.js";
 import { loadData } from "./lib/data.js";
@@ -13,23 +13,39 @@ import {
   saveChoreNextDates, saveChoreCompletedDates,
 } from "./lib/chores.js";
 import { computeNextDate } from "./lib/scheduleInterval.js";
+import { loadCategoryTypeOverrides } from "./lib/categoryTypes.js";
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const SYS_ABBR = {
+  "HVAC": "HVAC", "Plumbing": "PLM", "Electrical": "ELEC", "Appliances": "APPL",
+  "Exterior": "EXT", "Structure": "STRC", "Safety": "SAF", "General": "GEN",
+  "Roofing": "ROOF", "Landscaping": "LAND", "Pool": "POOL", "Irrigation": "IRR",
+};
+
+function getSysTag(cat) {
+  return SYS_ABBR[cat] || (cat || "").slice(0, 4).toUpperCase();
+}
 
 function keyOf(row) {
   return `${row.category}|${row.item}|${row.task}`;
 }
 
+function fmtDate(d) {
+  if (!d) return "—";
+  return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
+}
+
 const card = {
-  background: "#0f1117",
-  border: "1px solid #1e2330",
-  borderRadius: "6px",
+  background: "var(--fm-bg-panel)",
+  border: "var(--fm-border)",
+  borderRadius: "var(--fm-radius-lg)",
   padding: "1.25rem 1.5rem",
 };
 
 const sectionHeader = {
   alignItems: "center",
-  borderBottom: "1px solid #1e2330",
+  borderBottom: "1px solid var(--fm-hairline)",
   display: "flex",
   justifyContent: "space-between",
   marginBottom: "0.75rem",
@@ -37,8 +53,8 @@ const sectionHeader = {
 };
 
 const sectionTitle = {
-  color: "#8b7d6b",
-  fontFamily: "monospace",
+  color: "var(--fm-brass-dim)",
+  fontFamily: "var(--fm-mono)",
   fontSize: "0.6rem",
   letterSpacing: "0.12em",
   textTransform: "uppercase",
@@ -47,31 +63,49 @@ const sectionTitle = {
 const navLink = {
   background: "transparent",
   border: "none",
-  color: "#a8a29c",
+  color: "var(--fm-ink-dim)",
   cursor: "pointer",
-  fontFamily: "monospace",
+  fontFamily: "var(--fm-mono)",
   fontSize: "0.6rem",
   letterSpacing: "0.08em",
   padding: 0,
 };
 
 const emptyText = {
-  color: "#a8a29c",
-  fontFamily: "monospace",
+  color: "var(--fm-ink-dim)",
+  fontFamily: "var(--fm-mono)",
   fontSize: "0.72rem",
   padding: "0.5rem 0",
 };
 
 const rowStyle = {
   alignItems: "center",
-  borderBottom: "1px solid #1a1d26",
-  color: "#a8a29c",
+  borderBottom: "1px solid var(--fm-hairline)",
+  color: "var(--fm-ink-dim)",
   display: "flex",
-  fontFamily: "monospace",
+  fontFamily: "var(--fm-mono)",
   fontSize: "0.72rem",
   gap: "0.5rem",
   padding: "0.4rem 0",
 };
+
+const LogItInput = forwardRef(({ value, onClick }, ref) => (
+  <button
+    ref={ref}
+    onClick={onClick}
+    style={{
+      background: "var(--fm-bg-sunk)",
+      border: "1px solid var(--fm-hairline2)",
+      borderRadius: "var(--fm-radius)",
+      color: "var(--fm-ink)",
+      cursor: "pointer",
+      fontFamily: "var(--fm-mono)",
+      fontSize: "0.65rem",
+      padding: "0.15rem 0.4rem",
+    }}
+  >{value}</button>
+));
+LogItInput.displayName = "LogItInput";
 
 export default function DashboardPage({ navigate }) {
   const today = useMemo(() => {
@@ -92,7 +126,7 @@ export default function DashboardPage({ navigate }) {
     return d;
   }, [today]);
 
-  // ���� Static data (never changes) ��������������������������������������������������������������������������������������
+  // ── Static data ──────────────────────────────────────────────────────────────
   const rows              = useMemo(() => loadData(), []);
   const deletedCategories = useMemo(() => loadDeletedCategories(), []);
   const deletedItems      = useMemo(() => loadDeletedItems(), []);
@@ -100,7 +134,7 @@ export default function DashboardPage({ navigate }) {
   const todos             = useMemo(() => loadTodos(), []);
   const projects          = useMemo(() => loadProjects(), []);
 
-  // ���� Mutable state (updates live on completion) ��������������������������������������������������������
+  // ── Mutable state ────────────────────────────────────────────────────────────
   const [nextDatesMap, setNextDatesMap] = useState(() => {
     try { return JSON.parse(localStorage.getItem("maintenance-next-dates") || "{}"); }
     catch { return {}; }
@@ -111,13 +145,10 @@ export default function DashboardPage({ navigate }) {
   });
   const [choreNextDates, setChoreNextDates]           = useState(() => loadChoreNextDates());
   const [choreCompletedDates, setChoreCompletedDates] = useState(() => loadChoreCompletedDates());
+  const [logItKey, setLogItKey]   = useState(null);
+  const [logItDate, setLogItDate] = useState(() => new Date());
 
-  // ���� Visual completion state ����������������������������������������������������������������������������������������������
-  const [completedKeys, setCompletedKeys]   = useState(() => new Set());
-  // Items marked done this session � kept in display even after cycling out of window
-  const [completedItems, setCompletedItems] = useState([]);
-
-  // ���� Derived: maintenance ����������������������������������������������������������������������������������������������������
+  // ── Derived: maintenance ─────────────────────────────────────────────────────
   const activeRows = useMemo(() =>
     rows.filter(row =>
       !row._isBlankCategory && row.category && row.item && row.task &&
@@ -135,18 +166,16 @@ export default function DashboardPage({ navigate }) {
   );
 
   const upcomingItems = useMemo(() =>
-    activeRows
-      .filter(row => {
-        const d = nextDatesMap[keyOf(row)];
-        if (!d) return false;
-        const date = new Date(d);
-        return date >= today && date <= in30Days;
-      })
-      .sort((a, b) => new Date(nextDatesMap[keyOf(a)]) - new Date(nextDatesMap[keyOf(b)])),
+    activeRows.filter(row => {
+      const d = nextDatesMap[keyOf(row)];
+      if (!d) return false;
+      const date = new Date(d);
+      return date >= today && date <= in30Days;
+    }),
     [activeRows, nextDatesMap, today, in30Days]
   );
 
-  // ���� Derived: chores ��������������������������������������������������������������������������������������������������������������
+  // ── Derived: chores ──────────────────────────────────────────────────────────
   function choreNextDate(c) {
     if (choreNextDates[c.id]) return new Date(choreNextDates[c.id]);
     if (!c.startDate) return null;
@@ -154,20 +183,16 @@ export default function DashboardPage({ navigate }) {
   }
 
   const overdueChores = useMemo(() =>
-    chores
-      .filter(c => { const d = choreNextDate(c); return d && d < today; })
-      .sort((a, b) => (choreNextDate(a) ?? new Date(0)) - (choreNextDate(b) ?? new Date(0))),
+    chores.filter(c => { const d = choreNextDate(c); return d && d < today; }),
     [chores, choreNextDates, today]
   );
 
   const upcomingChores = useMemo(() =>
-    chores
-      .filter(c => { const d = choreNextDate(c); return d && d >= today && d <= in7Days; })
-      .sort((a, b) => (choreNextDate(a) ?? new Date(0)) - (choreNextDate(b) ?? new Date(0))),
+    chores.filter(c => { const d = choreNextDate(c); return d && d >= today && d <= in7Days; }),
     [chores, choreNextDates, today, in7Days]
   );
 
-  // ���� Derived: todos / projects ������������������������������������������������������������������������������������������
+  // ── Derived: todos / projects ────────────────────────────────────────────────
   const todoStatusCounts = useMemo(() => {
     const counts = { "not-started": 0, "in-progress": 0, "done": 0 };
     todos.forEach(t => { if (counts[t.status] != null) counts[t.status]++; });
@@ -183,14 +208,13 @@ export default function DashboardPage({ navigate }) {
 
   const projectsWithProgress = useMemo(() =>
     projects.map(p => {
-      const projectTodos = todos.filter(t => t.projectId === p.id);
-      const done = projectTodos.filter(t => t.status === "done").length;
-      return { ...p, total: projectTodos.length, done };
+      const pt = todos.filter(t => t.projectId === p.id);
+      return { ...p, total: pt.length, done: pt.filter(t => t.status === "done").length };
     }),
     [projects, todos]
   );
 
-  // ���� Completion chart ������������������������������������������������������������������������������������������������������������
+  // ── Completion chart ─────────────────────────────────────────────────────────
   const completionsByMonth = useMemo(() => {
     const result = [];
     for (let i = 5; i >= 0; i--) {
@@ -198,7 +222,6 @@ export default function DashboardPage({ navigate }) {
       d.setMonth(d.getMonth() - i);
       result.push({ label: MONTH_LABELS[d.getMonth()], year: d.getFullYear(), month: d.getMonth(), maint: 0, chores: 0 });
     }
-
     Object.values(completedDatesMap).forEach(dateOrList => {
       const dates = Array.isArray(dateOrList) ? dateOrList : (dateOrList ? [dateOrList] : []);
       dates.forEach(dateStr => {
@@ -207,14 +230,12 @@ export default function DashboardPage({ navigate }) {
         if (bucket) bucket.maint++;
       });
     });
-
     Object.values(choreCompletedDates).forEach(dateStr => {
       if (!dateStr) return;
       const d = new Date(dateStr);
       const bucket = result.find(b => b.year === d.getFullYear() && b.month === d.getMonth());
       if (bucket) bucket.chores++;
     });
-
     return result;
   }, [completedDatesMap, choreCompletedDates, today]);
 
@@ -223,7 +244,7 @@ export default function DashboardPage({ navigate }) {
     [completionsByMonth]
   );
 
-  // ─── Health score ────────────────────────────────────────────────────────────
+  // ── Health score ─────────────────────────────────────────────────────────────
   const healthScore = useMemo(() => {
     let penalty = 0;
     overdueItems.forEach(row => {
@@ -241,101 +262,75 @@ export default function DashboardPage({ navigate }) {
     return Math.max(0, Math.min(100, Math.round(100 - penalty)));
   }, [overdueItems, overdueChores, nextDatesMap, choreNextDates, today]);
 
-  // ���� Combined lists ����������������������������������������������������������������������������������������������������������������
-  const combinedOverdue = useMemo(() => {
-    const maintRows = overdueItems.map(row => ({
-      type: "maint",
-      date: nextDatesMap[keyOf(row)] ? new Date(nextDatesMap[keyOf(row)]) : null,
-      label: row.task,
-      sub: row.category,
-      row,
-    }));
-    const choreRows = overdueChores.map(c => ({
-      type: "chore",
-      date: choreNextDate(c),
-      label: c.title,
-      sub: c.room,
-      chore: c,
-    }));
-    return [...maintRows, ...choreRows]
-      .sort((a, b) => (a.date ?? new Date(0)) - (b.date ?? new Date(0)))
-      .slice(0, 8);
-  }, [overdueItems, overdueChores, nextDatesMap]);
+  // ── Category groups (architecture) ──────────────────────────────────────────
+  const categoryGroups = useMemo(() => {
+    const overrides = loadCategoryTypeOverrides();
+    const catInfoMap = {};
+    activeRows.forEach(row => {
+      if (!row.category) return;
+      if (!catInfoMap[row.category]) catInfoMap[row.category] = { type: row.categoryType || "system" };
+    });
+    const systems = [], rooms = [];
+    Object.entries(catInfoMap).forEach(([cat, info]) => {
+      const type = overrides[cat] ?? info.type;
+      if (type === "room") rooms.push(cat);
+      else systems.push(cat);
+    });
+    return { systems: systems.sort(), rooms: rooms.sort() };
+  }, [activeRows]);
 
-  // combinedUpcoming includes key + original data for completion
-  const combinedUpcoming = useMemo(() => {
-    const maintRows = upcomingItems.map(row => ({
-      type: "maint",
-      key: `maint:${keyOf(row)}`,
-      date: new Date(nextDatesMap[keyOf(row)]),
-      label: row.task,
-      sub: row.category,
-      row,
-    }));
-    const choreRows = upcomingChores.map(c => ({
-      type: "chore",
-      key: `chore:${c.id}`,
-      date: choreNextDate(c),
-      label: c.title,
-      sub: c.room,
-      chore: c,
-    }));
-    return [...maintRows, ...choreRows]
-      .sort((a, b) => (a.date ?? new Date(0)) - (b.date ?? new Date(0)))
-      .slice(0, 8);
-  }, [upcomingItems, upcomingChores, nextDatesMap]);
+  const catHealthMap = useMemo(() => {
+    const map = {};
+    [...categoryGroups.systems, ...categoryGroups.rooms].forEach(cat => {
+      let penalty = 0;
+      activeRows.filter(r => r.category === cat).forEach(row => {
+        const d = nextDatesMap[keyOf(row)];
+        if (!d) return;
+        const dt = new Date(d);
+        if (dt >= today) return;
+        const weeksOver = Math.max(0, (today - dt) / (7 * 86400000));
+        penalty += 8 * (1 + Math.log1p(weeksOver));
+      });
+      map[cat] = Math.max(0, Math.min(100, Math.round(100 - penalty)));
+    });
+    return map;
+  }, [categoryGroups, activeRows, nextDatesMap, today]);
 
-  // Stable display list: active items + any completed items that cycled out
-  const displayUpcoming = useMemo(() => {
-    const activeKeys = new Set(combinedUpcoming.map(i => i.key));
-    const cycledOut = completedItems.filter(i => !activeKeys.has(i.key));
-    return [...combinedUpcoming, ...cycledOut];
-  }, [combinedUpcoming, completedItems]);
+  const catNextDueMap = useMemo(() => {
+    const map = {};
+    activeRows.forEach(row => {
+      const d = nextDatesMap[keyOf(row)];
+      if (!d || !row.category) return;
+      const dt = new Date(d);
+      if (!map[row.category] || dt < map[row.category]) map[row.category] = dt;
+    });
+    return map;
+  }, [activeRows, nextDatesMap]);
 
-  // ���� Completion handlers ������������������������������������������������������������������������������������������������������
-  function handleMarkDone(item) {
-    if (completedKeys.has(item.key)) return;
+  // ── Triage: overdue + due this week ─────────────────────────────────────────
+  const triageItems = useMemo(() => {
+    const overdue = [], upcoming = [];
+    activeRows.forEach(row => {
+      const d = nextDatesMap[keyOf(row)];
+      if (!d) return;
+      const dt = new Date(d);
+      const item = { type: "maint", key: `maint:${keyOf(row)}`, date: dt, label: row.task, sub: row.category, row };
+      if (dt < today) overdue.push(item);
+      else if (dt <= in7Days) upcoming.push(item);
+    });
+    chores.forEach(c => {
+      const dt = choreNextDate(c);
+      if (!dt) return;
+      const item = { type: "chore", key: `chore:${c.id}`, date: dt, label: c.title, sub: c.room, chore: c };
+      if (dt < today) overdue.push(item);
+      else if (dt <= in7Days) upcoming.push(item);
+    });
+    overdue.sort((a, b) => a.date - b.date);
+    upcoming.sort((a, b) => a.date - b.date);
+    return [...overdue, ...upcoming];
+  }, [activeRows, chores, nextDatesMap, choreNextDates, today, in7Days]);
 
-    setCompletedKeys(prev => new Set([...prev, item.key]));
-    setCompletedItems(prev => [...prev, item]);
-
-    const now = new Date();
-
-    if (item.type === "maint") {
-      const k = keyOf(item.row);
-
-      const newCompleted = { ...completedDatesMap, [k]: now.toISOString() };
-      setCompletedDatesMap(newCompleted);
-      localStorage.setItem("maintenance-dates", JSON.stringify(newCompleted));
-
-      const nextDate = computeNextDate(now, item.row.schedule, item.row.season);
-      if (nextDate) {
-        const newNext = { ...nextDatesMap, [k]: nextDate.toISOString() };
-        setNextDatesMap(newNext);
-        localStorage.setItem("maintenance-next-dates", JSON.stringify(newNext));
-      }
-    } else {
-      const c = item.chore;
-      const base = choreNextDates[c.id] ? new Date(choreNextDates[c.id]) : now;
-      const nextDate = computeChoreNextDate(base, c.schedule, c.dayOfWeek, c.timeOfDay);
-
-      const newCompleted = { ...choreCompletedDates, [c.id]: now.toISOString() };
-      setChoreCompletedDates(newCompleted);
-      saveChoreCompletedDates(newCompleted);
-
-      const newNext = { ...choreNextDates, [c.id]: nextDate.toISOString() };
-      setChoreNextDates(newNext);
-      saveChoreNextDates(newNext);
-    }
-  }
-
-  // ���� Helpers ������������������������������������������������������������������������������������������������������������������������������
-  const openTodosCount     = todoStatusCounts["not-started"] + todoStatusCounts["in-progress"];
-  const totalOverdue       = overdueItems.length + overdueChores.length;
-  const combinedOverdueTotal  = overdueItems.length + overdueChores.length;
-  const combinedUpcomingTotal = upcomingItems.length + upcomingChores.length;
-
-  // ───── Inventory coverage ────────────────────────────────────────────────────
+  // ── Coverage ─────────────────────────────────────────────────────────────────
   const allInventoryItems = useMemo(() => {
     const seen = new Set();
     rows.forEach(row => {
@@ -362,151 +357,168 @@ export default function DashboardPage({ navigate }) {
     [activeRows, nextDatesMap]
   );
 
-  function formatDateFromDate(d) {
-    if (!d) return "�";
-    return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`;
+  // ── Handlers ─────────────────────────────────────────────────────────────────
+  function handleLogIt(item, date) {
+    const now = date || new Date();
+    if (item.type === "maint") {
+      const k = keyOf(item.row);
+      const newCompleted = { ...completedDatesMap, [k]: now.toISOString() };
+      setCompletedDatesMap(newCompleted);
+      localStorage.setItem("maintenance-dates", JSON.stringify(newCompleted));
+      const nextDate = computeNextDate(now, item.row.schedule, item.row.season);
+      if (nextDate) {
+        const newNext = { ...nextDatesMap, [k]: nextDate.toISOString() };
+        setNextDatesMap(newNext);
+        localStorage.setItem("maintenance-next-dates", JSON.stringify(newNext));
+      }
+    } else {
+      const c = item.chore;
+      const base = choreNextDates[c.id] ? new Date(choreNextDates[c.id]) : now;
+      const nextDate = computeChoreNextDate(base, c.schedule, c.dayOfWeek, c.timeOfDay);
+      const newCompleted = { ...choreCompletedDates, [c.id]: now.toISOString() };
+      setChoreCompletedDates(newCompleted);
+      saveChoreCompletedDates(newCompleted);
+      const newNext = { ...choreNextDates, [c.id]: nextDate.toISOString() };
+      setChoreNextDates(newNext);
+      saveChoreNextDates(newNext);
+    }
+    setLogItKey(null);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+  const openTodosCount = todoStatusCounts["not-started"] + todoStatusCounts["in-progress"];
+  const totalOverdue   = overdueItems.length + overdueChores.length;
+
+  function fmtDaysStatus(date) {
+    if (!date) return "—";
+    const days = Math.round((today - date) / 86400000);
+    if (days > 0) return `${days}d late`;
+    if (days === 0) return "today";
+    return `T+${-days}d`;
   }
 
   const PRIORITY_COLORS = {
-    low: "#4ade80", medium: "#c9a96e", high: "#f59e0b", urgent: "#f87171",
+    low: "var(--fm-green)", medium: "var(--fm-brass)", high: "var(--fm-amber)", urgent: "var(--fm-red)",
   };
 
   return (
-    <div style={{ background: "var(--fm-bg)", color: "var(--fm-ink)", display: "flex", flexDirection: "column", fontFamily: "monospace", height: "100vh", overflow: "hidden" }}>
+    <div style={{ background: "var(--fm-bg)", color: "var(--fm-ink)", display: "flex", flexDirection: "column", fontFamily: "var(--fm-sans)", height: "100vh", overflow: "hidden" }}>
       <FmHeader active="Dashboard" tagline="Dashboard" />
 
-      {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "var(--fm-spacing-5xl)" }}>
 
-        {/* Stat summary row */}
+        {/* Stat row */}
         <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "180px repeat(4, 1fr)", marginBottom: "1.5rem" }}>
-          <HouseScoreWidget score={healthScore} />
+          <CircleHealthDial score={healthScore} />
           <StatCard
             label="Overdue"
             value={totalOverdue}
-            valueColor={totalOverdue > 0 ? "#f87171" : "#4ade80"}
-            sub={overdueItems.length > 0 || overdueChores.length > 0
-              ? `${overdueItems.length} maint · ${overdueChores.length} chores`
-              : "all clear"}
-            onClick={() => navigate("maintenance", { category: "Overdue" })}
+            valueColor={totalOverdue > 0 ? "var(--fm-red)" : "var(--fm-green)"}
+            sub={totalOverdue > 0 ? `${overdueItems.length} maint · ${overdueChores.length} chores` : "all clear"}
+            onClick={() => navigate("maintenance")}
           />
           <StatCard
             label="Upcoming"
             value={upcomingItems.length}
-            valueColor="#c9a96e"
+            valueColor="var(--fm-amber)"
             sub="maintenance in 30 days"
-            onClick={() => navigate("maintenance", { category: "Next 30 Days" })}
+            onClick={() => navigate("maintenance")}
           />
           <StatCard
             label="Chores This Week"
             value={upcomingChores.length}
-            valueColor={upcomingChores.length > 0 ? "#c9a96e" : "#a8a29c"}
+            valueColor={upcomingChores.length > 0 ? "var(--fm-amber)" : "var(--fm-ink-dim)"}
             sub="due in 7 days"
-            onClick={() => navigate("chores", { showUpcoming: true })}
+            onClick={() => navigate("chores")}
           />
           <StatCard
             label="Open To Dos"
             value={openTodosCount}
-            valueColor="#8b7d6b"
+            valueColor="var(--fm-ink-mute)"
             sub={`${todoStatusCounts["in-progress"]} in progress`}
             onClick={() => navigate("board")}
           />
         </div>
 
-        {/* Overdue + Due Soon */}
-        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1fr", marginBottom: "1rem" }}>
-
-          {/* Overdue */}
-          <div style={card}>
-            <div style={sectionHeader}>
-              <span style={sectionTitle}>Overdue</span>
-              <button style={navLink} onClick={() => navigate("maintenance")}>&rarr; Maintenance</button>
-            </div>
-            {combinedOverdue.length === 0 ? (
-              <div style={emptyText}>All clear</div>
-            ) : (
-              combinedOverdue.map((item, i) => (
-                <div
-                  key={i}
-                  onClick={() => item.type === "maint"
-                    ? navigate("maintenance", { search: item.row.task })
-                    : navigate("chores", { choreId: item.chore.id })}
-                  style={{ ...rowStyle, cursor: "pointer" }}
-                  onMouseEnter={e => e.currentTarget.style.color = "#e8e4dd"}
-                  onMouseLeave={e => e.currentTarget.style.color = ""}
-                >
-                  <span style={{ color: "#f87171", flexShrink: 0, minWidth: "58px" }}>{formatDateFromDate(item.date)}</span>
-                  <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
-                  <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
+        {/* Triage queue */}
+        <div style={{ ...card, marginBottom: "1rem" }}>
+          <div style={sectionHeader}>
+            <span style={sectionTitle}>Triage · Overdue + Due This Week</span>
+            <button style={navLink} onClick={() => navigate("maintenance")}>&rarr; Maintenance</button>
+          </div>
+          {triageItems.length === 0 ? (
+            <div style={emptyText}>All clear — nothing overdue or due this week</div>
+          ) : triageItems.map(item => {
+            const isOverdue = item.date < today;
+            const tag = item.type === "chore" ? "CHORE" : getSysTag(item.sub);
+            const isActive = logItKey === item.key;
+            return (
+              <div key={item.key} style={rowStyle}>
+                <div style={{ background: isOverdue ? "var(--fm-red)" : "var(--fm-amber)", borderRadius: "50%", flexShrink: 0, height: "5px", width: "5px" }} />
+                <span style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-hairline2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.55rem", letterSpacing: "0.06em", padding: "0.1rem 0.35rem" }}>
+                  {tag}
+                </span>
+                <span style={{ flex: 1, fontFamily: "var(--fm-sans)", fontSize: "0.78rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {item.type === "maint" && item.sub && <span style={{ color: "var(--fm-ink-mute)" }}>{item.sub} · </span>}
+                  {item.label}
+                </span>
+                <span style={{ color: isOverdue ? "var(--fm-red)" : "var(--fm-amber)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.65rem", minWidth: "58px", textAlign: "right" }}>
+                  {fmtDaysStatus(item.date)}
+                </span>
+                <div style={{ flexShrink: 0 }}>
+                  {isActive ? (
+                    <div style={{ alignItems: "center", display: "flex", gap: "0.35rem" }}>
+                      <DatePicker
+                        selected={logItDate}
+                        onChange={date => setLogItDate(date)}
+                        dateFormat="MM/dd/yy"
+                        popperPlacement="top-end"
+                        customInput={<LogItInput />}
+                      />
+                      <button
+                        onClick={() => handleLogIt(item, logItDate)}
+                        style={{ background: "transparent", border: "1px solid var(--fm-green)", borderRadius: "var(--fm-radius)", color: "var(--fm-green)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", padding: "0.15rem 0.35rem" }}
+                      >✓</button>
+                      <button
+                        onClick={() => setLogItKey(null)}
+                        style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", padding: "0.15rem 0.35rem" }}
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setLogItKey(item.key); setLogItDate(new Date()); }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-brass)"; e.currentTarget.style.color = "var(--fm-brass)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-hairline2)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
+                      style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", letterSpacing: "0.06em", padding: "0.15rem 0.55rem", transition: "all 0.12s" }}
+                    >Log it</button>
+                  )}
                 </div>
-              ))
-            )}
-            {combinedOverdueTotal > 8 && (
-              <div style={{ ...emptyText, marginTop: "0.25rem" }}>+{combinedOverdueTotal - 8} more</div>
-            )}
-          </div>
-
-          {/* Due Soon */}
-          <div style={card}>
-            <div style={sectionHeader}>
-              <span style={sectionTitle}>Due Soon</span>
-              <button style={navLink} onClick={() => navigate("calendar")}>&rarr; Calendar</button>
-            </div>
-            {displayUpcoming.length === 0 ? (
-              <div style={emptyText}>Nothing due soon</div>
-            ) : (
-              displayUpcoming.map((item, i) => {
-                const done = completedKeys.has(item.key);
-                return (
-                  <div key={item.key} style={{ ...rowStyle, opacity: done ? 0.3 : 1 }}>
-                    <span style={{ color: "#c9a96e", flexShrink: 0, minWidth: "58px" }}>{formatDateFromDate(item.date)}</span>
-                    <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "44px" }}>{item.type === "chore" ? "chore" : "maint"}</span>
-                    <span style={{ color: "#a8a29c", flexShrink: 0, minWidth: "70px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.sub}</span>
-                    <span
-                      onClick={() => !done && (item.type === "maint"
-                        ? navigate("maintenance", { search: item.row.task })
-                        : navigate("chores", { choreId: item.chore.id }))}
-                      style={{ cursor: done ? "default" : "pointer", flex: 1, overflow: "hidden", textDecoration: done ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                      onMouseEnter={e => { if (!done) e.currentTarget.style.color = "#e8e4dd"; }}
-                      onMouseLeave={e => { e.currentTarget.style.color = ""; }}
-                    >{item.label}</span>
-                    {!done && <MarkDoneButton onClick={() => handleMarkDone(item)} />}
-                  </div>
-                );
-              })
-            )}
-            {combinedUpcomingTotal > 8 && (
-              <div style={{ ...emptyText, marginTop: "0.25rem" }}>+{combinedUpcomingTotal - 8} more</div>
-            )}
-          </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Coverage */}
+        {/* Architecture: Systems + Rooms */}
+        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1fr", marginBottom: "1rem" }}>
+          <ArchSection title="Systems" cats={categoryGroups.systems} catHealthMap={catHealthMap} catNextDueMap={catNextDueMap} emptyMsg="No systems in inventory" />
+          <ArchSection title="Rooms"   cats={categoryGroups.rooms}   catHealthMap={catHealthMap} catNextDueMap={catNextDueMap} emptyMsg="No rooms added yet" />
+        </div>
+
+        {/* Coverage alerts */}
         {(zeroTaskItemCount > 0 || unscheduledTaskCount > 0) && (
           <div style={{ ...card, display: "flex", gap: "2rem", marginBottom: "1rem" }}>
-            <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.55rem", flexShrink: 0, letterSpacing: "0.12em", paddingTop: "0.1rem", textTransform: "uppercase" }}>Coverage</div>
+            <div style={{ color: "var(--fm-ink-mute)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.55rem", letterSpacing: "0.12em", paddingTop: "0.1rem", textTransform: "uppercase" }}>Coverage</div>
             <div style={{ display: "flex", flex: 1, gap: "1.5rem" }}>
               {zeroTaskItemCount > 0 && (
-                <button
-                  onClick={() => navigate("inventory", { expandAll: true })}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}
-                  onMouseEnter={e => e.currentTarget.querySelector("span.val").style.color = "#a8a29c"}
-                  onMouseLeave={e => e.currentTarget.querySelector("span.val").style.color = "#4a4458"}
-                >
-                  <span className="val" style={{ color: "#4a4458", fontFamily: "monospace", fontSize: "1.4rem", fontWeight: 300, transition: "color 0.12s" }}>{zeroTaskItemCount}</span>
-                  <span style={{ color: "#3a3548", fontFamily: "monospace", fontSize: "0.6rem", marginLeft: "0.4rem" }}>items with no tasks</span>
+                <button onClick={() => navigate("inventory", { expandAll: true })} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}>
+                  <span style={{ color: "var(--fm-hairline2)", fontFamily: "var(--fm-mono)", fontSize: "1.4rem", fontWeight: 300 }}>{zeroTaskItemCount}</span>
+                  <span style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", marginLeft: "0.4rem" }}>items with no tasks</span>
                 </button>
               )}
               {unscheduledTaskCount > 0 && (
-                <button
-                  onClick={() => navigate("inventory", { expandAll: true })}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}
-                  onMouseEnter={e => e.currentTarget.querySelector("span.val").style.color = "#a8a29c"}
-                  onMouseLeave={e => e.currentTarget.querySelector("span.val").style.color = "#5a4a2e"}
-                >
-                  <span className="val" style={{ color: "#5a4a2e", fontFamily: "monospace", fontSize: "1.4rem", fontWeight: 300, transition: "color 0.12s" }}>{unscheduledTaskCount}</span>
-                  <span style={{ color: "#4a3a20", fontFamily: "monospace", fontSize: "0.6rem", marginLeft: "0.4rem" }}>tasks not scheduled</span>
+                <button onClick={() => navigate("inventory", { expandAll: true })} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}>
+                  <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "1.4rem", fontWeight: 300 }}>{unscheduledTaskCount}</span>
+                  <span style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", marginLeft: "0.4rem" }}>tasks not scheduled</span>
                 </button>
               )}
             </div>
@@ -515,8 +527,6 @@ export default function DashboardPage({ navigate }) {
 
         {/* To Dos + Projects */}
         <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1fr", marginBottom: "1rem" }}>
-
-          {/* To Dos Summary */}
           <div style={card}>
             <div style={sectionHeader}>
               <span style={sectionTitle}>To Dos</span>
@@ -524,17 +534,13 @@ export default function DashboardPage({ navigate }) {
             </div>
             <div style={{ display: "flex", gap: "1.5rem", marginBottom: "0.75rem" }}>
               {[
-                { label: "Not Started", key: "not-started", color: "#a8a29c" },
-                { label: "In Progress", key: "in-progress", color: "#c9a96e" },
-                { label: "Done",        key: "done",        color: "#4ade80" },
+                { label: "Not Started", key: "not-started", color: "var(--fm-ink-dim)" },
+                { label: "In Progress", key: "in-progress", color: "var(--fm-amber)" },
+                { label: "Done",        key: "done",        color: "var(--fm-green)" },
               ].map(s => (
                 <div key={s.key} style={{ textAlign: "center" }}>
-                  <div style={{ color: s.color, fontFamily: "monospace", fontSize: "1.4rem", fontWeight: 300 }}>
-                    {todoStatusCounts[s.key]}
-                  </div>
-                  <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                    {s.label}
-                  </div>
+                  <div style={{ color: s.color, fontFamily: "var(--fm-serif)", fontSize: "1.6rem", fontWeight: 300 }}>{todoStatusCounts[s.key]}</div>
+                  <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -542,23 +548,18 @@ export default function DashboardPage({ navigate }) {
               <div style={emptyText}>No urgent or high priority items</div>
             ) : (
               <>
-                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase" }}>
-                  High Priority Open
-                </div>
+                <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.55rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase" }}>High Priority Open</div>
                 {highPriorityTodos.slice(0, 6).map((t, i) => (
                   <div key={i} style={rowStyle}>
                     <span style={{ color: PRIORITY_COLORS[t.priority], minWidth: "50px" }}>{t.priority}</span>
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title}</span>
+                    <span style={{ fontFamily: "var(--fm-sans)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title}</span>
                   </div>
                 ))}
-                {highPriorityTodos.length > 6 && (
-                  <div style={{ ...emptyText, marginTop: "0.25rem" }}>+{highPriorityTodos.length - 6} more</div>
-                )}
+                {highPriorityTodos.length > 6 && <div style={{ ...emptyText, marginTop: "0.25rem" }}>+{highPriorityTodos.length - 6} more</div>}
               </>
             )}
           </div>
 
-          {/* Projects Progress */}
           <div style={card}>
             <div style={sectionHeader}>
               <span style={sectionTitle}>Projects</span>
@@ -571,15 +572,11 @@ export default function DashboardPage({ navigate }) {
               return (
                 <div key={i} style={{ marginBottom: "0.85rem" }}>
                   <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "0.3rem" }}>
-                    <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {p.name}
-                    </span>
-                    <span style={{ color: "#a8a29c", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem", marginLeft: "0.5rem" }}>
-                      {p.done}/{p.total}
-                    </span>
+                    <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ color: "var(--fm-ink-mute)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.6rem", marginLeft: "0.5rem" }}>{p.done}/{p.total}</span>
                   </div>
-                  <div style={{ background: "#1a1d26", borderRadius: "2px", height: "3px", width: "100%" }}>
-                    <div style={{ background: pct === 100 ? "#4ade80" : "#c9a96e", borderRadius: "2px", height: "100%", transition: "width 0.3s", width: `${pct}%` }} />
+                  <div style={{ background: "var(--fm-hairline)", borderRadius: "2px", height: "3px", width: "100%" }}>
+                    <div style={{ background: pct === 100 ? "var(--fm-green)" : "var(--fm-brass)", borderRadius: "2px", height: "100%", transition: "width 0.3s", width: `${pct}%` }} />
                   </div>
                 </div>
               );
@@ -587,17 +584,34 @@ export default function DashboardPage({ navigate }) {
           </div>
         </div>
 
+        {/* Schedule timeline stub */}
+        <div style={{ ...card, marginBottom: "1rem", overflow: "hidden", position: "relative" }}>
+          <div style={{ alignItems: "center", backdropFilter: "blur(3px)", background: "rgba(14,16,20,0.65)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "absolute", right: 0, top: 0, zIndex: 2 }}>
+            <span style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>Coming soon</span>
+          </div>
+          <div style={sectionHeader}>
+            <span style={sectionTitle}>Schedule · T−30 to T+90</span>
+          </div>
+          <div style={{ alignItems: "center", display: "flex", height: "40px", justifyContent: "space-between", padding: "0 0.25rem", position: "relative" }}>
+            <div style={{ background: "var(--fm-hairline)", height: "1px", left: 0, position: "absolute", right: 0, top: "50%" }} />
+            {[...Array(9)].map((_, i) => (
+              <div key={i} style={{ background: i < 2 ? "var(--fm-red)" : i < 4 ? "var(--fm-amber)" : "var(--fm-brass)", borderRadius: "50%", height: "7px", position: "relative", width: "7px", zIndex: 1 }} />
+            ))}
+          </div>
+          <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", marginTop: "0.25rem", textAlign: "center" }}>T−30d · · · today · · · T+90d</div>
+        </div>
+
         {/* Completion chart */}
         <div style={card}>
           <div style={sectionHeader}>
-            <span style={sectionTitle}>Completed � Last 6 Months</span>
+            <span style={sectionTitle}>Completed · Last 6 Months</span>
             <div style={{ alignItems: "center", display: "flex", gap: "0.9rem" }}>
-              <span style={{ alignItems: "center", color: "#a8a29c", display: "flex", fontFamily: "monospace", fontSize: "0.58rem", gap: "0.3rem" }}>
-                <span style={{ background: "#c9a96e", borderRadius: "1px", display: "inline-block", height: "6px", width: "10px" }} />
+              <span style={{ alignItems: "center", color: "var(--fm-ink-dim)", display: "flex", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", gap: "0.3rem" }}>
+                <span style={{ background: "var(--fm-brass)", borderRadius: "1px", display: "inline-block", height: "6px", opacity: 0.55, width: "10px" }} />
                 Maintenance
               </span>
-              <span style={{ alignItems: "center", color: "#a8a29c", display: "flex", fontFamily: "monospace", fontSize: "0.58rem", gap: "0.3rem" }}>
-                <span style={{ background: "#4ade80", borderRadius: "1px", display: "inline-block", height: "6px", width: "10px" }} />
+              <span style={{ alignItems: "center", color: "var(--fm-ink-dim)", display: "flex", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", gap: "0.3rem" }}>
+                <span style={{ background: "var(--fm-green)", borderRadius: "1px", display: "inline-block", height: "6px", opacity: 0.55, width: "10px" }} />
                 Chores
               </span>
             </div>
@@ -611,31 +625,14 @@ export default function DashboardPage({ navigate }) {
               const choreH = totalH - maintH;
               return (
                 <div key={i} style={{ alignItems: "center", display: "flex", flex: 1, flexDirection: "column", gap: "0.4rem" }}>
-                  <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem" }}>
-                    {total > 0 ? total : ""}
-                  </div>
+                  <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem" }}>{total > 0 ? total : ""}</div>
                   <div style={{ display: "flex", flexDirection: "column-reverse", justifyContent: "flex-start", width: "100%" }}>
-                    <div style={{
-                      background: bucket.maint > 0 ? "#c9a96e30" : "#1a1d26",
-                      border: bucket.maint > 0 ? "1px solid #c9a96e40" : "1px solid #1e2330",
-                      borderRadius: maintH > 0 && choreH === 0 ? "2px 2px 0 0" : "0 0 0 0",
-                      height: `${Math.max(maintH, bucket.maint > 0 ? 4 : 0)}px`,
-                      minHeight: bucket.maint > 0 ? "4px" : "0",
-                      width: "100%",
-                    }} />
+                    <div style={{ background: bucket.maint > 0 ? "rgba(201,169,110,0.2)" : "var(--fm-hairline)", border: `1px solid ${bucket.maint > 0 ? "rgba(201,169,110,0.3)" : "var(--fm-hairline)"}`, borderRadius: maintH > 0 && choreH === 0 ? "2px 2px 0 0" : "0", height: `${Math.max(maintH, bucket.maint > 0 ? 4 : 0)}px`, minHeight: bucket.maint > 0 ? "4px" : "0", width: "100%" }} />
                     {bucket.chores > 0 && (
-                      <div style={{
-                        background: "#4ade8030",
-                        border: "1px solid #4ade8040",
-                        borderRadius: "2px 2px 0 0",
-                        height: `${Math.max(choreH, 4)}px`,
-                        width: "100%",
-                      }} />
+                      <div style={{ background: "rgba(127,176,135,0.2)", border: "1px solid rgba(127,176,135,0.3)", borderRadius: "2px 2px 0 0", height: `${Math.max(choreH, 4)}px`, width: "100%" }} />
                     )}
                   </div>
-                  <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem" }}>
-                    {bucket.label}
-                  </div>
+                  <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem" }}>{bucket.label}</div>
                 </div>
               );
             })}
@@ -650,40 +647,17 @@ export default function DashboardPage({ navigate }) {
   );
 }
 
-function MarkDoneButton({ onClick }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: "transparent",
-        border: `1px solid ${hovered ? "#4ade8060" : "#1e2330"}`,
-        borderRadius: "3px",
-        color: hovered ? "#4ade80" : "#a8a29c",
-        cursor: "pointer",
-        flexShrink: 0,
-        fontFamily: "monospace",
-        fontSize: "0.62rem",
-        lineHeight: 1,
-        padding: "0.2rem 0.4rem",
-        transition: "all 0.12s",
-      }}
-    >{"✓"}
-    </button>
-  );
-}
+// ── Sub-components ────────────────────────────────────────────────────────────
 
-function HouseScoreWidget({ score }) {
+function CircleHealthDial({ score }) {
   const [hovered, setHovered] = useState(false);
-  const color = score >= 80 ? "#4ade80" : score >= 50 ? "#c9a96e" : "#f87171";
+  const r = 36;
+  const cx = 50, cy = 52;
+  const circ = 2 * Math.PI * r;
+  const arcLen = circ * 0.75;
+  const fillLen = Math.max(0, (score / 100) * arcLen);
+  const color = score >= 80 ? "var(--fm-green)" : score >= 50 ? "var(--fm-amber)" : "var(--fm-red)";
   const band  = score >= 80 ? "On track" : score >= 50 ? "Needs attention" : "Falling behind";
-
-  // House viewBox 0 0 60 62: roof tip (30,2), eaves at y=30, base at y=61
-  // Total fill range: y=2 to y=61 = 59px. Fill from bottom.
-  const fillH   = 59 * (score / 100);
-  const clipTopY = 61 - fillH;
 
   return (
     <div
@@ -691,69 +665,38 @@ function HouseScoreWidget({ score }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         alignItems: "center",
-        background: hovered ? "#0f1117" : "#0d0f16",
-        border: `1px solid ${hovered ? "#a8a29c" : "#1e2330"}`,
-        borderRadius: "6px",
+        background: hovered ? "var(--fm-bg-raised)" : "var(--fm-bg-panel)",
+        border: `1px solid ${hovered ? "var(--fm-hairline2)" : "var(--fm-hairline)"}`,
+        borderRadius: "var(--fm-radius-lg)",
         cursor: "default",
         display: "flex",
         flexDirection: "column",
-        gap: "0.35rem",
+        gap: "0.2rem",
         justifyContent: "center",
-        padding: "0.85rem 1rem",
+        padding: "0.75rem 1rem",
         position: "relative",
         transition: "all 0.15s",
       }}
     >
-      <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-        Home Health
-      </div>
-
-      <svg viewBox="0 0 60 62" width="46" height="47" style={{ display: "block", overflow: "visible" }}>
-        <defs>
-          <clipPath id="hhfill">
-            <rect x="0" y={clipTopY} width="60" height={62} />
-          </clipPath>
-        </defs>
-        {/* Outline layer */}
-        <polygon points="30,2 59,30 1,30" fill="#0d0f16" stroke="#1e2330" strokeWidth="1.5" />
-        <rect x="1" y="29" width="58" height="32" fill="#0d0f16" stroke="#1e2330" strokeWidth="1.5" />
-        <rect x="23" y="43" width="14" height="18" fill="#0d0f16" stroke="#1e2330" strokeWidth="1" />
-        {/* Fill layer */}
-        <g clipPath="url(#hhfill)">
-          <polygon points="30,2 59,30 1,30" fill={color} opacity="0.22" />
-          <rect x="1" y="29" width="58" height="32" fill={color} opacity="0.22" />
-          <polygon points="30,2 59,30 1,30" fill="none" stroke={color} strokeWidth="1.5" opacity="0.55" />
-          <rect x="1" y="29" width="58" height="32" fill="none" stroke={color} strokeWidth="1.5" opacity="0.55" />
-        </g>
-        {/* Door re-drawn on top so fill doesn't bleed into it */}
-        <rect x="23" y="43" width="14" height="18" fill="#0d0f16" stroke="#1e2330" strokeWidth="1" />
+      <div style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>Home Health</div>
+      <svg viewBox="0 0 100 104" width="88" height="88" style={{ display: "block" }}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--fm-hairline2)" strokeWidth={7}
+          strokeDasharray={`${arcLen} ${circ - arcLen}`} strokeLinecap="round"
+          transform={`rotate(225 ${cx} ${cy})`} />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={7} strokeOpacity={0.85}
+          strokeDasharray={`${fillLen} ${circ - fillLen}`} strokeLinecap="round"
+          transform={`rotate(225 ${cx} ${cy})`}
+          style={{ transition: "stroke-dasharray 0.4s ease" }} />
+        <text x={cx} y={cy - 3} textAnchor="middle" dominantBaseline="middle"
+          fill={color} fontFamily="var(--fm-serif)" fontSize="24" fontWeight="300">{score}</text>
+        <text x={cx} y={cy + 14} textAnchor="middle"
+          fill="var(--fm-ink-mute)" fontFamily="var(--fm-mono)" fontSize="7" letterSpacing="0.5">/100</text>
       </svg>
-
-      <div style={{ color, fontFamily: "monospace", fontSize: "1.6rem", fontWeight: 300, lineHeight: 1 }}>
-        {score}<span style={{ color: "#a8a29c", fontSize: "0.7rem" }}>/100</span>
-      </div>
-
-      <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.58rem" }}>{band}</div>
+      <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.55rem" }}>{band}</div>
 
       {hovered && (
-        <div style={{
-          background: "#13161f",
-          border: "1px solid #1e2330",
-          borderRadius: "4px",
-          top: "calc(100% + 8px)",
-          color: "#a8a29c",
-          fontFamily: "monospace",
-          fontSize: "0.62rem",
-          left: "0",
-          lineHeight: 1.55,
-          width: "360px",
-          padding: "0.5rem 0.7rem",
-          pointerEvents: "none",
-          position: "absolute",
-          whiteSpace: "normal",
-          zIndex: 100,
-        }}>
-          Starts at 100. Each overdue maintenance task subtracts points — more the longer it&apos;s overdue. Chores count half as much as maintenance.
+        <div style={{ background: "var(--fm-bg-raised)", border: "var(--fm-border)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", left: "0", lineHeight: 1.55, padding: "0.5rem 0.7rem", pointerEvents: "none", position: "absolute", top: "calc(100% + 8px)", whiteSpace: "normal", width: "280px", zIndex: 100 }}>
+          Starts at 100. Each overdue maintenance task subtracts points — more the longer it&apos;s overdue. Chores count half as much.
         </div>
       )}
     </div>
@@ -768,25 +711,55 @@ function StatCard({ label, value, valueColor, sub, onClick }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: hovered ? "#0f1117" : "#0d0f16",
-        border: `1px solid ${hovered ? "#a8a29c" : "#1e2330"}`,
-        borderRadius: "6px",
+        background: hovered ? "var(--fm-bg-raised)" : "var(--fm-bg-panel)",
+        border: `1px solid ${hovered ? "var(--fm-hairline2)" : "var(--fm-hairline)"}`,
+        borderRadius: "var(--fm-radius-lg)",
         cursor: "pointer",
         padding: "1rem 1.25rem",
         textAlign: "left",
         transition: "all 0.15s",
       }}
     >
-      <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.55rem", letterSpacing: "0.12em", marginBottom: "0.4rem", textTransform: "uppercase" }}>
-        {label}
-      </div>
-      <div style={{ color: valueColor, fontFamily: "monospace", fontSize: "1.8rem", fontWeight: 300, lineHeight: 1 }}>
-        {value}
-      </div>
-      <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", marginTop: "0.3rem" }}>
-        {sub}
-      </div>
+      <div style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.55rem", letterSpacing: "0.12em", marginBottom: "0.4rem", textTransform: "uppercase" }}>{label}</div>
+      <div style={{ color: valueColor, fontFamily: "var(--fm-serif)", fontSize: "1.8rem", fontWeight: 300, lineHeight: 1 }}>{value}</div>
+      <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", marginTop: "0.3rem" }}>{sub}</div>
     </button>
   );
 }
 
+function HealthBar({ score }) {
+  const cells = 10;
+  const filled = Math.round(score / 10);
+  const color = score >= 80 ? "var(--fm-green)" : score >= 50 ? "var(--fm-amber)" : "var(--fm-red)";
+  return (
+    <div style={{ display: "flex", gap: "2px", width: "72px" }}>
+      {[...Array(cells)].map((_, i) => (
+        <div key={i} style={{ background: i < filled ? color : "var(--fm-hairline)", borderRadius: "1px", flex: 1, height: "5px", opacity: i < filled ? 0.7 : 0.35 }} />
+      ))}
+    </div>
+  );
+}
+
+function ArchSection({ title, cats, catHealthMap, catNextDueMap, emptyMsg }) {
+  return (
+    <div style={{ background: "var(--fm-bg-panel)", border: "var(--fm-border)", borderRadius: "var(--fm-radius-lg)", padding: "1.25rem 1.5rem" }}>
+      <div style={{ alignItems: "center", borderBottom: "1px solid var(--fm-hairline)", display: "flex", justifyContent: "space-between", marginBottom: "0.75rem", paddingBottom: "0.5rem" }}>
+        <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>{title}</span>
+      </div>
+      {cats.length === 0 ? (
+        <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", padding: "0.5rem 0" }}>{emptyMsg}</div>
+      ) : cats.map(cat => {
+        const score = catHealthMap[cat] ?? 100;
+        const nextDue = catNextDueMap[cat];
+        return (
+          <div key={cat} style={{ alignItems: "center", borderBottom: "1px solid var(--fm-hairline)", display: "flex", gap: "0.75rem", padding: "0.45rem 0" }}>
+            <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-sans)", fontSize: "0.75rem", minWidth: "88px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat}</span>
+            <HealthBar score={score} />
+            <span style={{ color: score >= 80 ? "var(--fm-green)" : score >= 50 ? "var(--fm-amber)" : "var(--fm-red)", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", minWidth: "26px", textAlign: "right" }}>{score}</span>
+            <span style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", marginLeft: "auto" }}>{fmtDate(nextDue)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

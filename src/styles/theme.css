@@ -1,0 +1,120 @@
+/* Foreman Design Tokens — CSS Variables */
+/* Based on Claude Design reskin v2 (2026-05-14) */
+
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:wght@400;500&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  /* ──── COLORS ──── */
+  /* Background layers */
+  --fm-bg: #0e1014;
+  --fm-bg-raised: #13161e;
+  --fm-bg-panel: #171a23;
+  --fm-bg-sunk: #0a0c11;
+
+  /* Borders & dividers */
+  --fm-hairline: #22262f;
+  --fm-hairline2: #2b3140;
+
+  /* Text */
+  --fm-ink: #e8e4dd;
+  --fm-ink-dim: #a8a29c;
+  --fm-ink-mute: #5e6068;
+
+  /* Accent — brass (primary action, focus, active states) */
+  --fm-brass: #c9a96e;
+  --fm-brass-dim: #8b7d6b;
+  --fm-brass-bg: rgba(201, 169, 110, 0.10);
+
+  /* Status colors */
+  --fm-red: #e07b6a;      /* Overdue, errors, danger */
+  --fm-amber: #e0b266;    /* Due soon, warnings, high priority */
+  --fm-green: #7fb087;    /* OK, in-warranty, success */
+  --fm-cyan: #7ab5d9;     /* Utility/service spaces, WIP, chores */
+  --fm-purple: #9d8fb8;   /* Reserved */
+
+  /* ──── TYPOGRAPHY ──── */
+  --fm-sans: 'Inter', system-ui, sans-serif;
+  --fm-serif: 'Newsreader', 'Georgia', serif;
+  --fm-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* ──── SPACING SCALE ──── */
+  /* 4/6/8/10/12/14/16/18/24/30 px */
+  --fm-spacing-xs: 4px;      /* 4 */
+  --fm-spacing-sm: 6px;      /* 6 */
+  --fm-spacing-md: 8px;      /* 8 */
+  --fm-spacing-base: 10px;   /* 10 */
+  --fm-spacing-lg: 12px;     /* 12 */
+  --fm-spacing-xl: 14px;     /* 14 */
+  --fm-spacing-2xl: 16px;    /* 16 */
+  --fm-spacing-3xl: 18px;    /* 18 */
+  --fm-spacing-4xl: 24px;    /* 24 */
+  --fm-spacing-5xl: 30px;    /* 30 */
+
+  /* ──── BORDERS & CORNERS ──── */
+  --fm-radius: 2px;
+  --fm-radius-lg: 3px;
+  --fm-border: 1px solid var(--fm-hairline);
+  --fm-border-2: 1px solid var(--fm-hairline2);
+
+  /* ──── COMMON SIZES ──── */
+  /* Monospace caps label: 9.5–10 px, all-caps, letter-spacing 0.08em–0.22em */
+  --fm-tag-size: 9.5px;
+  --fm-tag-spacing: 0.10em;
+  --fm-tag-padding: 2px 5px;
+}
+
+/* ──── BASE STYLES ──── */
+html,
+body {
+  background: var(--fm-bg);
+  color: var(--fm-ink);
+  font-family: var(--fm-sans);
+  margin: 0;
+  padding: 0;
+}
+
+/* Typography reset */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-family: var(--fm-serif);
+}
+
+button {
+  font-family: var(--fm-sans);
+}
+
+/* Remove default button styling */
+button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ──── UTILITY CLASSES ──── */
+.fm-sans {
+  font-family: var(--fm-sans);
+}
+
+.fm-serif {
+  font-family: var(--fm-serif);
+}
+
+.fm-mono {
+  font-family: var(--fm-mono);
+}
+
+.fm-card {
+  background: var(--fm-bg-raised);
+  border: var(--fm-border);
+  border-radius: var(--fm-radius);
+  padding: var(--fm-spacing-xl) var(--fm-spacing-2xl);
+}
+
+.fm-hairline {
+  border-bottom: var(--fm-border);
+}
+
+.fm-hairline-2 {
+  border-bottom: var(--fm-border-2);
+}

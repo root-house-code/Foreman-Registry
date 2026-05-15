@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, forwardRef } from "react";
 import { fieldLabel, fieldInput, fieldSelect, DueDateBtn, STATUS_COLUMNS, PRIORITY_LABELS } from "./components/ModalShared.jsx";
 import FmHeader from "./src/components/FmHeader.jsx";
+import FmSubnav from "./src/components/FmSubnav.jsx";
 import { createPortal } from "react-dom";
 import DatePicker from "react-datepicker";
 import { loadTodos, saveTodos, createTodo } from "./lib/todos.js";
@@ -519,6 +520,15 @@ export default function BoardPage({ navigate }) {
       )}
 
       <FmHeader active="To Dos" tagline="To Dos" />
+      <FmSubnav
+        tabs={["Board", "List", "By priority", "By project"]}
+        active="Board"
+        stats={[
+          { value: todosByStatus["not-started"].length, label: "not started" },
+          { value: todosByStatus["in-progress"].length, color: "var(--fm-amber)", label: "in progress" },
+          { value: todosByStatus["done"].length, color: "var(--fm-green)", label: "done" },
+        ]}
+      />
 
       {/* Body */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>

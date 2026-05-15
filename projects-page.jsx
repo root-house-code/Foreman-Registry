@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, forwardRef } from "react";
 import FmHeader from "./src/components/FmHeader.jsx";
+import FmSubnav from "./src/components/FmSubnav.jsx";
 import DatePicker from "react-datepicker";
 import { loadTodos, saveTodos, createTodo } from "./lib/todos.js";
 import { loadProjects, saveProjects, createProject } from "./lib/projects.js";
@@ -398,6 +399,15 @@ export default function ProjectsPage({ navigate }) {
       {/* Header */}
       <div ref={headerRef}>
         <FmHeader active="Projects" tagline="Projects" />
+        <FmSubnav
+          tabs={["Active", "Planned", "Completed", "Archive"]}
+          active="Active"
+          stats={[
+            { value: projects.length, label: "active" },
+            { value: todos.filter(t => t.projectId && t.status !== "done").length, label: "open todos" },
+            { value: todos.filter(t => t.projectId && t.status === "done").length, color: "var(--fm-green)", label: "completed" },
+          ]}
+        />
       </div>
 
       {/* Body */}

@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import FmHeader from "./src/components/FmHeader.jsx";
+import FmSubnav from "./src/components/FmSubnav.jsx";
 import {
   PROFILES, PROFILE_DATA_KEYS,
   getAllProfiles, loadUserProfiles,
@@ -1468,6 +1469,7 @@ export default function PreferencesPage({ navigate }) {
 
       {/* Header */}
       <FmHeader active="Preferences" tagline="Preferences" />
+      <FmSubnav tabs={["Account", "Notifications", "Display", "Data", "Integrations"]} active="Account" />
 
       {/* Body */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>

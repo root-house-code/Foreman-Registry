@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import FmHeader from "./src/components/FmHeader.jsx";
+import FmSubnav from "./src/components/FmSubnav.jsx";
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import ChoreDetailModal from "./components/ChoreDetailModal.jsx";
 import {
@@ -456,6 +457,15 @@ export default function CalendarPage({ navigate }) {
 
       {/* Header */}
       <FmHeader active="Calendar" tagline="Calendar" />
+      <FmSubnav
+        tabs={["Month", "Week", "Agenda", "Year"]}
+        active="Month"
+        stats={[
+          { value: Object.values(eventsByDay).flat().filter(e => e.type === "maintenance").length, label: "tasks" },
+          { value: Object.values(eventsByDay).flat().filter(e => e.type === "chore").length, label: "chores" },
+          { value: Object.values(eventsByDay).flat().length, label: "total events" },
+        ]}
+      />
 
       {/* Controls + filter bar — mirrors stats-row → CategoryTabs pattern of Maintenance/Chores */}
       <div style={{ flexShrink: 0, padding: "2rem 2rem 0" }}>

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import FmHeader from "./src/components/FmHeader.jsx";
+import FmSubnav from "./src/components/FmSubnav.jsx";
 import AssigneeInput, { AssigneeCellInput } from "./components/AssigneeInput.jsx";
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import SelectCell from "./components/SelectCell.jsx";
@@ -1078,6 +1079,21 @@ export default function ChoresPage({ navigate, navState }) {
     });
   }, [chores, activeRoom, activeFrequencies, search, sortCols, notes]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const choreStats = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const in7Days = new Date(today); in7Days.setDate(in7Days.getDate() + 7);
+    const nextDates = loadChoreNextDates();
+    let overdue = 0, thisWeek = 0;
+    chores.forEach(c => {
+      const nd = nextDates[c.id] ? new Date(nextDates[c.id]) : null;
+      if (!nd) return;
+      nd.setHours(0, 0, 0, 0);
+      if (nd < today) overdue++;
+      else if (nd <= in7Days) thisWeek++;
+    });
+    return { overdue, thisWeek };
+  }, [chores]);
+
   // ── Handlers ────────────────────────────────────────────────────────────────
   function handleChoreEdit(id, field, value) {
     const updated = chores.map(c => c.id === id ? { ...c, [field]: value } : c);
@@ -1213,6 +1229,15 @@ export default function ChoresPage({ navigate, navState }) {
 
       {/* Header */}
       <FmHeader active="Chores" tagline="Chores" />
+      <FmSubnav
+        tabs={["This week", "All chores", "By room", "Templates"]}
+        active="This week"
+        stats={[
+          { value: chores.length, label: "total" },
+          { value: choreStats.overdue, color: "var(--fm-red)", label: "overdue" },
+          { value: choreStats.thisWeek, color: "var(--fm-amber)", label: "this week" },
+        ]}
+      />
 
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "2rem 2rem 4rem" }}>

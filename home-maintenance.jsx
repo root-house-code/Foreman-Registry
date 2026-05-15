@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import FmHeader from "./src/components/FmHeader.jsx";
+import FmSubnav from "./src/components/FmSubnav.jsx";
 import { loadData, loadCustomData, saveCustomData, loadOverrides, saveOverrides, defaultData } from "./lib/data.js";
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import MaintenanceTable from "./components/MaintenanceTable.jsx";
@@ -468,6 +469,23 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
     });
   }, [rows, activeCategory, isNext30View, isOverdueView, activeFrequencies, activeSeasons, search, deletedRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
 
+  const maintenanceStats = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const in7Days = new Date(today); in7Days.setDate(in7Days.getDate() + 7);
+    let overdue = 0, soon = 0;
+    rows.forEach(row => {
+      const key = `${row.category}|${row.item}|${row.task}`;
+      if (row._isBlankCategory || !row.task) return;
+      if (!row._isCustom && deletedCategories.has(row.category)) return;
+      if (deletedItems.has(`${row.category}|${row.item}`)) return;
+      if (deletedRows.has(key)) return;
+      const nd = nextDates[key];
+      if (!nd) return;
+      if (nd < today) overdue++;
+      else if (nd <= in7Days) soon++;
+    });
+    return { overdue, soon };
+  }, [rows, deletedCategories, deletedItems, deletedRows, nextDates]);
 
   return (
     <div style={{
@@ -481,6 +499,16 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
     }}>
       <div ref={pageHeaderRef}>
         <FmHeader active="Maintenance" tagline="Maintenance" />
+        <FmSubnav
+          tabs={["All tasks", "By system", "By room", "History"]}
+          active="All tasks"
+          stats={[
+            { value: activeTaskCount, label: "tracked" },
+            { value: maintenanceStats.overdue, color: "var(--fm-red)", label: "overdue" },
+            { value: maintenanceStats.soon, color: "var(--fm-amber)", label: "due ≤7d" },
+            { value: filtered.length, label: "shown" },
+          ]}
+        />
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "var(--fm-spacing-5xl) var(--fm-spacing-5xl) 4rem" }}>

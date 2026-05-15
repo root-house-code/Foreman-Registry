@@ -4,6 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
 import FmHeader from "./src/components/FmHeader.jsx";
+import FmSubnav from "./src/components/FmSubnav.jsx";
 import ScheduleBadge from "./components/ScheduleBadge.jsx";
 import { defaultData, loadCustomData, loadUseDefaultData } from "./lib/data.js";
 import { getCategoryTree } from "./lib/categoryData.js";
@@ -454,6 +455,15 @@ export default function GuidePage({ navigate }) {
 
       {/* Header */}
       <FmHeader active="Guide" tagline="Guide" />
+      <FmSubnav
+        tabs={["Articles", "By system", "By item", "Drafts"]}
+        active="By system"
+        stats={[
+          { value: grouped.length, label: "systems" },
+          { value: grouped.reduce((n, g) => n + g.items.length, 0), label: "items" },
+          { value: Object.keys(notes).length, color: "var(--fm-brass)", label: "notes" },
+        ]}
+      />
 
       {deletedCount > 0 && (
         <div style={{ borderBottom: "1px solid #1a1d26", flexShrink: 0, padding: "0.4rem 2rem" }}>

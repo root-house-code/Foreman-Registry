@@ -518,13 +518,7 @@ export default function BoardPage({ navigate }) {
         />
       )}
 
-      {/* Header */}
-      <div style={{
-        background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
-        borderBottom: "1px solid #a8a29c", flexShrink: 0, padding: "2rem", zIndex: 50,
-      }}>
-        <FmHeader active="To Dos" tagline="ad-hoc work in flight" />
-      </div>
+      <FmHeader active="To Dos" tagline="ad-hoc work in flight" />
 
       {/* Body */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>

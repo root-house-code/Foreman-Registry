@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import PageNav from "./components/PageNav.jsx";
+import FmHeader from "./src/components/FmHeader.jsx";
 import { loadData, loadCustomData, saveCustomData, loadOverrides, saveOverrides, defaultData } from "./lib/data.js";
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import MaintenanceTable from "./components/MaintenanceTable.jsx";
@@ -475,45 +475,17 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
       overflow: "hidden",
       display: "flex",
       flexDirection: "column",
-      background: "#0f1117",
-      fontFamily: "'Georgia', 'Times New Roman', serif",
-      color: "#e8e4dd",
+      background: "var(--fm-bg)",
+      fontFamily: "var(--fm-serif)",
+      color: "var(--fm-ink)",
     }}>
-      <div ref={pageHeaderRef} style={{
-        background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)",
-        borderBottom: "1px solid #a8a29c",
-        flexShrink: 0,
-        padding: "2rem",
-        zIndex: 50,
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <div>
-            <h1 style={{
-              color: "#f0e6d3",
-              fontSize: "clamp(2rem, 5vw, 3rem)",
-              fontWeight: "normal",
-              letterSpacing: "-0.02em",
-              lineHeight: 1.1,
-              margin: "0 0 0.5rem",
-            }}>
-              Foreman
-            </h1>
-            <div>
-              <span style={{ color: "#8b7d6b", display: "block", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.25em", textTransform: "uppercase" }}>
-                THE COMPLETE
-              </span>
-              <span style={{ color: "#c9a96e", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>
-                Home Maintenance Registry
-              </span>
-            </div>
-          </div>
-          <PageNav currentPage="maintenance" navigate={navigate} />
-        </div>
+      <div ref={pageHeaderRef}>
+        <FmHeader active="Maintenance" />
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "2rem 2rem 4rem" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "var(--fm-spacing-5xl) var(--fm-spacing-5xl) 4rem" }}>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", marginBottom: "1.25rem" }}>
-          <p style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.85rem", margin: 0 }}>
+          <p style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.85rem", margin: 0 }}>
             {activeTaskCount} maintenance item{activeTaskCount !== 1 ? "s" : ""} across {activeCategoryCount} categor{activeCategoryCount !== 1 ? "ies" : "y"}
           </p>
           <input
@@ -521,19 +493,19 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
             onChange={e => setSearch(e.target.value)}
             placeholder="Search items, types, schedules…"
             style={{
-              background: "#1a1f2e",
-              border: "1px solid #a8a29c",
+              background: "var(--fm-bg-sunk)",
+              border: "1px solid var(--fm-ink-dim)",
               borderRadius: "4px",
-              color: "#e8e4dd",
+              color: "var(--fm-ink)",
               fontSize: "0.82rem",
               marginLeft: "auto",
               padding: "0.5rem 0.85rem",
               width: "260px",
-              fontFamily: "monospace",
+              fontFamily: "var(--fm-mono)",
               outline: "none",
             }}
           />
-          <span style={{ color: "#a8a29c", fontSize: "0.78rem", fontFamily: "monospace" }}>
+          <span style={{ color: "var(--fm-ink-dim)", fontSize: "0.78rem", fontFamily: "var(--fm-mono)" }}>
             {filtered.length} results
           </span>
           <button
@@ -542,11 +514,11 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
             onMouseLeave={() => setAddRowHovered(false)}
             style={{
               background: "transparent",
-              border: `1px solid ${addRowHovered ? "#c9a96e" : "#a8a29c"}`,
+              border: `1px solid ${addRowHovered ? "var(--fm-brass)" : "var(--fm-ink-dim)"}`,
               borderRadius: "3px",
-              color: addRowHovered ? "#c9a96e" : "#8b7d6b",
+              color: addRowHovered ? "var(--fm-brass)" : "var(--fm-brass-dim)",
               cursor: "pointer",
-              fontFamily: "monospace",
+              fontFamily: "var(--fm-mono)",
               fontSize: "0.72rem",
               letterSpacing: "0.08em",
               padding: "0.4rem 0.9rem",
@@ -561,19 +533,19 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
             className="foreman-reminders-header-btn"
             style={{
               background: "transparent",
-              border: "1px solid #a8a29c",
+              border: "1px solid var(--fm-ink-dim)",
               borderRadius: "3px",
-              color: "#8b7d6b",
+              color: "var(--fm-brass-dim)",
               cursor: "pointer",
-              fontFamily: "monospace",
+              fontFamily: "var(--fm-mono)",
               fontSize: "0.72rem",
               letterSpacing: "0.08em",
               padding: "0.4rem 0.9rem",
               transition: "all 0.15s",
               whiteSpace: "nowrap",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-brass)"; e.currentTarget.style.color = "var(--fm-brass)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
           >
             REMINDERS
           </button>

@@ -76,6 +76,15 @@ const MODAL_SCHEDULE_OPTIONS = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const SYS_ABBR = {
+  "HVAC":"HVAC","Plumbing":"PLM","Electrical":"ELEC","Appliances":"APPL",
+  "Exterior":"EXT","Structure":"STRC","Safety":"SAF","General":"GEN",
+  "Roofing":"ROOF","Landscaping":"LAND","Pool":"POOL","Irrigation":"IRR",
+};
+function getSysTag(cat) {
+  return SYS_ABBR[cat] || (cat || "").slice(0, 4).toUpperCase();
+}
+
 function buildRoomOptions() {
   const fromInventory = loadRoomCategories();
   const all = ["Whole House", ...fromInventory.filter(r => r !== "Whole House")];
@@ -211,34 +220,6 @@ function getMaintenanceUpcoming(startDateStr, schedule, n = 3) {
   return results;
 }
 
-// Combined upcoming from chores + maintenance, sorted chronologically.
-function buildGlobalUpcoming(chores, maintenanceRows, maintenanceStartDates, maintenanceNextDates, n = 16) {
-  const now    = new Date();
-  const events = [];
-  for (const chore of chores) {
-    if (!chore.startDate || !chore.schedule) continue;
-    getChoreUpcoming(chore, 2).forEach(date =>
-      events.push({ date, type: "chore", label: chore.title, color: getScheduleColor(chore.schedule), meta: chore.room })
-    );
-  }
-  for (const row of maintenanceRows) {
-    const key    = maintenanceKey(row);
-    const anchor = maintenanceStartDates[key];
-    if (anchor) {
-      getMaintenanceUpcoming(anchor, row.schedule, 2).forEach(date =>
-        events.push({ date, type: "maintenance", label: `${row.item} › ${row.task}`, color: getScheduleColor(row.schedule), meta: row.category })
-      );
-    } else {
-      const nextStr = maintenanceNextDates[key];
-      if (!nextStr) continue;
-      const nextDate = new Date(nextStr);
-      if (nextDate >= now)
-        events.push({ date: nextDate, type: "maintenance", label: `${row.item} › ${row.task}`, color: getScheduleColor(row.schedule), meta: row.category });
-    }
-  }
-  events.sort((a, b) => a.date - b.date);
-  return events.slice(0, n);
-}
 
 // ─── CreateChoreModal ─────────────────────────────────────────────────────────
 
@@ -299,7 +280,6 @@ export default function CalendarPage({ navigate }) {
   const [maintenanceDates]      = useState(() => { try { return JSON.parse(localStorage.getItem("maintenance-dates") || "{}"); } catch { return {}; } });
   const [maintenanceNextDates]  = useState(() => { try { return JSON.parse(localStorage.getItem("maintenance-next-dates") || "{}"); } catch { return {}; } });
   const [view, setView]         = useState({ y: todayYear, m: todayMonth });
-  const [selectedDay, setSelectedDay]     = useState(null);
   const [createDate, setCreateDate]       = useState(null);
   const [selectedTaskKey, setSelectedTaskKey] = useState(null); // maintenance task awaiting start date
   const [activeFilter, setActiveFilter] = useState("All");
@@ -334,9 +314,11 @@ export default function CalendarPage({ navigate }) {
     return { choreRooms: rooms, maintenanceCats: cats };
   }, [chores, maintenanceRows]);
 
-  const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
-  const firstDow    = new Date(view.y, view.m, 1).getDay();
-  const numRows     = Math.ceil((firstDow + daysInMonth) / 7);
+  const daysInMonth   = new Date(view.y, view.m + 1, 0).getDate();
+  const prevMonthDays = new Date(view.y, view.m, 0).getDate();
+  const firstDow      = new Date(view.y, view.m, 1).getDay();
+  const numRows       = Math.ceil((firstDow + daysInMonth) / 7);
+  const trailingDays  = numRows * 7 - firstDow - daysInMonth;
 
   // Build events-by-day map for the viewed month
   const eventsByDay = useMemo(() => {
@@ -387,11 +369,6 @@ export default function CalendarPage({ navigate }) {
     ? maintenanceRows.find(r => maintenanceKey(r) === selectedTaskKey) ?? null
     : null;
 
-  const globalUpcoming = useMemo(
-    () => buildGlobalUpcoming(chores, maintenanceRows, maintenanceStartDates, maintenanceNextDates),
-    [chores, maintenanceRows, maintenanceStartDates, maintenanceNextDates]
-  );
-
   function handleCellClick(day) {
     const date = new Date(view.y, view.m, day);
     if (selectedTaskKey) {
@@ -416,17 +393,12 @@ export default function CalendarPage({ navigate }) {
     }
   }
 
-  const selectedDayEvents = selectedDay ? (eventsByDay[selectedDay] ?? []) : [];
-  const selectedDayLabel  = selectedDay
-    ? new Date(view.y, view.m, selectedDay).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
-    : null;
-
   const navBtnStyle = (disabled) => ({
     background: "transparent", border: "none",
-    color: disabled ? "#a8a29c" : "#8b7d6b",
+    color: disabled ? "var(--fm-ink-mute)" : "var(--fm-brass-dim)",
     cursor: disabled ? "default" : "pointer",
-    fontFamily: "monospace", fontSize: "1.2rem", lineHeight: 1,
-    padding: "0.1rem 0.6rem", transition: "color 0.15s",
+    fontFamily: "var(--fm-serif)", fontSize: "1.4rem", lineHeight: 1,
+    padding: "0.1rem 0.5rem", transition: "color 0.15s",
   });
 
 
@@ -470,22 +442,21 @@ export default function CalendarPage({ navigate }) {
       {/* Controls + filter bar — mirrors stats-row → CategoryTabs pattern of Maintenance/Chores */}
       <div style={{ flexShrink: 0, padding: "2rem 2rem 0" }}>
 
-        {/* Month nav — plays the same role as the stats/actions row on other pages */}
+        {/* Month nav */}
         <div style={{ alignItems: "center", display: "flex", marginBottom: "1.25rem", minHeight: "36px" }}>
           <button
             style={navBtnStyle(atYearStart)} onClick={prevMonth}
-            onMouseEnter={e => { if (!atYearStart) e.currentTarget.style.color = "#c9a96e"; }}
-            onMouseLeave={e => { if (!atYearStart) e.currentTarget.style.color = "#8b7d6b"; }}
+            onMouseEnter={e => { if (!atYearStart) e.currentTarget.style.color = "var(--fm-brass)"; }}
+            onMouseLeave={e => { if (!atYearStart) e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
           >‹</button>
-          <span style={{ color: "#e8e4dd", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.05rem", letterSpacing: "0.02em", minWidth: "11rem", textAlign: "center" }}>
+          <span style={{ color: "var(--fm-ink)", fontFamily: "var(--fm-serif)", fontSize: "1.05rem", letterSpacing: "0.02em", minWidth: "11rem", textAlign: "center" }}>
             {CAL_MONTHS[view.m]} {view.y}
           </span>
           <button
             style={navBtnStyle(atYearEnd)} onClick={nextMonth}
-            onMouseEnter={e => { if (!atYearEnd) e.currentTarget.style.color = "#c9a96e"; }}
-            onMouseLeave={e => { if (!atYearEnd) e.currentTarget.style.color = "#8b7d6b"; }}
+            onMouseEnter={e => { if (!atYearEnd) e.currentTarget.style.color = "var(--fm-brass)"; }}
+            onMouseLeave={e => { if (!atYearEnd) e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
           >›</button>
-          <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem", marginLeft: "1rem" }}>{CURRENT_YEAR}</span>
         </div>
 
         <CategoryTabs
@@ -508,209 +479,159 @@ export default function CalendarPage({ navigate }) {
           {/* DOW headers */}
           <div style={{ display: "grid", flexShrink: 0, gap: "2px", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: "2px" }}>
             {CAL_DOWS.map(d => (
-              <div key={d} style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.06em", padding: "0.15rem 0.4rem", textAlign: "center" }}>{d}</div>
+              <div key={d} style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", letterSpacing: "0.06em", padding: "0.15rem 0.4rem", textAlign: "center" }}>{d}</div>
             ))}
           </div>
 
-          {/* Grid — fills remaining height */}
+          {/* Grid */}
           <div style={{ display: "grid", flex: 1, gap: "2px", gridTemplateColumns: "repeat(7, 1fr)", gridTemplateRows: `repeat(${numRows}, 1fr)`, overflow: "hidden" }}>
-            {Array.from({ length: firstDow }, (_, i) => <div key={`e${i}`} />)}
-            {Array.from({ length: daysInMonth }, (_, i) => {
-              const day           = i + 1;
-              const isToday       = view.y === todayYear && view.m === todayMonth && day === todayDay;
-              const isDaySelected = day === selectedDay;
-              const dayEvents     = eventsByDay[day] ?? [];
-              const visible       = dayEvents.slice(0, MAX_CHIPS);
-              const overflow      = dayEvents.length - visible.length;
-              const awaitingDate  = !!selectedTaskKey;
 
+            {/* Leading: prev-month days */}
+            {Array.from({ length: firstDow }, (_, i) => {
+              const day = prevMonthDays - firstDow + i + 1;
+              return (
+                <div key={`prev${i}`} style={{ border: "1px solid var(--fm-hairline)", borderRadius: "3px", opacity: 0.3, padding: "3px 4px 2px" }}>
+                  <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-serif)", fontSize: "0.75rem", textAlign: "center" }}>{day}</div>
+                </div>
+              );
+            })}
+
+            {/* Current month days */}
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const day        = i + 1;
+              const isToday    = view.y === todayYear && view.m === todayMonth && day === todayDay;
+              const dayEvents  = eventsByDay[day] ?? [];
+              const visible    = dayEvents.slice(0, MAX_CHIPS);
+              const overflow   = dayEvents.length - visible.length;
+              const awaitingDate = !!selectedTaskKey;
               return (
                 <div
                   key={day}
                   onClick={() => handleCellClick(day)}
                   style={{
-                    background: isDaySelected ? "#1a1f2e" : "transparent",
-                    border: `1px solid ${isDaySelected ? "#c9a96e30" : "#1e2330"}`,
+                    background: isToday ? "var(--fm-brass-bg)" : "transparent",
+                    border: `1px solid ${isToday ? "var(--fm-brass)" : "var(--fm-hairline)"}`,
                     borderRadius: "3px", cursor: "pointer", overflow: "hidden",
                     padding: "3px 4px 2px", transition: "background 0.1s",
                   }}
-                  onMouseEnter={e => { if (!isDaySelected) e.currentTarget.style.background = awaitingDate ? "#c9a96e0a" : "#13161f"; }}
-                  onMouseLeave={e => { if (!isDaySelected) e.currentTarget.style.background = "transparent"; }}
+                  onMouseEnter={e => { if (!isToday) e.currentTarget.style.background = awaitingDate ? "var(--fm-brass-bg)" : "var(--fm-bg-raised)"; }}
+                  onMouseLeave={e => { if (!isToday) e.currentTarget.style.background = "transparent"; }}
                 >
-                  {/* Date number */}
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "2px" }}>
-                    <div
-                      onClick={e => { e.stopPropagation(); setSelectedDay(prev => prev === day ? null : day); }}
-                      style={{
-                        alignItems: "center",
-                        background: isToday ? "#c9a96e" : "transparent",
-                        border: !isToday && isDaySelected ? "1px solid #c9a96e" : "1px solid transparent",
-                        borderRadius: "50%", color: isToday ? "#0f1117" : isDaySelected ? "#c9a96e" : "#8b7d6b",
-                        cursor: "pointer", display: "flex", fontFamily: "monospace", fontSize: "0.7rem",
-                        height: "20px", justifyContent: "center", width: "20px",
-                      }}
-                    >{day}</div>
+                  {/* Day number */}
+                  <div style={{ fontFamily: "var(--fm-serif)", fontSize: "0.75rem", marginBottom: "2px", textAlign: "center" }}>
+                    {isToday ? (
+                      <span style={{ alignItems: "center", background: "var(--fm-brass)", borderRadius: "50%", color: "var(--fm-bg)", display: "inline-flex", height: "18px", justifyContent: "center", width: "18px" }}>{day}</span>
+                    ) : (
+                      <span style={{ color: "var(--fm-ink-dim)" }}>{day}</span>
+                    )}
                   </div>
-
-                  {/* Event chips */}
+                  {/* Event stripes */}
                   {visible.map((evt, idx) => {
-                    const color = evt.type === "chore"
-                      ? getScheduleColor(evt.chore.schedule)
-                      : getScheduleColor(evt.row.schedule);
-                    const label = evt.type === "chore"
-                      ? evt.chore.title
-                      : `${evt.row.item} › ${evt.row.task}`;
-                    const clickable = evt.type === "chore";
+                    const isMaint   = evt.type === "maintenance";
+                    const color     = isMaint ? "var(--fm-brass-dim)" : "var(--fm-cyan)";
+                    const label     = isMaint ? evt.row.item : evt.chore.title;
+                    const clickable = !isMaint;
                     return (
                       <div
                         key={idx}
                         onClick={clickable ? e => { e.stopPropagation(); setDetailEvent({ chore: evt.chore, date: evt.date }); } : undefined}
-                        style={{ alignItems: "baseline", borderRadius: "2px", cursor: clickable ? "pointer" : "default", display: "flex", gap: "3px", marginBottom: "2px", overflow: "hidden", padding: "0 1px" }}
-                        onMouseEnter={clickable ? e => e.currentTarget.style.background = "#ffffff08" : undefined}
+                        style={{ borderLeft: `3px solid ${color}`, borderRadius: "0 2px 2px 0", cursor: clickable ? "pointer" : "default", marginBottom: "1px", opacity: evt.isCompleted ? 0.4 : 1, overflow: "hidden", padding: "1px 3px" }}
+                        onMouseEnter={clickable ? e => e.currentTarget.style.background = "rgba(255,255,255,0.05)" : undefined}
                         onMouseLeave={clickable ? e => e.currentTarget.style.background = "transparent" : undefined}
                       >
-                        <span style={{ background: color, borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "6px", marginTop: "2px", opacity: evt.isCompleted ? 0.4 : 1, width: "6px" }} />
-                        <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", opacity: evt.isCompleted ? 0.45 : 1, overflow: "hidden", textDecoration: evt.isCompleted ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {label}
-                        </span>
+                        <span style={{ color: "var(--fm-ink-dim)", display: "block", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", overflow: "hidden", textDecoration: evt.isCompleted ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
                       </div>
                     );
                   })}
-                  {overflow > 0 && (
-                    <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.56rem", padding: "0 2px" }}>+{overflow} more</div>
-                  )}
+                  {overflow > 0 && <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.56rem", padding: "0 3px" }}>+{overflow} more</div>}
                 </div>
               );
             })}
+
+            {/* Trailing: next-month days */}
+            {Array.from({ length: trailingDays }, (_, i) => (
+              <div key={`next${i}`} style={{ border: "1px solid var(--fm-hairline)", borderRadius: "3px", opacity: 0.3, padding: "3px 4px 2px" }}>
+                <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-serif)", fontSize: "0.75rem", textAlign: "center" }}>{i + 1}</div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Right panel */}
-        <div style={{ borderLeft: "1px solid #1e2330", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", width: "300px" }}>
-          <div style={{ flex: 1, overflowY: "auto", padding: "1.25rem" }}>
+        {/* Right panel — Agenda */}
+        <div style={{ borderLeft: "1px solid var(--fm-hairline)", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", width: "320px" }}>
 
-            {/* Start-date-setting prompt */}
-            {selectedTaskKey && selectedTaskRow && (
-              <div style={{ background: "#c9a96e10", border: "1px solid #c9a96e30", borderRadius: "4px", marginBottom: "1rem", padding: "0.75rem" }}>
-                <div style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.3rem", textTransform: "uppercase" }}>Set Start Date</div>
-                <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.72rem", marginBottom: "0.4rem" }}>{selectedTaskRow.item} › {selectedTaskRow.task}</div>
-                <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.68rem", marginBottom: "0.5rem" }}>Click a date on the calendar.</div>
-                <button
-                  onClick={() => setSelectedTaskKey(null)}
-                  style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.63rem", padding: 0, transition: "color 0.15s" }}
-                  onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                  onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
-                >× cancel</button>
-              </div>
+          {/* Start-date-setting prompt */}
+          {selectedTaskKey && selectedTaskRow && (
+            <div style={{ background: "var(--fm-brass-bg)", border: "1px solid var(--fm-brass)", borderRadius: "var(--fm-radius)", flexShrink: 0, margin: "0.75rem", padding: "0.65rem 0.75rem" }}>
+              <div style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.2rem", textTransform: "uppercase" }}>Set Start Date</div>
+              <div style={{ color: "var(--fm-ink)", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", marginBottom: "0.25rem" }}>{selectedTaskRow.item} · {selectedTaskRow.task}</div>
+              <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", marginBottom: "0.4rem" }}>Click a date on the calendar.</div>
+              <button onClick={() => setSelectedTaskKey(null)} style={{ background: "transparent", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.63rem", padding: 0 }} onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"} onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}>× cancel</button>
+            </div>
+          )}
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "0.75rem 1.25rem" }}>
+
+            {/* Agenda header */}
+            <div style={{ borderBottom: "1px solid var(--fm-hairline)", marginBottom: "0.5rem", paddingBottom: "0.5rem" }}>
+              <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                {CAL_MONTHS[view.m]} {view.y}
+              </span>
+            </div>
+
+            {/* Agenda events */}
+            {Object.keys(eventsByDay).length === 0 ? (
+              <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", padding: "0.5rem 0" }}>No events this month</div>
+            ) : (
+              Object.keys(eventsByDay).map(Number).sort((a, b) => a - b).flatMap(day =>
+                eventsByDay[day].map((evt, idx) => {
+                  const isMaint  = evt.type === "maintenance";
+                  const tag      = isMaint ? getSysTag(evt.row.category) : "CHORE";
+                  const tagColor = isMaint ? "var(--fm-brass-dim)" : "var(--fm-cyan)";
+                  const label    = isMaint ? `${evt.row.item} · ${evt.row.task}` : evt.chore.title;
+                  const clickable = !isMaint;
+                  return (
+                    <div
+                      key={`${day}-${idx}`}
+                      onClick={clickable ? () => setDetailEvent({ chore: evt.chore, date: new Date(view.y, view.m, day) }) : undefined}
+                      style={{ alignItems: "center", borderBottom: "1px solid var(--fm-hairline)", cursor: clickable ? "pointer" : "default", display: "flex", gap: "0.5rem", padding: "0.32rem 0" }}
+                      onMouseEnter={clickable ? e => e.currentTarget.style.background = "var(--fm-bg-raised)" : undefined}
+                      onMouseLeave={clickable ? e => e.currentTarget.style.background = "transparent" : undefined}
+                    >
+                      <span style={{ color: "var(--fm-brass)", flexShrink: 0, fontFamily: "var(--fm-serif)", fontSize: "0.88rem", minWidth: "20px", textAlign: "right" }}>{day}</span>
+                      <span style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-hairline2)", borderRadius: "var(--fm-radius)", color: tagColor, flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.52rem", letterSpacing: "0.05em", padding: "0.1rem 0.3rem" }}>{tag}</span>
+                      <span style={{ color: evt.isCompleted ? "var(--fm-ink-mute)" : "var(--fm-ink-dim)", fontFamily: "var(--fm-sans)", fontSize: "0.73rem", overflow: "hidden", textDecoration: evt.isCompleted ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+                    </div>
+                  );
+                })
+              )
             )}
 
-            {selectedDay ? (
-              /* Day detail view */
+            {/* To Schedule */}
+            {unscheduledMaintenance.length > 0 && (
               <>
-                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.75rem", textTransform: "uppercase" }}>{selectedDayLabel}</div>
-                {selectedDayEvents.length === 0 ? (
-                  <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", margin: 0 }}>No events scheduled.</p>
-                ) : (
-                  <>
-                    {/* Chores section */}
-                    {selectedDayEvents.some(e => e.type === "chore") && (
-                      <>
-                        <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase" }}>Chores</div>
-                        {selectedDayEvents.filter(e => e.type === "chore").map((evt, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => setDetailEvent({ chore: evt.chore, date: evt.date })}
-                            style={{ alignItems: "flex-start", borderBottom: "1px solid #1e2330", cursor: "pointer", display: "flex", gap: "0.5rem", marginBottom: "0.5rem", opacity: evt.isCompleted ? 0.5 : 1, paddingBottom: "0.5rem", transition: "opacity 0.15s" }}
-                            onMouseEnter={e => e.currentTarget.style.background = "#ffffff05"}
-                            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                          >
-                            <span style={{ background: getScheduleColor(evt.chore.schedule), borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "7px", marginTop: "4px", width: "7px" }} />
-                            <div>
-                              <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.75rem", textDecoration: evt.isCompleted ? "line-through" : "none" }}>{evt.chore.title}</div>
-                              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.63rem" }}>
-                                {evt.chore.room}{evt.chore.timeOfDay && ` · ${formatTimeOfDay(evt.chore.timeOfDay)}`}{evt.chore.assignee && ` · ${evt.chore.assignee}`}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    )}
-                    {/* Maintenance section */}
-                    {selectedDayEvents.some(e => e.type === "maintenance") && (
-                      <>
-                        <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.1em", marginBottom: "0.4rem", marginTop: "0.5rem", textTransform: "uppercase" }}>Maintenance</div>
-                        {selectedDayEvents.filter(e => e.type === "maintenance").map((evt, idx) => (
-                          <div key={idx} style={{ alignItems: "flex-start", borderBottom: "1px solid #1e2330", display: "flex", gap: "0.5rem", marginBottom: "0.5rem", opacity: evt.isCompleted ? 0.45 : 1, paddingBottom: "0.5rem" }}>
-                            <span style={{ background: getScheduleColor(evt.row.schedule), borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "7px", marginTop: "4px", width: "7px" }} />
-                            <div>
-                              <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.75rem", textDecoration: evt.isCompleted ? "line-through" : "none" }}>{evt.row.item} › {evt.row.task}</div>
-                              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.63rem" }}>{evt.row.category} · {evt.row.schedule}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </>
-                )}
-                <button onClick={() => setSelectedDay(null)} style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.63rem", marginTop: "0.25rem", padding: 0, transition: "color 0.15s" }} onMouseEnter={e => e.currentTarget.style.color = "#8b7d6b"} onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}>× clear selection</button>
-              </>
-            ) : (
-              /* Default: upcoming + unscheduled */
-              <>
-                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.65rem", textTransform: "uppercase" }}>Upcoming</div>
-                {globalUpcoming.length === 0 ? (
-                  <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", margin: "0 0 1.5rem" }}>No scheduled events. Set start dates below.</p>
-                ) : globalUpcoming.map(({ date, label, color, meta }, idx) => {
-                  const prev = globalUpcoming[idx - 1];
-                  const isNewDay = idx === 0 || prev.date.toDateString() !== date.toDateString();
+                <div style={{ borderTop: "1px solid var(--fm-hairline)", color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.1em", marginTop: "1rem", paddingTop: "0.85rem", textTransform: "uppercase" }}>
+                  To Schedule ({unscheduledMaintenance.length})
+                </div>
+                <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", margin: "0.4rem 0 0.6rem" }}>
+                  Select a task, then click a date.
+                </div>
+                {unscheduledMaintenance.map(row => {
+                  const key      = maintenanceKey(row);
+                  const isActive = selectedTaskKey === key;
                   return (
-                    <div key={`${label}-${date.toISOString()}`}>
-                      {isNewDay && (
-                        <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.06em", marginBottom: "0.25rem", marginTop: idx > 0 ? "0.75rem" : 0 }}>
-                          {CAL_DOWS_LONG[date.getDay()]}, {CAL_MONTHS_SHORT[date.getMonth()]} {date.getDate()}
-                        </div>
-                      )}
-                      <div style={{ alignItems: "baseline", display: "flex", gap: "0.4rem", marginBottom: "0.25rem", paddingLeft: "0.2rem" }}>
-                        <span style={{ background: color, borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "6px", marginTop: "2px", width: "6px" }} />
-                        <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.7rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
-                        <span style={{ color: "#a8a29c", flexShrink: 0, fontFamily: "monospace", fontSize: "0.6rem" }}>{meta}</span>
-                      </div>
+                    <div
+                      key={key}
+                      onClick={() => setSelectedTaskKey(prev => prev === key ? null : key)}
+                      style={{ background: isActive ? "var(--fm-brass-bg)" : "transparent", border: `1px solid ${isActive ? "var(--fm-brass)" : "transparent"}`, borderRadius: "var(--fm-radius)", cursor: "pointer", marginBottom: "0.3rem", padding: "0.3rem 0.4rem", transition: "all 0.1s" }}
+                      onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--fm-bg-raised)"; }}
+                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <div style={{ color: isActive ? "var(--fm-brass)" : "var(--fm-ink-dim)", fontFamily: "var(--fm-sans)", fontSize: "0.73rem" }}>{row.item} · {row.task}</div>
+                      <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem" }}>{row.category} · {row.schedule}</div>
                     </div>
                   );
                 })}
-
-                {/* Unscheduled maintenance — tasks needing a start date */}
-                {unscheduledMaintenance.length > 0 && (
-                  <>
-                    <div style={{ borderTop: "1px solid #1e2330", color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.1em", marginBottom: "0.5rem", marginTop: "1.25rem", paddingTop: "0.85rem", textTransform: "uppercase" }}>
-                      To Schedule ({unscheduledMaintenance.length})
-                    </div>
-                    <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem", marginBottom: "0.6rem" }}>
-                      Select a task, then click a date to anchor its schedule.
-                    </div>
-                    {unscheduledMaintenance.map(row => {
-                      const key      = maintenanceKey(row);
-                      const isActive = selectedTaskKey === key;
-                      return (
-                        <div
-                          key={key}
-                          onClick={() => setSelectedTaskKey(prev => prev === key ? null : key)}
-                          style={{
-                            background: isActive ? "#c9a96e14" : "transparent",
-                            border: `1px solid ${isActive ? "#c9a96e40" : "transparent"}`,
-                            borderRadius: "3px", cursor: "pointer",
-                            marginBottom: "0.3rem", padding: "0.3rem 0.4rem", transition: "all 0.1s",
-                          }}
-                          onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "#13161f"; }}
-                          onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
-                        >
-                          <div style={{ color: isActive ? "#c9a96e" : "#8b7d6b", fontFamily: "monospace", fontSize: "0.7rem" }}>{row.item} › {row.task}</div>
-                          <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem" }}>{row.category} · {row.schedule}</div>
-                        </div>
-                      );
-                    })}
-                  </>
-                )}
               </>
             )}
           </div>

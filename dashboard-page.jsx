@@ -413,7 +413,10 @@ export default function DashboardPage({ navigate }) {
           <CircleHealthDial score={healthScore} />
 
           {/* Compact stat summary */}
-          <div style={{ ...card, display: "flex", flexDirection: "column", gap: "0.55rem", justifyContent: "center" }}>
+          <div style={{ ...card, display: "flex", flexDirection: "column", gap: "0.55rem" }}>
+            <div style={{ borderBottom: "1px solid var(--fm-hairline)", marginBottom: "0.25rem", paddingBottom: "0.5rem" }}>
+              <span style={sectionTitle}>At a Glance</span>
+            </div>
             {[
               { label: "Overdue",  value: totalOverdue,         color: totalOverdue > 0 ? "var(--fm-red)" : "var(--fm-green)",           sub: totalOverdue > 0 ? `${overdueItems.length}m · ${overdueChores.length}c` : "all clear",        nav: () => navigate("maintenance") },
               { label: "Upcoming", value: upcomingItems.length, color: "var(--fm-amber)",                                                 sub: "maint / 30 days",                                                                              nav: () => navigate("maintenance") },

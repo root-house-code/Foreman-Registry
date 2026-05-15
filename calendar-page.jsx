@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import PageNav from "./components/PageNav.jsx";
+import FmHeader from "./src/components/FmHeader.jsx";
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import ChoreDetailModal from "./components/ChoreDetailModal.jsx";
 import {
@@ -430,7 +430,7 @@ export default function CalendarPage({ navigate }) {
 
 
   return (
-    <div style={{ background: "#0f1117", color: "#e8e4dd", display: "flex", flexDirection: "column", fontFamily: "'Georgia','Times New Roman',serif", height: "100vh", overflow: "hidden" }}>
+    <div style={{ background: "var(--fm-bg)", color: "var(--fm-ink)", display: "flex", flexDirection: "column", fontFamily: "var(--fm-serif)", height: "100vh", overflow: "hidden" }}>
 
       {createDate && (
         <CreateChoreModal
@@ -455,18 +455,7 @@ export default function CalendarPage({ navigate }) {
       )}
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #a8a29c", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
-        <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
-          <div>
-            <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
-            <div>
-              <span style={{ color: "#8b7d6b", display: "block", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.25em", textTransform: "uppercase" }}>SCHEDULE</span>
-              <span style={{ color: "#c9a96e", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>Calendar</span>
-            </div>
-          </div>
-          <PageNav currentPage="calendar" navigate={navigate} />
-        </div>
-      </div>
+      <FmHeader active="Calendar" tagline="when, in one place" />
 
       {/* Controls + filter bar — mirrors stats-row → CategoryTabs pattern of Maintenance/Chores */}
       <div style={{ flexShrink: 0, padding: "2rem 2rem 0" }}>

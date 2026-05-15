@@ -407,8 +407,8 @@ export default function DashboardPage({ navigate }) {
 
       <div style={{ flex: 1, overflowY: "auto", padding: "var(--fm-spacing-5xl)" }}>
 
-        {/* Top row: health dial · stat summary · triage queue */}
-        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "180px 180px 1fr", marginBottom: "1rem" }}>
+        {/* Top row: health dial · stat summary · triage · systems · rooms */}
+        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "180px 180px 1.6fr 1fr 1fr", marginBottom: "1rem" }}>
 
           <CircleHealthDial score={healthScore} />
 
@@ -489,12 +489,9 @@ export default function DashboardPage({ navigate }) {
             </div>
           </div>
 
-        </div>
-
-        {/* Architecture: Systems + Rooms */}
-        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr 1fr", marginBottom: "1rem" }}>
           <ArchSection title="Systems" cats={categoryGroups.systems} catHealthMap={catHealthMap} catNextDueMap={catNextDueMap} emptyMsg="No systems in inventory" />
           <ArchSection title="Rooms"   cats={categoryGroups.rooms}   catHealthMap={catHealthMap} catNextDueMap={catNextDueMap} emptyMsg="No rooms added yet" />
+
         </div>
 
         {/* Coverage alerts */}
@@ -713,24 +710,26 @@ function HealthBar({ score }) {
 
 function ArchSection({ title, cats, catHealthMap, catNextDueMap, emptyMsg }) {
   return (
-    <div style={{ background: "var(--fm-bg-panel)", border: "var(--fm-border)", borderRadius: "var(--fm-radius-lg)", padding: "1.25rem 1.5rem" }}>
-      <div style={{ alignItems: "center", borderBottom: "1px solid var(--fm-hairline)", display: "flex", justifyContent: "space-between", marginBottom: "0.75rem", paddingBottom: "0.5rem" }}>
-        <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>{title}</span>
+    <div style={{ background: "var(--fm-bg-panel)", border: "var(--fm-border)", borderRadius: "var(--fm-radius-lg)", display: "flex", flexDirection: "column", minHeight: 0, padding: "1.25rem 1.5rem" }}>
+      <div style={{ borderBottom: "1px solid var(--fm-hairline)", flexShrink: 0, marginBottom: "0.25rem", paddingBottom: "0.5rem" }}>
+        <span style={sectionTitle}>{title}</span>
       </div>
-      {cats.length === 0 ? (
-        <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", padding: "0.5rem 0" }}>{emptyMsg}</div>
-      ) : cats.map(cat => {
-        const score = catHealthMap[cat] ?? 100;
-        const nextDue = catNextDueMap[cat];
-        return (
-          <div key={cat} style={{ alignItems: "center", borderBottom: "1px solid var(--fm-hairline)", display: "flex", gap: "0.75rem", padding: "0.45rem 0" }}>
-            <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-sans)", fontSize: "0.75rem", minWidth: "88px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat}</span>
-            <HealthBar score={score} />
-            <span style={{ color: score >= 80 ? "var(--fm-green)" : score >= 50 ? "var(--fm-amber)" : "var(--fm-red)", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", minWidth: "26px", textAlign: "right" }}>{score}</span>
-            <span style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", marginLeft: "auto" }}>{fmtDate(nextDue)}</span>
-          </div>
-        );
-      })}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {cats.length === 0 ? (
+          <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", padding: "0.5rem 0" }}>{emptyMsg}</div>
+        ) : cats.map(cat => {
+          const score = catHealthMap[cat] ?? 100;
+          const nextDue = catNextDueMap[cat];
+          return (
+            <div key={cat} style={{ alignItems: "center", borderBottom: "1px solid var(--fm-hairline)", display: "flex", gap: "0.75rem", padding: "0.45rem 0" }}>
+              <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-sans)", fontSize: "0.75rem", minWidth: "80px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat}</span>
+              <HealthBar score={score} />
+              <span style={{ color: score >= 80 ? "var(--fm-green)" : score >= 50 ? "var(--fm-amber)" : "var(--fm-red)", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", minWidth: "26px", textAlign: "right" }}>{score}</span>
+              <span style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", marginLeft: "auto" }}>{fmtDate(nextDue)}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

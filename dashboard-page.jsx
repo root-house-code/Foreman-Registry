@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
-import PageNav from "./components/PageNav.jsx";
+import FmHeader from "./src/components/FmHeader.jsx";
+import { V1HealthDial, V1QueueRow, V1SystemRow, V1ActivityChart, V1SectionLabel } from "./src/components/DashboardComponents.jsx";
+import { FmH } from "./lib/dashboardHelpers.js";
 import { loadTodos } from "./lib/todos.js";
 import { loadProjects } from "./lib/projects.js";
 import { loadData } from "./lib/data.js";
@@ -370,23 +372,11 @@ export default function DashboardPage({ navigate }) {
   };
 
   return (
-    <div style={{ background: "#0f1117", color: "#e8e4dd", display: "flex", flexDirection: "column", fontFamily: "monospace", height: "100vh", overflow: "hidden" }}>
-      {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #a8a29c", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
-        <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
-          <div>
-            <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
-            <div>
-              <span style={{ color: "#8b7d6b", display: "block", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.25em", textTransform: "uppercase" }}>YOUR HOME AT A GLANCE</span>
-              <span style={{ color: "#c9a96e", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>Dashboard</span>
-            </div>
-          </div>
-          <PageNav currentPage="dashboard" navigate={navigate} />
-        </div>
-      </div>
+    <div style={{ background: "var(--fm-bg)", color: "var(--fm-ink)", display: "flex", flexDirection: "column", fontFamily: "monospace", height: "100vh", overflow: "hidden" }}>
+      <FmHeader active="Dashboard" tagline="your house, in order" />
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "2rem" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "var(--fm-spacing-5xl)" }}>
 
         {/* Stat summary row */}
         <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "180px repeat(4, 1fr)", marginBottom: "1.5rem" }}>

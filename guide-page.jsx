@@ -3,7 +3,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
-import PageNav from "./components/PageNav.jsx";
+import FmHeader from "./src/components/FmHeader.jsx";
 import ScheduleBadge from "./components/ScheduleBadge.jsx";
 import { defaultData, loadCustomData, loadUseDefaultData } from "./lib/data.js";
 import { getCategoryTree } from "./lib/categoryData.js";
@@ -453,18 +453,7 @@ export default function GuidePage({ navigate }) {
       <style>{EDITOR_STYLES}</style>
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #a8a29c", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
-        <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
-          <div>
-            <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
-            <div>
-              <span style={{ color: "#8b7d6b", display: "block", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.25em", textTransform: "uppercase" }}>YOUR HOME, EXPLAINED</span>
-              <span style={{ color: "#c9a96e", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>Guide</span>
-            </div>
-          </div>
-          <PageNav currentPage="guide" navigate={navigate} />
-        </div>
-      </div>
+      <FmHeader active="Guide" tagline="knowledge that outlasts the doer" />
 
       {deletedCount > 0 && (
         <div style={{ borderBottom: "1px solid #1a1d26", flexShrink: 0, padding: "0.4rem 2rem" }}>

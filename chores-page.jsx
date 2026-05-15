@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import PageNav from "./components/PageNav.jsx";
+import FmHeader from "./src/components/FmHeader.jsx";
 import AssigneeInput, { AssigneeCellInput } from "./components/AssigneeInput.jsx";
 import CategoryTabs from "./components/CategoryTabs.jsx";
 import SelectCell from "./components/SelectCell.jsx";
@@ -1212,18 +1212,7 @@ export default function ChoresPage({ navigate, navState }) {
       )}
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #1a1f2e 0%, #0f1117 60%)", borderBottom: "1px solid #a8a29c", flexShrink: 0, padding: "2rem", zIndex: 50 }}>
-        <div style={{ alignItems: "flex-end", display: "flex", justifyContent: "space-between" }}>
-          <div>
-            <h1 style={{ color: "#f0e6d3", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: "normal", letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 0.5rem" }}>Foreman</h1>
-            <div>
-              <span style={{ color: "#8b7d6b", display: "block", fontFamily: "monospace", fontSize: "0.7rem", letterSpacing: "0.25em", textTransform: "uppercase" }}>KEEP IT CLEAN</span>
-              <span style={{ color: "#c9a96e", fontFamily: "'Georgia', 'Times New Roman', serif", fontSize: "clamp(0.95rem, 2vw, 1.15rem)", letterSpacing: "0.01em" }}>Chores</span>
-            </div>
-          </div>
-          <PageNav currentPage="chores" navigate={navigate} />
-        </div>
-      </div>
+      <FmHeader active="Chores" tagline="keep it clean" />
 
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "2rem 2rem 4rem" }}>

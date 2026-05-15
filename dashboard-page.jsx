@@ -657,37 +657,36 @@ function CircleHealthDial({ score }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        alignItems: "center",
         background: hovered ? "var(--fm-bg-raised)" : "var(--fm-bg-panel)",
         border: `1px solid ${hovered ? "var(--fm-hairline2)" : "var(--fm-hairline)"}`,
         borderRadius: "var(--fm-radius-lg)",
         cursor: "default",
         display: "flex",
         flexDirection: "column",
-        gap: "0.2rem",
-        justifyContent: "center",
         padding: "0.75rem 1rem",
         position: "relative",
         transition: "all 0.15s",
       }}
     >
-      <div style={{ alignSelf: "stretch", borderBottom: "1px solid var(--fm-hairline)", marginBottom: "0.25rem", paddingBottom: "0.5rem" }}>
+      <div style={{ borderBottom: "1px solid var(--fm-hairline)", marginBottom: "0.25rem", paddingBottom: "0.5rem" }}>
         <span style={sectionTitle}>Home Health</span>
       </div>
-      <svg viewBox="0 0 100 104" width="88" height="88" style={{ display: "block" }}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--fm-hairline2)" strokeWidth={7}
-          strokeDasharray={`${arcLen} ${circ - arcLen}`} strokeLinecap="round"
-          transform={`rotate(225 ${cx} ${cy})`} />
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={7} strokeOpacity={0.85}
-          strokeDasharray={`${fillLen} ${circ - fillLen}`} strokeLinecap="round"
-          transform={`rotate(225 ${cx} ${cy})`}
-          style={{ transition: "stroke-dasharray 0.4s ease" }} />
-        <text x={cx} y={cy - 3} textAnchor="middle" dominantBaseline="middle"
-          fill={color} fontFamily="var(--fm-serif)" fontSize="24" fontWeight="300">{score}</text>
-        <text x={cx} y={cy + 14} textAnchor="middle"
-          fill="var(--fm-ink-mute)" fontFamily="var(--fm-mono)" fontSize="7" letterSpacing="0.5">/100</text>
-      </svg>
-      <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.55rem" }}>{band}</div>
+      <div style={{ alignItems: "center", display: "flex", flex: 1, flexDirection: "column", gap: "0.2rem", justifyContent: "center" }}>
+        <svg viewBox="0 0 100 104" width="88" height="88" style={{ display: "block" }}>
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--fm-hairline2)" strokeWidth={7}
+            strokeDasharray={`${arcLen} ${circ - arcLen}`} strokeLinecap="round"
+            transform={`rotate(225 ${cx} ${cy})`} />
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={7} strokeOpacity={0.85}
+            strokeDasharray={`${fillLen} ${circ - fillLen}`} strokeLinecap="round"
+            transform={`rotate(225 ${cx} ${cy})`}
+            style={{ transition: "stroke-dasharray 0.4s ease" }} />
+          <text x={cx} y={cy - 3} textAnchor="middle" dominantBaseline="middle"
+            fill={color} fontFamily="var(--fm-serif)" fontSize="24" fontWeight="300">{score}</text>
+          <text x={cx} y={cy + 14} textAnchor="middle"
+            fill="var(--fm-ink-mute)" fontFamily="var(--fm-mono)" fontSize="7" letterSpacing="0.5">/100</text>
+        </svg>
+        <div style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.55rem" }}>{band}</div>
+      </div>
 
       {hovered && (
         <div style={{ background: "var(--fm-bg-raised)", border: "var(--fm-border)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", left: "0", lineHeight: 1.55, padding: "0.5rem 0.7rem", pointerEvents: "none", position: "absolute", top: "calc(100% + 8px)", whiteSpace: "normal", width: "280px", zIndex: 100 }}>

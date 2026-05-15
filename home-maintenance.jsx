@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import FmHeader from "./src/components/FmHeader.jsx";
 import FmSubnav from "./src/components/FmSubnav.jsx";
 import { loadData, loadCustomData, saveCustomData, loadOverrides, saveOverrides, defaultData } from "./lib/data.js";
-import CategoryTabs from "./components/CategoryTabs.jsx";
 import MaintenanceTable from "./components/MaintenanceTable.jsx";
 import Legend from "./components/Legend.jsx";
 import ReminderSettings from "./components/ReminderSettings.jsx";
@@ -19,8 +18,34 @@ import { GROUP_ORDER, GROUP_LABELS, loadCategoryTypeOverrides, loadRoomSubtypes,
 import AddTaskModal from "./components/AddTaskModal.jsx";
 
 const DEFAULT_CAT_SET = new Set(defaultData.map(d => d.category));
-const CATEGORY_TABS = ["All", "User", "Hidden", ...Array.from(new Set(defaultData.map(d => d.category)))];
 const DEFAULT_CAT_ORDER = Array.from(new Set(defaultData.map(r => r.category)));
+
+function Pill({ active, onClick, color, children }) {
+  const activeColor = color || "var(--fm-brass)";
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: active ? "rgba(201,169,110,0.10)" : "transparent",
+        border: `1px solid ${active ? activeColor : "var(--fm-hairline2)"}`,
+        borderRadius: "var(--fm-radius)",
+        color: active ? activeColor : "var(--fm-ink-dim)",
+        cursor: "pointer",
+        fontFamily: "var(--fm-mono)",
+        fontSize: "0.65rem",
+        letterSpacing: "0.08em",
+        padding: "0.22rem 0.55rem",
+        textTransform: "uppercase",
+        transition: "all 0.12s",
+        whiteSpace: "nowrap",
+      }}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = activeColor; e.currentTarget.style.color = activeColor; } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "var(--fm-hairline2)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; } }}
+    >
+      {children}
+    </button>
+  );
+}
 
 function loadDates(key) {
   try {
@@ -43,7 +68,9 @@ function saveDates(key, dates) {
 
 export default function HomeMaintenanceTable({ navigate, navState }) {
   const [rows, setRows] = useState(() => loadData());
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeStatus, setActiveStatus] = useState("ALL");
+  const [activeSystem, setActiveSystem] = useState("ALL");
+  const [activeRoom, setActiveRoom]   = useState("ALL");
   const [search, setSearch] = useState("");
   const [activeFrequencies, setActiveFrequencies] = useState(new Set());
   const [activeSeasons, setActiveSeasons] = useState(new Set());
@@ -68,7 +95,7 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
 
   useEffect(() => {
     if (!navState) return;
-    if (navState.category) setActiveCategory(navState.category);
+    if (navState.status) setActiveStatus(navState.status);
     if (navState.search != null) setSearch(navState.search);
   }, []);
 
@@ -117,6 +144,18 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
     });
     return labels;
   }, [categoryGroups, roomSubtypes]);
+
+  const systemCats = useMemo(() =>
+    categoryGroups.filter(g => g.type !== "room").flatMap(g => g.tabs),
+    [categoryGroups]
+  );
+
+  const roomCats = useMemo(() =>
+    categoryGroups.find(g => g.type === "room")?.tabs ?? [],
+    [categoryGroups]
+  );
+
+  const roomCatSet = useMemo(() => new Set(roomCats), [roomCats]);
 
   const activeTaskCount = useMemo(() => {
     let count = 0;
@@ -245,7 +284,6 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
       });
     }
 
-    setActiveCategory(newRow.category);
     setAddTaskModalOpen(false);
   }
 
@@ -391,62 +429,46 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
     return dir === "asc" ? raw : -raw;
   }
 
-  const isNext30View  = activeCategory === "Next 30 Days";
-  const isOverdueView = activeCategory === "Overdue";
-
   const filtered = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const in30Days = new Date(today); in30Days.setDate(in30Days.getDate() + 30);
 
     const base = rows.filter(row => {
       const key = `${row.category}|${row.item}|${row.task}`;
-
-      if (isNext30View) {
-        if (row._isBlankCategory) return false;
-        if (!row._isCustom && deletedCategories.has(row.category)) return false;
-        if (deletedItems.has(`${row.category}|${row.item}`)) return false;
-        if (deletedRows.has(key)) return false;
-        const nd = nextDates[key];
-        return nd && nd >= today && nd <= in30Days;
-      }
-
-      if (isOverdueView) {
-        if (row._isBlankCategory) return false;
-        if (!row._isCustom && deletedCategories.has(row.category)) return false;
-        if (deletedItems.has(`${row.category}|${row.item}`)) return false;
-        if (deletedRows.has(key)) return false;
-        const nd = nextDates[key];
-        return nd && nd < today;
-      }
-
-      if (row._isBlankCategory) {
-        if (activeCategory !== "User") return false;
-        const q = search.toLowerCase();
-        return !q || (row.category || "").toLowerCase().includes(q);
-      }
-      if (!row.task) return false;
+      if (row._isBlankCategory || !row.task) return false;
       if (!row._isCustom && deletedCategories.has(row.category)) return false;
       if (deletedItems.has(`${row.category}|${row.item}`)) return false;
       if (deletedRows.has(key)) return false;
 
-      let matchCat;
-      if (activeCategory === "All") {
-        matchCat = true;
-      } else if (activeCategory === "User") {
-        matchCat = row._isCustom && row.category && !DEFAULT_CAT_SET.has(row.category);
-      } else {
-        matchCat = row.category === activeCategory;
+      // System / room filter (mutually exclusive)
+      if (activeSystem !== "ALL") {
+        if (roomCatSet.has(row.category) || row.category !== activeSystem) return false;
+      }
+      if (activeRoom !== "ALL") {
+        if (!roomCatSet.has(row.category) || row.category !== activeRoom) return false;
       }
 
-      const matchFreq = activeFrequencies.size === 0 || activeFrequencies.has(getScheduleColor(row.schedule));
-      const matchSeason = activeSeasons.size === 0 || (row.season && activeSeasons.has(row.season));
+      // Status filter
+      if (activeStatus !== "ALL") {
+        const nd = nextDates[key];
+        if (activeStatus === "OVERDUE" && (!nd || nd >= today)) return false;
+        if (activeStatus === "SOON"    && (!nd || nd < today || nd > in30Days)) return false;
+        if (activeStatus === "SCHED"   && !nd) return false;
+        if (activeStatus === "OK"      && (!nd || nd < today || nd <= in30Days)) return false;
+      }
+
+      if (activeFrequencies.size > 0 && !activeFrequencies.has(getScheduleColor(row.schedule))) return false;
+      if (activeSeasons.size > 0 && !(row.season && activeSeasons.has(row.season))) return false;
+
       const q = search.toLowerCase();
-      const matchSearch = !q ||
+      if (q && !(
         (row.category || "").toLowerCase().includes(q) ||
-        (row.item || "").toLowerCase().includes(q) ||
-        (row.task || "").toLowerCase().includes(q) ||
-        (row.schedule || "").toLowerCase().includes(q);
-      return matchCat && matchFreq && matchSeason && matchSearch;
+        (row.item     || "").toLowerCase().includes(q) ||
+        (row.task     || "").toLowerCase().includes(q) ||
+        (row.schedule || "").toLowerCase().includes(q)
+      )) return false;
+
+      return true;
     });
 
     if (sortCols.length > 0) {
@@ -460,14 +482,13 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
     }
 
     return base.sort((a, b) => {
-      const rank = r => r.category === "" ? -1 : (DEFAULT_CAT_ORDER.indexOf(r.category) === -1 ? Infinity : DEFAULT_CAT_ORDER.indexOf(r.category));
-      const aRank = rank(a);
-      const bRank = rank(b);
-      if (aRank !== bRank) return aRank - bRank;
+      const rank = r => DEFAULT_CAT_ORDER.indexOf(r.category) === -1 ? Infinity : DEFAULT_CAT_ORDER.indexOf(r.category);
+      const diff = rank(a) - rank(b);
+      if (diff !== 0) return diff;
       if (a._isCustom !== b._isCustom) return a._isCustom ? -1 : 1;
       return 0;
     });
-  }, [rows, activeCategory, isNext30View, isOverdueView, activeFrequencies, activeSeasons, search, deletedRows, deletedCategories, deletedItems, sortCols, completedDates, nextDates, notes]);
+  }, [rows, activeStatus, activeSystem, activeRoom, activeFrequencies, activeSeasons, search, deletedRows, deletedCategories, deletedItems, sortCols, nextDates, roomCatSet]);
 
   const maintenanceStats = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -500,7 +521,7 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
       <div ref={pageHeaderRef}>
         <FmHeader active="Maintenance" tagline="Maintenance" />
         <FmSubnav
-          tabs={["All tasks", "By system", "By room", "History"]}
+          tabs={["All tasks", "History"]}
           active="All tasks"
           stats={[
             { value: activeTaskCount, label: "tracked" },
@@ -578,12 +599,45 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
             REMINDERS
           </button>
         </div>
-        <CategoryTabs
-          special={["All", "User", "Next 30 Days", "Overdue"]}
-          groups={categoryGroups}
-          active={activeCategory}
-          onSelect={setActiveCategory}
-        />
+        {/* Filter pills — Status / System / Room */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", marginBottom: "0.6rem" }}>
+          {/* Status */}
+          <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+            <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.14em", minWidth: "54px", textTransform: "uppercase" }}>Status</span>
+            {[
+              { key: "ALL",     label: "All" },
+              { key: "OVERDUE", label: "Overdue", color: "var(--fm-red)"   },
+              { key: "SOON",    label: "Soon",    color: "var(--fm-amber)" },
+              { key: "SCHED",   label: "Sched" },
+              { key: "OK",      label: "OK",      color: "var(--fm-green)" },
+            ].map(({ key, label, color }) => (
+              <Pill key={key} active={activeStatus === key} color={color} onClick={() => setActiveStatus(key)}>{label}</Pill>
+            ))}
+          </div>
+
+          {/* System */}
+          {systemCats.length > 0 && (
+            <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+              <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.14em", minWidth: "54px", textTransform: "uppercase" }}>System</span>
+              <Pill active={activeSystem === "ALL"} onClick={() => setActiveSystem("ALL")}>All</Pill>
+              {systemCats.map(cat => (
+                <Pill key={cat} active={activeSystem === cat} onClick={() => { setActiveSystem(cat); setActiveRoom("ALL"); }}>{cat}</Pill>
+              ))}
+            </div>
+          )}
+
+          {/* Room */}
+          {roomCats.length > 0 && (
+            <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+              <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.14em", minWidth: "54px", textTransform: "uppercase" }}>Room</span>
+              <Pill active={activeRoom === "ALL"} onClick={() => setActiveRoom("ALL")}>All</Pill>
+              {roomCats.map(cat => (
+                <Pill key={cat} active={activeRoom === cat} onClick={() => { setActiveRoom(cat); setActiveSystem("ALL"); }}>{categoryLabels[cat] || cat}</Pill>
+              ))}
+            </div>
+          )}
+        </div>
+
         <Legend
           activeColors={activeFrequencies}
           onToggle={handleToggleFrequency}

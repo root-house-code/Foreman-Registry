@@ -532,7 +532,7 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
         />
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "var(--fm-spacing-5xl) var(--fm-spacing-5xl) 4rem" }}>
+      <div style={{ flex: 1, overflow: "auto", padding: "var(--fm-spacing-5xl) var(--fm-spacing-5xl) 4rem" }}>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", marginBottom: "1.25rem" }}>
           <p style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.85rem", margin: 0 }}>
             {activeTaskCount} maintenance item{activeTaskCount !== 1 ? "s" : ""} across {activeCategoryCount} categor{activeCategoryCount !== 1 ? "ies" : "y"}
@@ -632,7 +632,7 @@ export default function HomeMaintenanceTable({ navigate, navState }) {
               <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.14em", minWidth: "54px", textTransform: "uppercase" }}>Room</span>
               <Pill active={activeRoom === "ALL"} onClick={() => setActiveRoom("ALL")}>All</Pill>
               {roomCats.map(cat => (
-                <Pill key={cat} active={activeRoom === cat} onClick={() => { setActiveRoom(cat); setActiveSystem("ALL"); }}>{categoryLabels[cat] || cat}</Pill>
+                <Pill key={cat} active={activeRoom === cat} onClick={() => { setActiveRoom(cat); setActiveSystem("ALL"); }}>{cat}</Pill>
               ))}
             </div>
           )}

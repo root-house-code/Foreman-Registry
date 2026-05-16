@@ -218,7 +218,7 @@ export default function MaintenanceTable({
   };
 
   return (
-    <div style={{ background: "var(--fm-bg-raised)", border: "var(--fm-border)", borderRadius: "var(--fm-radius)", overflowX: "auto" }}>
+    <div style={{ background: "var(--fm-bg-raised)", border: "var(--fm-border)", borderRadius: "var(--fm-radius)" }}>
       <table style={{ borderCollapse: "collapse", fontSize: "0.8rem", minWidth: "900px", width: "100%" }}>
         <thead>
           <tr>
@@ -232,6 +232,7 @@ export default function MaintenanceTable({
                   style={{
                     background: "var(--fm-bg-raised)",
                     borderBottom: "1px solid var(--fm-hairline2)",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
                     color: "var(--fm-brass-dim)",
                     cursor: col.sortKey ? "pointer" : "default",
                     fontFamily: "var(--fm-mono)",

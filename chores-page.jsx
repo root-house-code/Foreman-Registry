@@ -50,7 +50,7 @@ function buildRoomOptions() {
       if (bRank !== -1) return 1;
       return a.localeCompare(b);
     })
-    .map(r => ({ value: r, label: formatRoomLabel(r, subtypes) }));
+    .map(r => ({ value: r, label: formatRoomLabel(r, subtypes).replace(/\s*\[.*?\]$/, "") }));
 }
 
 function buildRoomItemsMap() {
@@ -478,10 +478,118 @@ function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInv
   );
 }
 
-function WeekStrip({ chores, choreCompletions, onLogChore }) {
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOW_LABELS  = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+function MonthCalendar({ chores, choreCompletions, onLogChore }) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const [viewYear,  setViewYear]  = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
+    else setViewMonth(m => m - 1);
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
+    else setViewMonth(m => m + 1);
+  }
+
+  const firstDay   = new Date(viewYear, viewMonth, 1);
+  const lastDay    = new Date(viewYear, viewMonth + 1, 0);
+  const leadCells  = firstDay.getDay();
+  const totalCells = Math.ceil((leadCells + lastDay.getDate()) / 7) * 7;
+
+  const cells = Array.from({ length: totalCells }, (_, i) => {
+    const dayNum = i - leadCells + 1;
+    const date   = new Date(viewYear, viewMonth, dayNum);
+    date.setHours(0, 0, 0, 0);
+    return { date, dayNum, inMonth: dayNum >= 1 && dayNum <= lastDay.getDate(), isToday: date.getTime() === today.getTime() };
+  });
+
+  return (
+    <div>
+      {/* Month nav */}
+      <div style={{ alignItems: "center", display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+        <button
+          onClick={prevMonth}
+          style={{ background: "transparent", border: "var(--fm-border-2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-mute)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", padding: "0.25rem 0.65rem", transition: "color 0.12s" }}
+          onMouseEnter={e => e.currentTarget.style.color = "var(--fm-ink)"}
+          onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-mute)"}
+        >‹</button>
+        <span style={{ color: "var(--fm-ink)", fontFamily: "var(--fm-serif)", fontSize: "1rem", minWidth: "140px", textAlign: "center" }}>
+          {MONTH_NAMES[viewMonth]} {viewYear}
+        </span>
+        <button
+          onClick={nextMonth}
+          style={{ background: "transparent", border: "var(--fm-border-2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-mute)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", padding: "0.25rem 0.65rem", transition: "color 0.12s" }}
+          onMouseEnter={e => e.currentTarget.style.color = "var(--fm-ink)"}
+          onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-mute)"}
+        >›</button>
+      </div>
+
+      {/* DOW headers */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: "4px" }}>
+        {DOW_LABELS.map(d => (
+          <div key={d} style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.52rem", letterSpacing: "0.1em", padding: "0 0.4rem 0.3rem", textAlign: "center", textTransform: "uppercase" }}>{d}</div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div style={{ display: "grid", gap: "4px", gridTemplateColumns: "repeat(7, 1fr)" }}>
+        {cells.map(({ date, dayNum, inMonth, isToday }, i) => {
+          const dayChores = inMonth ? chores.filter(c => isChoreOnDate(c, date)) : [];
+          return (
+            <div
+              key={i}
+              style={{
+                background: isToday ? "var(--fm-brass-bg)" : "var(--fm-bg-raised)",
+                border: isToday ? "1px solid rgba(201,169,110,0.3)" : "var(--fm-border)",
+                borderRadius: "var(--fm-radius)",
+                minHeight: "72px",
+                opacity: inMonth ? 1 : 0.3,
+                padding: "0.35rem 0.4rem",
+              }}
+            >
+              <div style={{ color: isToday ? "var(--fm-brass)" : "var(--fm-ink-dim)", fontFamily: "var(--fm-serif)", fontSize: "0.82rem", lineHeight: 1, marginBottom: "0.25rem" }}>
+                {inMonth ? dayNum : date.getDate()}
+              </div>
+              {dayChores.map(chore => {
+                const done = isChoreCompleted(choreCompletions, chore.id, date);
+                return (
+                  <div
+                    key={chore.id}
+                    onClick={() => onLogChore(chore.id, date)}
+                    title={`${done ? "Unmark" : "Mark done"}: ${chore.title}`}
+                    style={{
+                      background: "var(--fm-bg-sunk)",
+                      borderLeft: `3px solid ${done ? "var(--fm-ink-mute)" : "var(--fm-cyan)"}`,
+                      borderRadius: "var(--fm-radius)",
+                      cursor: "pointer",
+                      marginBottom: "2px",
+                      opacity: done ? 0.5 : 1,
+                      padding: "0.1rem 0.25rem",
+                      transition: "opacity 0.12s",
+                    }}
+                  >
+                    <span style={{ color: done ? "var(--fm-ink-mute)" : "var(--fm-ink-dim)", display: "block", fontFamily: "var(--fm-sans)", fontSize: "0.58rem", overflow: "hidden", textDecoration: done ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {chore.title}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WeekStrip({ chores, choreCompletions, onLogChore, startDate }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
+    const d = new Date(startDate || today);
     d.setDate(d.getDate() + i);
     return d;
   });
@@ -489,7 +597,7 @@ function WeekStrip({ chores, choreCompletions, onLogChore }) {
   return (
     <div style={{ display: "grid", gap: "6px", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: "1.25rem" }}>
       {days.map((date, i) => {
-        const isToday = i === 0;
+        const isToday = date.toDateString() === today.toDateString();
         const dayChores = chores.filter(c => isChoreOnDate(c, date));
         return (
           <div
@@ -551,6 +659,7 @@ export default function ChoresPage({ navigate, navState }) {
   const [remindersOpen, setRemindersOpen] = useState(false);
   const [roomOptions]                     = useState(() => buildRoomOptions());
   const [roomItemsMap, setRoomItemsMap]   = useState(() => buildRoomItemsMap());
+  const [activeTab, setActiveTab]         = useState("This week");
   const [activeRoom, setActiveRoom]       = useState("All");
   const [activeFrequencies, setActiveFrequencies] = useState(new Set());
   const [search, setSearch]               = useState("");
@@ -796,8 +905,9 @@ export default function ChoresPage({ navigate, navState }) {
 
       <FmHeader active="Chores" tagline="Chores" />
       <FmSubnav
-        tabs={["This week", "All chores", "By room", "Templates"]}
-        active="This week"
+        tabs={["This week", "Next 7 days", "This month"]}
+        active={activeTab}
+        onTabChange={setActiveTab}
         stats={[
           { value: chores.length, label: "total" },
           { value: choreStats.overdue, color: "var(--fm-red)", label: "overdue" },
@@ -807,12 +917,34 @@ export default function ChoresPage({ navigate, navState }) {
 
       <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem 2rem 4rem" }}>
 
-        {/* 7-day strip */}
-        <WeekStrip
-          chores={chores}
-          choreCompletions={choreCompletions}
-          onLogChore={handleLogChore}
-        />
+        {activeTab === "This week" && (() => {
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          const sunday = new Date(today); sunday.setDate(today.getDate() - today.getDay());
+          return (
+            <WeekStrip
+              chores={chores}
+              choreCompletions={choreCompletions}
+              onLogChore={handleLogChore}
+              startDate={sunday}
+            />
+          );
+        })()}
+
+        {activeTab === "Next 7 days" && (
+          <WeekStrip
+            chores={chores}
+            choreCompletions={choreCompletions}
+            onLogChore={handleLogChore}
+          />
+        )}
+
+        {activeTab === "This month" && (
+          <MonthCalendar
+            chores={chores}
+            choreCompletions={choreCompletions}
+            onLogChore={handleLogChore}
+          />
+        )}
 
         {/* Filter bar */}
         <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.85rem" }}>
@@ -821,7 +953,8 @@ export default function ChoresPage({ navigate, navState }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
             {["All", ...rooms].map(room => {
               const isActive = activeRoom === room;
-              const label = room === "All" ? "ALL" : (roomLabels[room] || room);
+              const rawLabel = room === "All" ? "ALL" : (roomLabels[room] || room);
+              const label = rawLabel.replace(/\s*\[.*?\]$/, "");
               return (
                 <button
                   key={room}

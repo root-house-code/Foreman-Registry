@@ -289,6 +289,1299 @@ function ModelComboField({ value = "", models = [], fieldStyle, onChange }) {
   );
 }
 
+// ── Floor Plan ────────────────────────────────────────────────────────────────
+
+const FP_GRID = 20;
+const FP_W = 1000;
+const FP_H = 680;
+
+const FP_FILL = {
+  room:      "rgba(122,181,217,0.12)",
+  system:    "rgba(197,164,102,0.12)",
+  structure: "rgba(127,176,135,0.12)",
+  exterior:  "rgba(150,190,130,0.12)",
+  safety:    "rgba(224,115,106,0.12)",
+  general:   "rgba(160,160,160,0.1)",
+};
+const FP_STROKE = {
+  room:      "rgba(122,181,217,0.7)",
+  system:    "rgba(197,164,102,0.7)",
+  structure: "rgba(127,176,135,0.7)",
+  exterior:  "rgba(150,190,130,0.7)",
+  safety:    "rgba(224,115,106,0.7)",
+  general:   "rgba(160,160,160,0.45)",
+};
+
+function rectToPolygon({ x, y, w, h }) {
+  return { points: [{ x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h }] };
+}
+
+function polygonArea(points) {
+  let area = 0;
+  const n = points.length;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    area += points[i].x * points[j].y - points[j].x * points[i].y;
+  }
+  return Math.abs(area / 2);
+}
+
+function polygonCentroid(points) {
+  return {
+    cx: points.reduce((s, p) => s + p.x, 0) / points.length,
+    cy: points.reduce((s, p) => s + p.y, 0) / points.length,
+  };
+}
+
+function migratePlacements(placements) {
+  const result = {};
+  for (const lvl of Object.keys(placements)) {
+    result[lvl] = {};
+    for (const cat of Object.keys(placements[lvl])) {
+      const r = placements[lvl][cat];
+      result[lvl][cat] = r.points ? r : rectToPolygon(r);
+    }
+  }
+  return result;
+}
+
+function loadFpData() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("inventory-floor-plan-v2") || "null");
+    if (raw && Array.isArray(raw.levels) && raw.levels.length > 0) {
+      return { zoneItems: {}, ...raw, placements: migratePlacements(raw.placements || {}) };
+    }
+  } catch {}
+  return { levels: [{ id: "lvl-1", name: "Floor 1" }], placements: {}, zoneItems: {} };
+}
+function saveFpData(data) {
+  localStorage.setItem("inventory-floor-plan-v2", JSON.stringify(data));
+}
+function fpSnap(v) { return Math.round(v / FP_GRID) * FP_GRID; }
+
+function FloorPlan({ categories, categoryTypes, categoryItems, onCreateCategory, onRenameCategory, onDeleteCategory }) {
+  const [fpData, setFpData] = useState(() => loadFpData());
+  const [activeLevel, setActiveLevel] = useState(() => loadFpData().levels[0].id);
+  const [selected, setSelected] = useState(null);
+  const [dragging, setDragging] = useState(null);
+  const [editingLevelId, setEditingLevelId] = useState(null);
+  const [editingPanelName, setEditingPanelName] = useState(false);
+  const svgRef = useRef(null);
+  const draggingRef = useRef(null);
+  const vertexDragRef = useRef(null);
+  const fpDataRef = useRef(fpData);
+  const activeLevelRef = useRef(activeLevel);
+
+  useEffect(() => { fpDataRef.current = fpData; }, [fpData]);
+  useEffect(() => { activeLevelRef.current = activeLevel; }, [activeLevel]);
+
+  const currentPlaced = fpData.placements[activeLevel] || {};
+  const unplaced = categories.filter(cat => !currentPlaced[cat]);
+  const placedList = categories.filter(cat => !!currentPlaced[cat]);
+
+  function save(newData) {
+    fpDataRef.current = newData;
+    setFpData(newData);
+    saveFpData(newData);
+  }
+
+  function renameInPlacements(oldName, newName) {
+    const d = fpDataRef.current;
+    const newPlacements = {};
+    for (const lvl of Object.keys(d.placements)) {
+      newPlacements[lvl] = {};
+      for (const cat of Object.keys(d.placements[lvl])) {
+        newPlacements[lvl][cat === oldName ? newName : cat] = d.placements[lvl][cat];
+      }
+    }
+    save({ ...d, placements: newPlacements });
+    if (selected === oldName) setSelected(newName); setEditingPanelName(false);
+  }
+
+  function addToCanvas(cat) {
+    const existing = fpDataRef.current.placements[activeLevelRef.current] || {};
+    const taken = Object.values(existing);
+    let x = FP_GRID * 4, y = FP_GRID * 4;
+    const W = 200, H = 120;
+    outer: for (let row = 0; row < 20; row++) {
+      for (let col = 0; col < 20; col++) {
+        const tx = FP_GRID * 4 + col * (W + FP_GRID);
+        const ty = FP_GRID * 4 + row * (H + FP_GRID);
+        if (tx + W > FP_W || ty + H > FP_H) continue;
+        const overlaps = taken.some(r => {
+          const bx = Math.min(...r.points.map(p => p.x)), bx2 = Math.max(...r.points.map(p => p.x));
+          const by = Math.min(...r.points.map(p => p.y)), by2 = Math.max(...r.points.map(p => p.y));
+          return tx < bx2 && tx + W > bx && ty < by2 && ty + H > by;
+        });
+        if (!overlaps) { x = tx; y = ty; break outer; }
+      }
+    }
+    const d = fpDataRef.current;
+    save({
+      ...d,
+      placements: { ...d.placements, [activeLevelRef.current]: { ...existing, [cat]: rectToPolygon({ x, y, w: W, h: H }) } },
+    });
+    setSelected(cat); setEditingPanelName(false);
+  }
+
+  function removeFromCanvas(cat) {
+    const d = fpDataRef.current;
+    const lvl = activeLevelRef.current;
+    const { [cat]: _, ...rest } = d.placements[lvl] || {};
+    save({ ...d, placements: { ...d.placements, [lvl]: rest } });
+    if (selected === cat) setSelected(null);
+  }
+
+  function handleRoomMouseDown(e, cat) {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelected(cat); setEditingPanelName(false);
+    const svgRect = svgRef.current.getBoundingClientRect();
+    const scaleX = FP_W / svgRect.width;
+    const scaleY = FP_H / svgRect.height;
+    const room = (fpDataRef.current.placements[activeLevelRef.current] || {})[cat];
+    draggingRef.current = {
+      cat,
+      startSVGX: (e.clientX - svgRect.left) * scaleX,
+      startSVGY: (e.clientY - svgRect.top) * scaleY,
+      startPoints: room.points.map(p => ({ ...p })),
+    };
+    setDragging(cat);
+  }
+
+  function handleVertexMouseDown(e, cat, vi) {
+    e.preventDefault();
+    e.stopPropagation();
+    vertexDragRef.current = { cat, vi, startX: e.clientX, startY: e.clientY };
+  }
+
+  function handleEdgeClick(e, cat, edgeStartIdx) {
+    e.preventDefault();
+    e.stopPropagation();
+    const d = fpDataRef.current;
+    const lvl = activeLevelRef.current;
+    const room = (d.placements[lvl] || {})[cat];
+    const svgRect = svgRef.current.getBoundingClientRect();
+    const newPt = {
+      x: fpSnap(Math.max(0, Math.min(FP_W, (e.clientX - svgRect.left) * (FP_W / svgRect.width)))),
+      y: fpSnap(Math.max(0, Math.min(FP_H, (e.clientY - svgRect.top) * (FP_H / svgRect.height)))),
+    };
+    const newPoints = [...room.points];
+    newPoints.splice(edgeStartIdx + 1, 0, newPt);
+    save({ ...d, placements: { ...d.placements, [lvl]: { ...(d.placements[lvl] || {}), [cat]: { points: newPoints } } } });
+  }
+
+  useEffect(() => {
+    function onMove(e) {
+      if (!svgRef.current) return;
+      const svgRect = svgRef.current.getBoundingClientRect();
+      const scaleX = FP_W / svgRect.width;
+      const scaleY = FP_H / svgRect.height;
+
+      if (vertexDragRef.current) {
+        const { cat, vi } = vertexDragRef.current;
+        const d = fpDataRef.current;
+        const lvl = activeLevelRef.current;
+        const room = (d.placements[lvl] || {})[cat];
+        const nx = fpSnap(Math.max(0, Math.min(FP_W, (e.clientX - svgRect.left) * scaleX)));
+        const ny = fpSnap(Math.max(0, Math.min(FP_H, (e.clientY - svgRect.top) * scaleY)));
+        const newPoints = room.points.map((p, i) => i === vi ? { x: nx, y: ny } : p);
+        const next = { ...d, placements: { ...d.placements, [lvl]: { ...(d.placements[lvl] || {}), [cat]: { points: newPoints } } } };
+        fpDataRef.current = next;
+        setFpData({ ...next });
+        return;
+      }
+
+      if (draggingRef.current) {
+        const { cat, startSVGX, startSVGY, startPoints } = draggingRef.current;
+        const d = fpDataRef.current;
+        const lvl = activeLevelRef.current;
+        const svgX = (e.clientX - svgRect.left) * scaleX;
+        const svgY = (e.clientY - svgRect.top) * scaleY;
+        const dx = fpSnap(svgX - startSVGX);
+        const dy = fpSnap(svgY - startSVGY);
+        const minX = Math.min(...startPoints.map(p => p.x));
+        const maxX = Math.max(...startPoints.map(p => p.x));
+        const minY = Math.min(...startPoints.map(p => p.y));
+        const maxY = Math.max(...startPoints.map(p => p.y));
+        const cdx = Math.max(-minX, Math.min(FP_W - maxX, dx));
+        const cdy = Math.max(-minY, Math.min(FP_H - maxY, dy));
+        const newPoints = startPoints.map(p => ({ x: p.x + cdx, y: p.y + cdy }));
+        const next = { ...d, placements: { ...d.placements, [lvl]: { ...(d.placements[lvl] || {}), [cat]: { points: newPoints } } } };
+        fpDataRef.current = next;
+        setFpData({ ...next });
+      }
+    }
+
+    function onUp(e) {
+      if (vertexDragRef.current) {
+        const { cat, vi, startX, startY } = vertexDragRef.current;
+        vertexDragRef.current = null;
+        const moved = Math.abs(e.clientX - startX) > 4 || Math.abs(e.clientY - startY) > 4;
+        if (moved) {
+          saveFpData(fpDataRef.current);
+        } else {
+          const d = fpDataRef.current;
+          const lvl = activeLevelRef.current;
+          const room = (d.placements[lvl] || {})[cat];
+          if (room && room.points.length > 3) {
+            const newPoints = room.points.filter((_, i) => i !== vi);
+            save({ ...d, placements: { ...d.placements, [lvl]: { ...(d.placements[lvl] || {}), [cat]: { points: newPoints } } } });
+          } else {
+            saveFpData(d);
+          }
+        }
+        return;
+      }
+      if (draggingRef.current) { saveFpData(fpDataRef.current); draggingRef.current = null; setDragging(null); }
+    }
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, []);
+
+  const [showLevelPicker, setShowLevelPicker] = useState(false);
+  const [addedItemsExpanded, setAddedItemsExpanded] = useState(true);
+  const [hoveredLevelId, setHoveredLevelId] = useState(null);
+  const [hoveredCatId, setHoveredCatId] = useState(null);
+  const [editingCatId, setEditingCatId] = useState(null);
+  const [showCatTypePicker, setShowCatTypePicker] = useState(false);
+  const [newCatType, setNewCatType] = useState(null);
+  const [newCatName, setNewCatName] = useState("");
+  const [levelDragIdx, setLevelDragIdx] = useState(null);
+  const [levelDragOverIdx, setLevelDragOverIdx] = useState(null);
+
+  function handleLevelReorder(fromIdx, toIdx) {
+    if (fromIdx === toIdx || fromIdx == null) return;
+    const levels = [...fpDataRef.current.levels];
+    const [moved] = levels.splice(fromIdx, 1);
+    levels.splice(toIdx, 0, moved);
+    save({ ...fpDataRef.current, levels });
+  }
+
+  function deleteLevel(id) {
+    const d = fpDataRef.current;
+    if (d.levels.length <= 1) return;
+    const next = { ...d, levels: d.levels.filter(l => l.id !== id), placements: { ...d.placements }, zoneItems: { ...(d.zoneItems || {}) } };
+    delete next.placements[id];
+    delete next.zoneItems[id];
+    save(next);
+    if (activeLevel === id) { setActiveLevel(next.levels[0].id); setSelected(null); }
+  }
+
+  function addLevelOfType(type) {
+    setShowLevelPicker(false);
+    const newId = `lvl-${Date.now()}`;
+    let name;
+    if (type === "Floor") {
+      const floorCount = fpData.levels.filter(l => l.name.startsWith("Floor")).length;
+      name = `Floor ${floorCount + 1}`;
+    } else {
+      name = type;
+    }
+    save({ ...fpDataRef.current, levels: [...fpDataRef.current.levels, { id: newId, name }] });
+    setActiveLevel(newId);
+    setSelected(null);
+    setEditingLevelId(newId);
+  }
+
+  function renameLevel(id, name) {
+    const trimmed = name.trim();
+    setEditingLevelId(null);
+    if (!trimmed) return;
+    save({ ...fpDataRef.current, levels: fpDataRef.current.levels.map(l => l.id === id ? { ...l, name: trimmed } : l) });
+  }
+
+  const [zoneSearch, setZoneSearch] = useState("");
+
+  const allInventoryItems = useMemo(() =>
+    Object.entries(categoryItems).flatMap(([cat, items]) => items.map(item => ({ cat, item }))),
+    [categoryItems]
+  );
+
+  const selZoneItems = useMemo(() => {
+    if (!selected) return [];
+    return (fpData.zoneItems?.[activeLevel]?.[selected]) || [];
+  }, [fpData, activeLevel, selected]);
+
+  const searchResults = useMemo(() => {
+    const q = zoneSearch.trim().toLowerCase();
+    const pool = q
+      ? allInventoryItems.filter(({ cat, item }) =>
+          item.toLowerCase().includes(q) || cat.toLowerCase().includes(q))
+      : allInventoryItems.slice(0, 60);
+    return pool;
+  }, [allInventoryItems, zoneSearch]);
+
+  function toggleZoneItem(cat, item) {
+    const d = fpDataRef.current;
+    const lvl = activeLevelRef.current;
+    const sel = selected;
+    if (!sel) return;
+    const current = d.zoneItems?.[lvl]?.[sel] || [];
+    const exists = current.some(z => z.cat === cat && z.item === item);
+    const next = exists
+      ? current.filter(z => !(z.cat === cat && z.item === item))
+      : [...current, { cat, item }];
+    save({
+      ...d,
+      zoneItems: { ...(d.zoneItems || {}), [lvl]: { ...(d.zoneItems?.[lvl] || {}), [sel]: next } },
+    });
+  }
+
+  const activeLevelName = fpData.levels.find(l => l.id === activeLevel)?.name || "";
+  const selType = selected ? (categoryTypes[selected] || "general") : null;
+  const selRoom = selected ? currentPlaced[selected] : null;
+
+  const placedOnAnyLevel = useMemo(() => {
+    const set = new Set();
+    fpData.levels.forEach(level => {
+      Object.keys(fpData.placements[level.id] || {}).forEach(cat => set.add(cat));
+    });
+    return set;
+  }, [fpData]);
+
+  const sortedCategories = useMemo(() => {
+    return [...categories]
+      .filter(cat => !placedOnAnyLevel.has(cat))
+      .sort((a, b) => {
+        const ga = GROUP_ORDER.indexOf(categoryTypes[a] || "general");
+        const gb = GROUP_ORDER.indexOf(categoryTypes[b] || "general");
+        if (ga !== gb) return ga - gb;
+        return a.localeCompare(b);
+      });
+  }, [categories, categoryTypes, placedOnAnyLevel]);
+
+  return (
+    <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+
+      {/* Left sidebar */}
+      <div style={{ borderRight: "1px solid var(--fm-hairline)", display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", width: 200 }}>
+
+        {/* Add to canvas */}
+        <div style={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
+          <div style={{ color: "var(--fm-brass)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", flexShrink: 0, letterSpacing: "0.14em", padding: "1rem 1rem 0.4rem", textTransform: "uppercase" }}>
+            Add to canvas
+          </div>
+
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {/* Pending new category input row */}
+            {newCatType && (
+              <div style={{ alignItems: "center", display: "flex", gap: "0.45rem", padding: "0.25rem 1rem" }}>
+                <div style={{ background: "transparent", border: `1px solid ${FP_STROKE[newCatType] || FP_STROKE.general}`, borderRadius: 2, flexShrink: 0, height: 10, width: 10 }} />
+                <input
+                  autoFocus
+                  value={newCatName}
+                  onChange={e => setNewCatName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") { const n = newCatName.trim(); setNewCatType(null); setNewCatName(""); if (n) onCreateCategory(n, newCatType); }
+                    if (e.key === "Escape") { setNewCatType(null); setNewCatName(""); }
+                  }}
+                  onBlur={() => { const n = newCatName.trim(); setNewCatType(null); setNewCatName(""); if (n) onCreateCategory(n, newCatType); }}
+                  placeholder="Name…"
+                  style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-brass)", borderRadius: 2, color: "var(--fm-ink)", flex: 1, fontFamily: "var(--fm-mono)", fontSize: "0.7rem", minWidth: 0, outline: "none", padding: "0.15rem 0.3rem" }}
+                />
+              </div>
+            )}
+
+            {sortedCategories.length === 0 && !newCatType ? (
+              <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", padding: "0.3rem 1rem" }}>All rooms assigned</div>
+            ) : sortedCategories.map(cat => {
+              const type = categoryTypes[cat] || "general";
+              const isHov = hoveredCatId === cat;
+              const isEditing = editingCatId === cat;
+              return (
+                <div
+                  key={cat}
+                  onMouseEnter={() => setHoveredCatId(cat)}
+                  onMouseLeave={() => setHoveredCatId(null)}
+                  style={{ alignItems: "center", background: isHov ? "var(--fm-bg-raised)" : "transparent", display: "flex", gap: "0.4rem", padding: "0.3rem 1rem", transition: "background 0.1s" }}
+                >
+                  <div style={{ background: "transparent", border: `1px solid ${FP_STROKE[type]}`, borderRadius: 2, flexShrink: 0, height: 10, width: 10 }} />
+                  {isEditing ? (
+                    <input
+                      autoFocus
+                      defaultValue={cat}
+                      onBlur={e => { const v = e.target.value.trim(); if (v && v !== cat) { onRenameCategory(cat, v); renameInPlacements(cat, v); } setEditingCatId(null); }}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") { const v = e.target.value.trim(); if (v && v !== cat) { onRenameCategory(cat, v); renameInPlacements(cat, v); } setEditingCatId(null); }
+                        if (e.key === "Escape") { setEditingCatId(null); }
+                      }}
+                      onClick={e => e.stopPropagation()}
+                      style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-brass)", borderRadius: 2, color: "var(--fm-ink)", flex: 1, fontFamily: "var(--fm-mono)", fontSize: "0.7rem", minWidth: 0, outline: "none", padding: "0.15rem 0.3rem" }}
+                    />
+                  ) : (
+                    <span
+                      style={{ color: "var(--fm-ink-dim)", flex: 1, fontFamily: "var(--fm-mono)", fontSize: "0.7rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                      onDoubleClick={() => setEditingCatId(cat)}
+                    >{cat}</span>
+                  )}
+                  {isHov && !isEditing && (
+                    <>
+                      <button
+                        onClick={e => { e.stopPropagation(); setEditingCatId(cat); }}
+                        style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", flexShrink: 0, fontSize: "0.7rem", lineHeight: 1, padding: "0", transition: "color 0.1s" }}
+                        onMouseEnter={e => e.currentTarget.style.color = "var(--fm-ink)"}
+                        onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
+                        title="Rename"
+                      >✎</button>
+                      <button
+                        onClick={e => { e.stopPropagation(); onDeleteCategory(cat); }}
+                        style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", flexShrink: 0, fontSize: "0.78rem", lineHeight: 1, padding: "0", transition: "color 0.1s" }}
+                        onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"}
+                        onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
+                        title="Delete"
+                      >×</button>
+                    </>
+                  )}
+                  <span
+                    onClick={() => addToCanvas(cat)}
+                    style={{ color: "var(--fm-brass)", cursor: "pointer", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.75rem", lineHeight: 1 }}
+                    title="Add to canvas"
+                  >+</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Add category button */}
+          <div style={{ borderTop: "1px solid var(--fm-hairline)", flexShrink: 0, position: "relative" }}>
+            {showCatTypePicker && (
+              <>
+                <div onClick={() => setShowCatTypePicker(false)} style={{ bottom: 0, left: 0, position: "fixed", right: 0, top: 0, zIndex: 10 }} />
+                <div style={{ background: "var(--fm-bg-panel)", border: "1px solid var(--fm-hairline2)", borderRadius: 4, bottom: "100%", boxShadow: "0 -4px 16px rgba(0,0,0,0.4)", left: 0, position: "absolute", right: 0, zIndex: 11 }}>
+                  {[["Room", "room"], ["System", "system"], ["Structure", "structure"]].map(([label, type]) => (
+                    <div
+                      key={type}
+                      onClick={() => { setShowCatTypePicker(false); setNewCatType(type); setNewCatName(""); }}
+                      style={{ color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", letterSpacing: "0.08em", padding: "0.5rem 1rem", transition: "background 0.1s, color 0.1s" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "var(--fm-bg-raised)"; e.currentTarget.style.color = "var(--fm-brass)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            <button
+              onClick={() => setShowCatTypePicker(p => !p)}
+              style={{ background: "transparent", border: "none", color: showCatTypePicker ? "var(--fm-brass)" : "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.1em", padding: "0.6rem 1rem", textAlign: "left", textTransform: "uppercase", transition: "color 0.1s", width: "100%" }}
+              onMouseEnter={e => e.currentTarget.style.color = "var(--fm-brass)"}
+              onMouseLeave={e => { if (!showCatTypePicker) e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
+            >+ Add Category</button>
+          </div>
+        </div>
+
+        {/* Levels */}
+        <div style={{ borderTop: "1px solid var(--fm-hairline)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+          <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", padding: "0.55rem 1rem 0.35rem" }}>
+            <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.14em", textTransform: "uppercase" }}>Levels</span>
+            <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem" }}>{fpData.levels.length}</span>
+          </div>
+
+          <div style={{ maxHeight: 220, overflowY: "auto" }}>
+            {fpData.levels.map((level, idx) => {
+              const isActive = level.id === activeLevel;
+              const lvlPlaced = fpData.placements[level.id] || {};
+              const zoneCount = Object.keys(lvlPlaced).length;
+              const itemCount = Object.keys(lvlPlaced).reduce((n, cat) => n + (categoryItems[cat]?.length || 0), 0);
+              const isEditing = editingLevelId === level.id;
+              const isHovered = hoveredLevelId === level.id;
+              const isDragOver = levelDragOverIdx === idx;
+              return (
+                <div
+                  key={level.id}
+                  draggable={!isEditing}
+                  onDragStart={e => { e.dataTransfer.effectAllowed = "move"; setLevelDragIdx(idx); }}
+                  onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setLevelDragOverIdx(idx); }}
+                  onDragLeave={() => setLevelDragOverIdx(null)}
+                  onDrop={e => { e.preventDefault(); handleLevelReorder(levelDragIdx, idx); setLevelDragIdx(null); setLevelDragOverIdx(null); }}
+                  onDragEnd={() => { setLevelDragIdx(null); setLevelDragOverIdx(null); }}
+                  onClick={() => { setActiveLevel(level.id); setSelected(null); }}
+                  onMouseEnter={() => setHoveredLevelId(level.id)}
+                  onMouseLeave={() => setHoveredLevelId(null)}
+                  style={{ background: isActive ? "var(--fm-bg-panel)" : "transparent", borderLeft: isActive ? "2px solid var(--fm-brass)" : "2px solid transparent", borderTop: isDragOver ? "2px solid var(--fm-brass)" : "2px solid transparent", cursor: "pointer", padding: "0.4rem 0.5rem 0.35rem 0.65rem", transition: "background 0.1s" }}
+                >
+                  <div style={{ alignItems: "center", display: "flex", gap: "0.3rem" }}>
+                    <span
+                      style={{ color: isHovered ? "var(--fm-ink-dim)" : "transparent", cursor: "grab", flexShrink: 0, fontSize: "0.75rem", lineHeight: 1, transition: "color 0.1s", userSelect: "none" }}
+                      onMouseDown={e => e.stopPropagation()}
+                    >⠿</span>
+                    {isEditing ? (
+                      <input
+                        autoFocus
+                        defaultValue={level.name}
+                        onBlur={e => renameLevel(level.id, e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") { e.preventDefault(); renameLevel(level.id, e.target.value); }
+                          if (e.key === "Escape") { e.preventDefault(); setEditingLevelId(null); }
+                        }}
+                        onClick={e => e.stopPropagation()}
+                        style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-brass)", borderRadius: 2, color: "var(--fm-ink)", flex: 1, fontFamily: "var(--fm-sans)", fontSize: "0.75rem", minWidth: 0, outline: "none", padding: "0.1rem 0.3rem" }}
+                      />
+                    ) : (
+                      <span
+                        style={{ color: isActive ? "var(--fm-ink)" : "var(--fm-ink-dim)", flex: 1, fontFamily: "var(--fm-sans)", fontSize: "0.75rem", fontWeight: isActive ? 500 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                      >
+                        {level.name}
+                      </span>
+                    )}
+                    {isHovered && !isEditing && (
+                      <>
+                        <button
+                          onClick={e => { e.stopPropagation(); setEditingLevelId(level.id); }}
+                          style={{ background: "transparent", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", flexShrink: 0, fontSize: "0.7rem", lineHeight: 1, padding: "0 0.1rem" }}
+                          title="Rename"
+                        >✎</button>
+                        {fpData.levels.length > 1 && (
+                          <button
+                            onClick={e => { e.stopPropagation(); deleteLevel(level.id); }}
+                            style={{ background: "transparent", border: "none", color: "var(--fm-red)", cursor: "pointer", flexShrink: 0, fontSize: "0.75rem", lineHeight: 1, padding: "0 0.1rem" }}
+                            title="Delete level"
+                          >×</button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.57rem", letterSpacing: "0.05em", marginLeft: "1rem", marginTop: "0.1rem", textTransform: "uppercase" }}>
+                    {zoneCount} zone · {itemCount} items
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ borderTop: "1px solid var(--fm-hairline)", position: "relative" }}>
+            {showLevelPicker && (
+              <>
+                <div onClick={() => setShowLevelPicker(false)} style={{ bottom: 0, left: 0, position: "fixed", right: 0, top: 0, zIndex: 10 }} />
+                <div style={{ background: "var(--fm-bg-panel)", border: "1px solid var(--fm-hairline2)", borderRadius: 4, bottom: "100%", boxShadow: "0 -4px 16px rgba(0,0,0,0.4)", left: 0, position: "absolute", right: 0, zIndex: 11 }}>
+                  {["Floor", "Basement", "Attic", "Roof"].map(type => (
+                    <div
+                      key={type}
+                      onClick={() => addLevelOfType(type)}
+                      style={{ color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", letterSpacing: "0.08em", padding: "0.5rem 1rem", transition: "background 0.1s, color 0.1s" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "var(--fm-bg-raised)"; e.currentTarget.style.color = "var(--fm-brass)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
+                    >
+                      {type}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            <button
+              onClick={() => setShowLevelPicker(p => !p)}
+              style={{ background: "transparent", border: "none", color: showLevelPicker ? "var(--fm-brass)" : "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.1em", padding: "0.6rem 1rem", textAlign: "left", textTransform: "uppercase", transition: "color 0.1s", width: "100%" }}
+              onMouseEnter={e => e.currentTarget.style.color = "var(--fm-brass)"}
+              onMouseLeave={e => { if (!showLevelPicker) e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
+            >+ Add Level</button>
+          </div>
+        </div>
+      </div>
+
+      {/* SVG canvas */}
+      <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${FP_W} ${FP_H}`}
+          style={{ cursor: dragging ? "grabbing" : "default", display: "block", height: "100%", userSelect: "none", width: "100%", touchAction: "none" }}
+          onMouseDown={() => setSelected(null)}
+        >
+          <defs>
+            <pattern id="fp-sm" width={FP_GRID} height={FP_GRID} patternUnits="userSpaceOnUse">
+              <path d={`M ${FP_GRID} 0 L 0 0 0 ${FP_GRID}`} fill="none" stroke="var(--fm-hairline)" strokeWidth="0.5" opacity="0.6" />
+            </pattern>
+            <pattern id="fp-lg" width={FP_GRID * 5} height={FP_GRID * 5} patternUnits="userSpaceOnUse">
+              <rect width={FP_GRID * 5} height={FP_GRID * 5} fill="url(#fp-sm)" />
+              <path d={`M ${FP_GRID * 5} 0 L 0 0 0 ${FP_GRID * 5}`} fill="none" stroke="var(--fm-hairline2)" strokeWidth="0.8" opacity="0.7" />
+            </pattern>
+          </defs>
+          <rect width={FP_W} height={FP_H} fill="var(--fm-bg-sunk)" />
+          <rect width={FP_W} height={FP_H} fill="url(#fp-lg)" />
+
+          {placedList.map(cat => {
+            const room = currentPlaced[cat];
+            const type = categoryTypes[cat] || "general";
+            const isSel = selected === cat;
+            const isDrag = dragging === cat;
+            const itemCount = categoryItems[cat]?.length || 0;
+            const pts = room.points;
+            const ptStr = pts.map(p => `${p.x},${p.y}`).join(" ");
+            const { cx, cy } = polygonCentroid(pts);
+            return (
+              <g key={cat}>
+                <polygon
+                  points={ptStr}
+                  fill={FP_FILL[type]}
+                  stroke={isSel ? "var(--fm-brass)" : FP_STROKE[type]}
+                  strokeWidth={isSel ? 1.5 : 1}
+                  opacity={isDrag ? 0.7 : 1}
+                  style={{ cursor: "grab" }}
+                  onMouseDown={e => handleRoomMouseDown(e, cat)}
+                />
+                <text x={cx} y={cy + 5} textAnchor="middle" fill={isSel ? "var(--fm-brass)" : "var(--fm-ink)"} fontSize={11} fontFamily="var(--fm-mono)" style={{ pointerEvents: "none" }}>
+                  {cat}
+                </text>
+                <text x={cx} y={cy + 18} textAnchor="middle" fill="var(--fm-ink-dim)" fontSize={9} fontFamily="var(--fm-mono)" style={{ pointerEvents: "none" }}>
+                  {itemCount} {itemCount === 1 ? "item" : "items"}
+                </text>
+                {isSel && (
+                  <>
+                    {/* Edge hit strips — click anywhere on an edge to insert a vertex */}
+                    {pts.map((p0, vi) => {
+                      const p1 = pts[(vi + 1) % pts.length];
+                      return (
+                        <line
+                          key={`eh-${vi}`}
+                          x1={p0.x} y1={p0.y} x2={p1.x} y2={p1.y}
+                          stroke="transparent"
+                          strokeWidth={12}
+                          style={{ cursor: "cell" }}
+                          onMouseDown={e => { e.stopPropagation(); handleEdgeClick(e, cat, vi); }}
+                        />
+                      );
+                    })}
+                    {/* Vertex handles — drag to move, click to remove (if 4+ vertices) */}
+                    {pts.map((p0, vi) => (
+                      <circle
+                        key={`vh-${vi}`}
+                        cx={p0.x} cy={p0.y} r={5}
+                        fill="var(--fm-bg)"
+                        stroke="var(--fm-brass)"
+                        strokeWidth={1.5}
+                        style={{ cursor: pts.length > 3 ? "crosshair" : "grab" }}
+                        onMouseDown={e => handleVertexMouseDown(e, cat, vi)}
+                        title={pts.length > 3 ? "Drag to move · Click to remove" : "Drag to move"}
+                      />
+                    ))}
+                  </>
+                )}
+              </g>
+            );
+          })}
+        </svg>
+
+        {placedList.length === 0 && (
+          <div style={{ alignItems: "center", display: "flex", height: "100%", justifyContent: "center", left: 0, pointerEvents: "none", position: "absolute", top: 0, width: "100%" }}>
+            <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", letterSpacing: "0.08em" }}>Click items in the sidebar to place them on this level</div>
+          </div>
+        )}
+      </div>
+
+      {/* Right detail panel */}
+      <div style={{ borderLeft: "1px solid var(--fm-hairline)", display: "flex", flexDirection: "column", flexShrink: 0, width: 280 }}>
+        {selected && selRoom ? (
+          <>
+            {/* Header */}
+            <div style={{ padding: "0.85rem 1rem 0.7rem" }}>
+              <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.57rem", letterSpacing: "0.12em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
+                {activeLevelName} · {GROUP_LABELS[selType] || selType}
+              </div>
+              {editingPanelName ? (
+                <input
+                  autoFocus
+                  defaultValue={selected}
+                  onBlur={e => { const v = e.target.value.trim(); if (v && v !== selected) { onRenameCategory?.(selected, v); renameInPlacements(selected, v); } else setEditingPanelName(false); }}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") { const v = e.target.value.trim(); if (v && v !== selected) { onRenameCategory?.(selected, v); renameInPlacements(selected, v); } else setEditingPanelName(false); }
+                    if (e.key === "Escape") setEditingPanelName(false);
+                  }}
+                  style={{ background: "transparent", border: "none", borderBottom: "1px solid var(--fm-brass)", color: "var(--fm-ink)", fontFamily: "var(--fm-serif)", fontSize: "1.55rem", fontWeight: 400, lineHeight: 1.1, outline: "none", padding: "0 0 2px", width: "100%" }}
+                />
+              ) : (
+                <div
+                  style={{ color: "var(--fm-ink)", cursor: "text", fontFamily: "var(--fm-serif)", fontSize: "1.55rem", fontWeight: 400, lineHeight: 1.1 }}
+                  onDoubleClick={() => setEditingPanelName(true)}
+                  title="Double-click to rename"
+                >
+                  {selected}
+                </div>
+              )}
+            </div>
+            <div style={{ borderBottom: "1px solid var(--fm-hairline)" }} />
+
+
+            {/* Stats */}
+            <div style={{ display: "flex" }}>
+              {[
+                { label: "Area", value: `${Math.round(polygonArea(selRoom.points) / (FP_GRID * FP_GRID))} u²` },
+                { label: "Items", value: selZoneItems.length },
+              ].map(({ label, value }, i) => (
+                <div key={label} style={{ borderRight: i < 1 ? "1px solid var(--fm-hairline)" : "none", flex: 1, padding: "0.6rem 0.75rem" }}>
+                  <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.54rem", letterSpacing: "0.1em", marginBottom: "0.2rem", textTransform: "uppercase" }}>{label}</div>
+                  <div style={{ color: "var(--fm-ink)", fontFamily: "var(--fm-serif)", fontSize: "1.3rem", fontWeight: 400 }}>{value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ borderBottom: "1px solid var(--fm-hairline)" }} />
+
+            {/* Items section — scrollable */}
+            <div style={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0, overflowY: "auto" }}>
+              {/* Section header */}
+              <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", padding: "0.45rem 0.75rem 0.4rem" }}>
+                <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                  Items · {selZoneItems.length}
+                </span>
+                <button
+                  onClick={() => setSelected(null)}
+                  style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.08em", padding: "0.1rem 0", transition: "color 0.1s" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "var(--fm-ink)"}
+                  onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
+                >— Close</button>
+              </div>
+
+              {/* Collapsible: Added items */}
+              <div style={{ borderBottom: "1px solid var(--fm-hairline)", borderTop: "1px solid var(--fm-hairline)" }}>
+                <div
+                  onClick={() => setAddedItemsExpanded(p => !p)}
+                  style={{ alignItems: "center", cursor: "pointer", display: "flex", justifyContent: "space-between", padding: "0.4rem 0.75rem" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "var(--fm-bg-panel)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                >
+                  <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                    Added{selZoneItems.length > 0 ? ` · ${selZoneItems.length}` : ""}
+                  </span>
+                  <span style={{ color: "var(--fm-ink-dim)", fontSize: "0.55rem" }}>{addedItemsExpanded ? "▲" : "▼"}</span>
+                </div>
+                {addedItemsExpanded && (
+                  <div style={{ paddingBottom: "0.35rem" }}>
+                    {selZoneItems.length === 0 ? (
+                      <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-sans)", fontSize: "0.7rem", fontStyle: "italic", padding: "0.25rem 0.75rem 0.5rem" }}>
+                        No items assigned yet.
+                      </div>
+                    ) : selZoneItems.map(({ cat, item }) => (
+                      <div key={`${cat}|${item}`} style={{ alignItems: "center", display: "flex", gap: "0.4rem", padding: "0.28rem 0.75rem" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "var(--fm-bg-panel)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        <span style={{ color: "var(--fm-ink)", flex: 1, fontFamily: "var(--fm-sans)", fontSize: "0.75rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item}</span>
+                        <span style={{ color: "var(--fm-ink-dim)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.57rem", letterSpacing: "0.04em" }}>{cat.slice(0, 3).toUpperCase()}</span>
+                        <button
+                          onClick={e => { e.stopPropagation(); toggleZoneItem(cat, item); }}
+                          style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.8rem", lineHeight: 1, padding: "0 0.1rem", transition: "color 0.1s" }}
+                          onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"}
+                          onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
+                        >×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Search */}
+              <div style={{ padding: "0.5rem 0.75rem 0.4rem" }}>
+                <input
+                  value={zoneSearch}
+                  onChange={e => setZoneSearch(e.target.value)}
+                  placeholder="Search items…"
+                  style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-hairline2)", borderRadius: 3, boxSizing: "border-box", color: "var(--fm-ink)", fontFamily: "var(--fm-sans)", fontSize: "0.75rem", outline: "none", padding: "0.35rem 0.6rem", width: "100%" }}
+                  onFocus={e => e.currentTarget.style.borderColor = "var(--fm-brass)"}
+                  onBlur={e => e.currentTarget.style.borderColor = "var(--fm-hairline2)"}
+                />
+              </div>
+
+              {/* Search results */}
+              <div style={{ flex: 1, overflowY: "auto" }}>
+                {searchResults.length === 0 ? (
+                  <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", padding: "0.5rem 0.75rem" }}>No matches</div>
+                ) : searchResults.map(({ cat, item }) => {
+                  const isAdded = selZoneItems.some(z => z.cat === cat && z.item === item);
+                  return (
+                    <div
+                      key={`${cat}|${item}`}
+                      onClick={() => toggleZoneItem(cat, item)}
+                      style={{ alignItems: "center", cursor: "pointer", display: "flex", gap: "0.4rem", padding: "0.3rem 0.75rem", transition: "background 0.1s" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "var(--fm-bg-panel)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                    >
+                      <span style={{ color: isAdded ? "var(--fm-ink)" : "var(--fm-ink-dim)", flex: 1, fontFamily: "var(--fm-sans)", fontSize: "0.75rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item}</span>
+                      <span style={{ color: "var(--fm-ink-dim)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.05em" }}>{cat.slice(0, 3).toUpperCase()}</span>
+                      <span style={{ color: isAdded ? "var(--fm-green)" : "var(--fm-brass)", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.72rem", width: "0.8rem" }}>
+                        {isAdded ? "✓" : "+"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ borderTop: "1px solid var(--fm-hairline)", padding: "0.7rem 1rem" }}>
+              <button
+                onClick={() => removeFromCanvas(selected)}
+                style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: 3, color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.1em", padding: "0.45rem 0.85rem", textTransform: "uppercase", transition: "all 0.1s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-red)"; e.currentTarget.style.color = "var(--fm-red)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-hairline2)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
+              >Remove Zone</button>
+            </div>
+          </>
+        ) : (
+          <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", padding: "2.5rem 1rem", textAlign: "center" }}>
+            Click a zone on the canvas to view details
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Item Inventory View ────────────────────────────────────────────────────────
+
+function ItemInvPill({ active, color, onClick, children }) {
+  const c = color || "var(--fm-brass)";
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: active ? "rgba(201,169,110,0.10)" : "transparent",
+        border: `1px solid ${active ? c : "var(--fm-hairline2)"}`,
+        borderRadius: "var(--fm-radius)",
+        color: active ? c : "var(--fm-ink-dim)",
+        cursor: "pointer",
+        fontFamily: "var(--fm-mono)",
+        fontSize: "0.65rem",
+        letterSpacing: "0.08em",
+        padding: "0.22rem 0.55rem",
+        textTransform: "uppercase",
+        transition: "all 0.12s",
+        whiteSpace: "nowrap",
+      }}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = c; e.currentTarget.style.color = c; } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "var(--fm-hairline2)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; } }}
+    >{children}</button>
+  );
+}
+
+function InvNoteCell({ value, onChange }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={() => { setEditing(false); onChange(draft); }}
+        onKeyDown={e => {
+          if (e.key === "Enter") { e.preventDefault(); setEditing(false); onChange(draft); }
+          if (e.key === "Escape") setEditing(false);
+        }}
+        style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-hairline2)", borderRadius: "var(--fm-radius)", boxSizing: "border-box", color: "var(--fm-ink)", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", outline: "none", padding: "0.2rem 0.4rem", width: "100%" }}
+      />
+    );
+  }
+  return (
+    <span
+      onClick={() => { setDraft(value || ""); setEditing(true); }}
+      style={{ color: value ? "var(--fm-ink-dim)" : "var(--fm-ink-mute)", cursor: "text", display: "block", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", fontStyle: value ? "normal" : "italic", minHeight: "1.2em" }}
+    >
+      {value || "Add note…"}
+    </span>
+  );
+}
+
+const INV_STATUS_META = {
+  active:  { color: "var(--fm-green)",   label: "Active"  },
+  partial: { color: "var(--fm-amber)",   label: "Partial" },
+  empty:   { color: "var(--fm-ink-dim)", label: "Empty"   },
+};
+
+function getInvItemStatus(itemDetails, cat, item) {
+  const detail = itemDetails?.[`${cat}|${item}`];
+  if (!detail) return "empty";
+  if (detail.mfr || detail.model) return "active";
+  if (detail.serial || detail.purchaseDate) return "partial";
+  return "empty";
+}
+
+function ItemInventoryView({ categories, categoryItems, categoryTypes, itemDetails, customFieldValues, onSelectItem, onAddItem, onDeleteItem, onRenameItem, onFieldChange }) {
+  const [search, setSearch] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newItemCat, setNewItemCat] = useState("");
+  const [newItemName, setNewItemName] = useState("");
+  const [hoveredRow, setHoveredRow] = useState(null);
+  const [editingRow, setEditingRow] = useState(null);
+  const [editingTypeRow, setEditingTypeRow] = useState(null);
+  const [editingRoomRow, setEditingRoomRow] = useState(null);
+  const [editingSystemRow, setEditingSystemRow] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [systemFilter, setSystemFilter] = useState("ALL");
+  const [roomFilter, setRoomFilter] = useState("ALL");
+  const [levelFilter, setLevelFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [fpData] = useState(() => loadFpData());
+  const [sortCol, setSortCol] = useState({ col: "system", dir: 1 });
+
+  const allRows = useMemo(() =>
+    categories.flatMap(cat =>
+      (categoryItems[cat] || []).map(item => ({ cat, item, key: `${cat}|${item}` }))
+    ), [categories, categoryItems]);
+
+  const systemCats = useMemo(() =>
+    [...new Set(allRows.map(r => r.cat))].filter(c => categoryTypes?.[c] !== "room").sort(),
+    [allRows, categoryTypes]);
+
+  const roomCats = useMemo(() =>
+    [...new Set(allRows.map(r => r.cat))].filter(c => categoryTypes?.[c] === "room").sort(),
+    [allRows, categoryTypes]);
+
+  const filtered = useMemo(() => {
+    let rows = allRows;
+    if (statusFilter !== "ALL") rows = rows.filter(r => getInvItemStatus(itemDetails, r.cat, r.item) === statusFilter.toLowerCase());
+    if (systemFilter !== "ALL") rows = rows.filter(r => r.cat === systemFilter);
+    if (roomFilter !== "ALL") rows = rows.filter(r => r.cat === roomFilter);
+    if (levelFilter !== "ALL") {
+      const placedCats = new Set(Object.keys(fpData.placements[levelFilter] || {}));
+      rows = rows.filter(r => placedCats.has(r.cat));
+    }
+    if (typeFilter !== "ALL") rows = rows.filter(r => (customFieldValues?.[r.key]?.item_type || "") === typeFilter);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      rows = rows.filter(r => r.item.toLowerCase().includes(q) || r.cat.toLowerCase().includes(q));
+    }
+    return [...rows].sort((a, b) => {
+      let cmp = 0;
+      if (sortCol.col === "status") {
+        const order = { active: 0, partial: 1, empty: 2 };
+        cmp = (order[getInvItemStatus(itemDetails, a.cat, a.item)] ?? 3) - (order[getInvItemStatus(itemDetails, b.cat, b.item)] ?? 3);
+      } else if (sortCol.col === "item") {
+        cmp = a.item.localeCompare(b.item) || a.cat.localeCompare(b.cat);
+      } else if (sortCol.col === "manufacturer") {
+        const ma = customFieldValues?.[a.key]?.manufacturer || "";
+        const mb = customFieldValues?.[b.key]?.manufacturer || "";
+        cmp = ma.localeCompare(mb) || a.item.localeCompare(b.item);
+      } else if (sortCol.col === "model") {
+        const ma = customFieldValues?.[a.key]?.model || "";
+        const mb = customFieldValues?.[b.key]?.model || "";
+        cmp = ma.localeCompare(mb) || a.item.localeCompare(b.item);
+      } else if (sortCol.col === "type") {
+        cmp = (customFieldValues?.[a.key]?.item_type || "").localeCompare(customFieldValues?.[b.key]?.item_type || "") || a.item.localeCompare(b.item);
+      } else if (sortCol.col === "room") {
+        const ra = customFieldValues?.[a.key]?.room || (categoryTypes?.[a.cat] === "room" ? a.cat : "");
+        const rb = customFieldValues?.[b.key]?.room || (categoryTypes?.[b.cat] === "room" ? b.cat : "");
+        cmp = ra.localeCompare(rb) || a.item.localeCompare(b.item);
+      } else if (sortCol.col === "system") {
+        const sa = customFieldValues?.[a.key]?.system || a.cat;
+        const sb = customFieldValues?.[b.key]?.system || b.cat;
+        cmp = sa.localeCompare(sb) || a.item.localeCompare(b.item);
+      }
+      return cmp * sortCol.dir;
+    });
+  }, [allRows, statusFilter, systemFilter, roomFilter, levelFilter, typeFilter, fpData, search, sortCol, itemDetails, customFieldValues]);
+
+  function handleHeaderClick(col) {
+    setSortCol(prev => prev.col === col ? { col, dir: prev.dir * -1 } : { col, dir: 1 });
+  }
+
+  const thBase = {
+    background: "var(--fm-bg-raised)",
+    borderBottom: "1px solid var(--fm-hairline2)",
+    color: "var(--fm-brass-dim)",
+    fontFamily: "var(--fm-mono)",
+    fontSize: "0.62rem",
+    fontWeight: "normal",
+    letterSpacing: "0.12em",
+    padding: "0.6rem 0.5rem",
+    position: "sticky",
+    textAlign: "left",
+    textTransform: "uppercase",
+    top: 0,
+    userSelect: "none",
+    whiteSpace: "nowrap",
+    zIndex: 10,
+  };
+
+  return (
+    <div style={{ padding: "var(--fm-spacing-5xl) var(--fm-spacing-5xl) 0" }}>
+      {/* Toolbar */}
+      <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1.25rem" }}>
+        <p style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.85rem", margin: 0 }}>
+          {allRows.length} item{allRows.length !== 1 ? "s" : ""}
+        </p>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search items, systems…"
+          style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-ink-dim)", borderRadius: "4px", color: "var(--fm-ink)", fontFamily: "var(--fm-mono)", fontSize: "0.82rem", marginLeft: "auto", outline: "none", padding: "0.5rem 0.85rem", width: "260px" }}
+        />
+        <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.78rem" }}>{filtered.length} results</span>
+        <button
+          onClick={() => { setShowAddForm(true); setNewItemCat(categories[0] || ""); setNewItemName(""); }}
+          style={{ background: "transparent", border: "1px solid var(--fm-ink-dim)", borderRadius: "3px", color: "var(--fm-brass-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s", whiteSpace: "nowrap" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-brass)"; e.currentTarget.style.color = "var(--fm-brass)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
+        >+ ADD ITEM</button>
+      </div>
+
+      {/* Inline add form */}
+      {showAddForm && (
+        <div style={{ alignItems: "center", background: "var(--fm-bg-panel)", border: "1px solid var(--fm-hairline2)", borderRadius: "4px", display: "flex", gap: "0.6rem", marginBottom: "0.75rem", padding: "0.6rem 0.75rem" }}>
+          <select
+            value={newItemCat}
+            onChange={e => setNewItemCat(e.target.value)}
+            style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-hairline2)", borderRadius: "3px", color: "var(--fm-ink)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", outline: "none", padding: "0.35rem 0.5rem" }}
+          >
+            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          </select>
+          <input
+            autoFocus
+            value={newItemName}
+            onChange={e => setNewItemName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter") { onAddItem?.(newItemCat, newItemName); setShowAddForm(false); }
+              if (e.key === "Escape") setShowAddForm(false);
+            }}
+            placeholder="Item name…"
+            style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-hairline2)", borderRadius: "3px", color: "var(--fm-ink)", flex: 1, fontFamily: "var(--fm-sans)", fontSize: "0.78rem", outline: "none", padding: "0.35rem 0.6rem" }}
+            onFocus={e => e.currentTarget.style.borderColor = "var(--fm-brass)"}
+            onBlur={e => e.currentTarget.style.borderColor = "var(--fm-hairline2)"}
+          />
+          <button
+            onClick={() => { onAddItem?.(newItemCat, newItemName); setShowAddForm(false); }}
+            disabled={!newItemName.trim()}
+            style={{ background: newItemName.trim() ? "var(--fm-brass)18" : "transparent", border: `1px solid ${newItemName.trim() ? "var(--fm-brass)40" : "var(--fm-hairline2)"}`, borderRadius: "3px", color: newItemName.trim() ? "var(--fm-brass)" : "var(--fm-ink-dim)", cursor: newItemName.trim() ? "pointer" : "default", fontFamily: "var(--fm-mono)", fontSize: "0.68rem", letterSpacing: "0.08em", padding: "0.35rem 0.75rem", transition: "all 0.12s" }}
+          >Add</button>
+          <button
+            onClick={() => setShowAddForm(false)}
+            style={{ background: "transparent", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.68rem", padding: "0.35rem 0.3rem", transition: "color 0.12s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--fm-ink)"}
+            onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
+          >Cancel</button>
+        </div>
+      )}
+
+      {/* Filter pills */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", marginBottom: "0.6rem" }}>
+        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+          <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.14em", minWidth: "54px", textTransform: "uppercase" }}>Status</span>
+          {[
+            { key: "ALL",     label: "All" },
+            { key: "ACTIVE",  label: "Active",  color: "var(--fm-green)" },
+            { key: "PARTIAL", label: "Partial", color: "var(--fm-amber)" },
+            { key: "EMPTY",   label: "Empty" },
+          ].map(({ key, label, color }) => (
+            <ItemInvPill key={key} active={statusFilter === key} color={color} onClick={() => setStatusFilter(key)}>{label}</ItemInvPill>
+          ))}
+        </div>
+        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+          <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.14em", minWidth: "54px", textTransform: "uppercase" }}>Room</span>
+          <ItemInvPill active={roomFilter === "ALL"} onClick={() => setRoomFilter("ALL")}>All</ItemInvPill>
+          {roomCats.map(cat => (
+            <ItemInvPill key={cat} active={roomFilter === cat} onClick={() => setRoomFilter(cat)}>{cat}</ItemInvPill>
+          ))}
+        </div>
+        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+          <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.14em", minWidth: "54px", textTransform: "uppercase" }}>Level</span>
+          <ItemInvPill active={levelFilter === "ALL"} onClick={() => setLevelFilter("ALL")}>All</ItemInvPill>
+          {fpData.levels.map(lvl => (
+            <ItemInvPill key={lvl.id} active={levelFilter === lvl.id} onClick={() => setLevelFilter(lvl.id)}>{lvl.name}</ItemInvPill>
+          ))}
+        </div>
+        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+          <span style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.14em", minWidth: "54px", textTransform: "uppercase" }}>Type</span>
+          <ItemInvPill active={typeFilter === "ALL"} onClick={() => setTypeFilter("ALL")}>All</ItemInvPill>
+          {[...new Set(allRows.map(r => customFieldValues?.[r.key]?.item_type).filter(Boolean))].sort().map(t => (
+            <ItemInvPill key={t} active={typeFilter === t} onClick={() => setTypeFilter(t)}>{t}</ItemInvPill>
+          ))}
+        </div>
+      </div>
+
+      {/* Table */}
+      <table style={{ borderCollapse: "collapse", width: "100%" }}>
+        <thead>
+          <tr>
+            {[
+              { label: "Status",       col: "status",       width: "110px" },
+              { label: "Type",         col: "type",         width: "100px" },
+              { label: "Room",         col: "room",         width: "130px" },
+              { label: "Item",         col: "item",         width: "200px" },
+              { label: "Manufacturer", col: "manufacturer", width: "160px" },
+              { label: "Model",        col: "model",        width: "160px" },
+              { label: "Note",         col: null,           width: "48px"  },
+              { label: "",             col: null,           width: "30px"  },
+            ].map(({ label, col, width }) => (
+              <th
+                key={label}
+                style={{ ...thBase, cursor: col ? "pointer" : "default", width }}
+                onClick={() => col && handleHeaderClick(col)}
+              >
+                {label}
+                {col && sortCol.col === col && (
+                  <span style={{ marginLeft: "0.3rem", opacity: 0.6 }}>{sortCol.dir === 1 ? "↑" : "↓"}</span>
+                )}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map(({ cat, item, key }) => {
+            const status = getInvItemStatus(itemDetails, cat, item);
+            const { color, label } = INV_STATUS_META[status];
+            const hasDetail = !!(itemDetails?.[key]);
+            const existingTypes = [...new Set(Object.values(customFieldValues || {}).map(v => v?.item_type).filter(Boolean))].sort();
+            const typeListId = `itypes-${key}`;
+            const existingRooms = [...new Set([
+              ...roomCats,
+              ...Object.values(customFieldValues || {}).map(v => v?.room).filter(Boolean),
+            ])].sort();
+            const roomListId = `irooms-${key}`;
+            const resolvedRoom = customFieldValues?.[key]?.room || (categoryTypes?.[cat] === "room" ? cat : "");
+            const existingSystems = [...new Set([
+              ...categories,
+              ...Object.values(customFieldValues || {}).map(v => v?.system).filter(Boolean),
+            ])].sort();
+            const systemListId = `isys-${key}`;
+            const resolvedSystem = customFieldValues?.[key]?.system || cat;
+            const noteColor = hasDetail ? "var(--fm-brass)" : "var(--fm-ink-mute)";
+            const isHov = hoveredRow === key;
+            return (
+              <tr key={key} style={{ borderBottom: "1px solid var(--fm-hairline)" }}
+                onMouseEnter={() => setHoveredRow(key)}
+                onMouseLeave={() => setHoveredRow(null)}
+              >
+                <td style={{ padding: "0.45rem 0.5rem", verticalAlign: "middle" }}>
+                  <div style={{ alignItems: "center", display: "flex", gap: "0.4rem" }}>
+                    <span style={{ background: color, borderRadius: "50%", display: "inline-block", flexShrink: 0, height: 7, width: 7 }} />
+                    <span style={{ color, fontFamily: "var(--fm-mono)", fontSize: "0.67rem", letterSpacing: "0.06em" }}>{label}</span>
+                  </div>
+                </td>
+                <td style={{ padding: "0.45rem 0.5rem", verticalAlign: "middle" }}>
+                  {editingTypeRow === key ? (
+                    <>
+                      <datalist id={typeListId}>
+                        {existingTypes.map(t => <option key={t} value={t} />)}
+                      </datalist>
+                      <input
+                        autoFocus
+                        list={typeListId}
+                        defaultValue={customFieldValues?.[key]?.item_type || ""}
+                        onBlur={e => { onFieldChange?.(cat, item, "item_type", e.target.value.trim()); setEditingTypeRow(null); }}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") { onFieldChange?.(cat, item, "item_type", e.target.value.trim()); setEditingTypeRow(null); }
+                          if (e.key === "Escape") setEditingTypeRow(null);
+                        }}
+                        style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-brass)", borderRadius: 2, color: "var(--fm-ink)", fontFamily: "var(--fm-mono)", fontSize: "0.67rem", outline: "none", padding: "0.15rem 0.3rem", width: "100%" }}
+                      />
+                    </>
+                  ) : (
+                    <span
+                      style={{ color: customFieldValues?.[key]?.item_type ? "var(--fm-ink-dim)" : "var(--fm-hairline2)", cursor: "text", display: "block", fontFamily: "var(--fm-mono)", fontSize: "0.67rem", letterSpacing: "0.06em", minHeight: "1.2em", minWidth: "2rem", textTransform: "uppercase" }}
+                      onDoubleClick={() => setEditingTypeRow(key)}
+                      title="Double-click to set type"
+                    >
+                      {customFieldValues?.[key]?.item_type || "—"}
+                    </span>
+                  )}
+                </td>
+                <td style={{ padding: "0.45rem 0.5rem", verticalAlign: "middle" }}>
+                  {editingRoomRow === key ? (
+                    <>
+                      <datalist id={roomListId}>
+                        {existingRooms.map(r => <option key={r} value={r} />)}
+                      </datalist>
+                      <input
+                        autoFocus
+                        list={roomListId}
+                        defaultValue={resolvedRoom}
+                        onBlur={e => { onFieldChange?.(cat, item, "room", e.target.value.trim()); setEditingRoomRow(null); }}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") { onFieldChange?.(cat, item, "room", e.target.value.trim()); setEditingRoomRow(null); }
+                          if (e.key === "Escape") setEditingRoomRow(null);
+                        }}
+                        style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-brass)", borderRadius: 2, color: "var(--fm-ink)", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", outline: "none", padding: "0.15rem 0.4rem", width: "100%" }}
+                      />
+                    </>
+                  ) : (
+                    <span
+                      style={{ color: resolvedRoom ? "var(--fm-ink-dim)" : "var(--fm-hairline2)", cursor: "text", display: "block", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", minHeight: "1.2em", minWidth: "2rem" }}
+                      onDoubleClick={() => setEditingRoomRow(key)}
+                      title="Double-click to set room"
+                    >
+                      {resolvedRoom || "—"}
+                    </span>
+                  )}
+                </td>
+                <td style={{ padding: "0.45rem 0.5rem", verticalAlign: "middle" }}>
+                  {editingRow === key ? (
+                    <input
+                      autoFocus
+                      defaultValue={item}
+                      onBlur={e => { onRenameItem?.(cat, item, e.target.value); setEditingRow(null); }}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") { onRenameItem?.(cat, item, e.target.value); setEditingRow(null); }
+                        if (e.key === "Escape") setEditingRow(null);
+                      }}
+                      style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-brass)", borderRadius: 2, color: "var(--fm-ink)", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", outline: "none", padding: "0.15rem 0.4rem", width: "100%" }}
+                    />
+                  ) : (
+                    <span
+                      style={{ color: "var(--fm-ink)", cursor: "text", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                      onDoubleClick={() => setEditingRow(key)}
+                      title="Double-click to rename"
+                    >{item}</span>
+                  )}
+                </td>
+                <td style={{ padding: "0.45rem 0.5rem", verticalAlign: "middle" }}>
+                  <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {customFieldValues?.[key]?.manufacturer || ""}
+                  </span>
+                </td>
+                <td style={{ padding: "0.45rem 0.5rem", verticalAlign: "middle" }}>
+                  <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {customFieldValues?.[key]?.model || ""}
+                  </span>
+                </td>
+                <td style={{ padding: "0.45rem 0.5rem", textAlign: "center", verticalAlign: "middle" }}>
+                  <button
+                    onClick={() => onSelectItem?.({ category: cat, item })}
+                    title={hasDetail ? "View item details" : "Add item details"}
+                    style={{ alignItems: "center", background: "transparent", border: "none", color: noteColor, cursor: "pointer", display: "flex", justifyContent: "center", padding: "0.15rem", transition: "color 0.12s" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--fm-brass)"}
+                    onMouseLeave={e => e.currentTarget.style.color = noteColor}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                  </button>
+                </td>
+                <td style={{ padding: "0.45rem 0.25rem", textAlign: "center", verticalAlign: "middle" }}>
+                  {isHov && (
+                    <button
+                      onClick={() => onDeleteItem?.(cat, item)}
+                      title="Delete item"
+                      style={{ alignItems: "center", background: "transparent", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", display: "flex", fontSize: "1rem", justifyContent: "center", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.12s" }}
+                      onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"}
+                      onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
+                    >×</button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+          {filtered.length === 0 && (
+            <tr>
+              <td colSpan={8} style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", padding: "2rem 0.5rem", textAlign: "center" }}>
+                No items match the current filters.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+
 export default function InventoryPage({ navigate, navState }) {
   const [rows, setRows] = useState(() => loadData());
   const [deletedCategories, setDeletedCategories] = useState(() => loadDeletedCategories());
@@ -364,6 +1657,8 @@ export default function InventoryPage({ navigate, navState }) {
     CATEGORIES.filter(c => effectiveCategoryTypes[c] === "room").length,
     [CATEGORIES, effectiveCategoryTypes]
   );
+  const [activeTab, setActiveTab] = useState("Item Inventory");
+
   const filteredGroupOrder = useMemo(() => {
     if (activeTab === "By system") return GROUP_ORDER.filter(g => g !== "room");
     if (activeTab === "By room")   return GROUP_ORDER.filter(g => g === "room");
@@ -387,7 +1682,6 @@ export default function InventoryPage({ navigate, navState }) {
   const [collapsedGroups, setCollapsedGroups] = useState(() =>
     Object.fromEntries(GROUP_ORDER.map(g => [g, true]))
   );
-  const [activeTab, setActiveTab] = useState("All items");
   const [sortedGroups, setSortedGroups] = useState(() => new Set());
   const [navHovered, setNavHovered] = useState(null);
   const [dragging, setDragging] = useState(null);
@@ -1025,6 +2319,17 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
     setCollapsedGroups(prev => ({ ...prev, [groupType]: false }));
   }
 
+  function handleCreateCategoryFromFloorPlan(name, type) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const customs = loadCustomData();
+    saveCustomData([...customs, {
+      _id: `custom-${Date.now()}`, _isCustom: true, _defaultKey: null, _isBlankCategory: true,
+      category: trimmed, item: "", task: "", schedule: "", season: null, categoryType: type,
+    }]);
+    reload();
+  }
+
   function handleCommitNewCategory(name, rowId) {
     const trimmed = name.trim();
     setPendingNewCategory(null);
@@ -1063,6 +2368,17 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
     reload();
     setNewItemIds(prev => new Set([...prev, newId]));
     setCollapsed(prev => ({ ...prev, [category]: false }));
+  }
+
+  function handleAddItemNamed(category, itemName) {
+    const trimmed = itemName.trim();
+    if (!trimmed || !category) return;
+    const customs = loadCustomData();
+    saveCustomData([...customs, {
+      _id: `custom-${Date.now()}`, _isCustom: true, _defaultKey: null,
+      category, item: trimmed, task: "", schedule: "", season: null,
+    }]);
+    reload();
   }
 
   function handleCommitItemName(rowId, name) {
@@ -1815,7 +3131,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
       <FmHeader active="Inventory" tagline="Inventory" />
       <FmSubnav
-        tabs={["All items", "By system", "By room"]}
+        tabs={["All items", "By system", "By room", "Item Inventory", "Floor plan"]}
         active={activeTab}
         onTabChange={setActiveTab}
         stats={[
@@ -1825,10 +3141,36 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
         ]}
       />
 
+      {activeTab === "Floor plan" ? (
+        <FloorPlan
+          categories={CATEGORIES}
+          categoryTypes={effectiveCategoryTypes}
+          categoryItems={CATEGORY_ITEMS}
+          onCreateCategory={handleCreateCategoryFromFloorPlan}
+          onRenameCategory={handleCategoryRename}
+          onDeleteCategory={handleDeleteClick}
+        />
+      ) : (
       <div style={{ display: "flex", flex: 1, flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", flex: 1, gap: "2rem", overflow: "hidden", padding: "2rem 2rem 0" }}>
         <div style={{ flex: "0 0 58%", minWidth: 0, overflowY: "auto", paddingBottom: "4rem", scrollbarGutter: "stable" }}>
 
+        {activeTab === "Item Inventory" ? (
+          <ItemInventoryView
+            categories={CATEGORIES}
+            categoryItems={CATEGORY_ITEMS}
+            categoryTypes={effectiveCategoryTypes}
+            itemDetails={itemDetails}
+            onSelectItem={setSelectedItem}
+            customFieldValues={customFieldValues}
+            onAddItem={handleAddItemNamed}
+            onDeleteItem={handleItemDeleteClick}
+            onRenameItem={handleItemRename}
+            onFieldChange={handleCustomFieldValueChange}
+          />
+        ) : null}
+
+        {activeTab !== "Item Inventory" && <>
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "2rem" }}>
           <button
             onClick={cycleExpand}
@@ -2009,6 +3351,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
             </div>
           );
         })}
+        </>}
         </div>
 
         <div style={{
@@ -2046,7 +3389,8 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                 const cfKey = `${selectedItem.category}|${selectedItem.item}`;
                 const itmFields = itemFieldSchemas[cfKey] || [];
                 const vals = customFieldValues[cfKey] || {};
-                const addedIds = new Set(itmFields.map(f => f.id));
+                const itemTypeField = UNIVERSAL_FIELDS.find(f => f.id === "item_type");
+                const addedIds = new Set([...itmFields.map(f => f.id), "item_type"]);
                 const svgArrow = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`;
                 const fieldStyle = { background: "var(--fm-bg)", border: "1px solid var(--fm-hairline2)", borderRadius: "3px", boxSizing: "border-box", color: "var(--fm-ink)", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", outline: "none", padding: "0.3rem 0.5rem", width: "100%" };
                 const labelStyle = { color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase" };
@@ -2056,6 +3400,10 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
                   const val = vals[field.id] ?? "";
                   const onChange = v => handleCustomFieldValueChange(selectedItem.category, selectedItem.item, field.id, v);
 
+                  if (field.id === "item_type") {
+                    const existingTypes = [...new Set(Object.values(customFieldValues).map(v => v?.item_type).filter(Boolean))].sort();
+                    return <ModelComboField value={val} models={existingTypes} fieldStyle={fieldStyle} onChange={onChange} />;
+                  }
                   if (field.id === "manufacturer") {
                     const mfrs = getManufacturers(selectedItem.item);
                     return <ModelComboField value={val} models={mfrs} fieldStyle={fieldStyle} onChange={onChange} />;
@@ -2095,8 +3443,13 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
 
                 return (
                   <>
-                    {itmFields.length === 0 && !showFieldPicker && (
-                      <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", marginBottom: "0.5rem", paddingTop: "0.25rem" }}>No fields yet</div>
+                    {itemTypeField && (
+                      <div style={{ marginBottom: "0.45rem" }}>
+                        <div style={{ marginBottom: "0.2rem" }}>
+                          <span style={labelStyle}>{itemTypeField.name}</span>
+                        </div>
+                        {renderFieldInput(itemTypeField)}
+                      </div>
                     )}
                     {itmFields.map(field => (
                       <div key={field.id} style={{ marginBottom: "0.45rem" }}>
@@ -2677,6 +4030,7 @@ Return 5–12 tasks. Include only tasks that are standard for this appliance typ
         </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

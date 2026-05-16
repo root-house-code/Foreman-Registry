@@ -1,4 +1,4 @@
-export default function FmSubnav({ tabs, active, stats }) {
+export default function FmSubnav({ tabs, active, stats, onTabChange }) {
   return (
     <div
       style={{
@@ -16,6 +16,7 @@ export default function FmSubnav({ tabs, active, stats }) {
           return (
             <span
               key={t}
+                onClick={() => !isActive && onTabChange?.(t)}
               style={{
                 fontFamily: 'var(--fm-mono)',
                 fontSize: 11,

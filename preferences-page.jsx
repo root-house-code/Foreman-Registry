@@ -64,22 +64,22 @@ function saveMembers(members) {
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
 const labelStyle = {
-  color: "#a8a29c", display: "block", fontFamily: "monospace",
+  color: "var(--fm-ink-dim)", display: "block", fontFamily: "var(--fm-mono)",
   fontSize: "0.62rem", letterSpacing: "0.1em", marginBottom: "0.4rem", textTransform: "uppercase",
 };
 
 const selectStyle = {
   appearance: "none",
-  background: "#1a1f2e",
+  background: "var(--fm-bg-panel)",
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`,
   backgroundRepeat: "no-repeat",
   backgroundPosition: "right 0.75rem center",
-  border: "1px solid #a8a29c",
+  border: "1px solid var(--fm-hairline2)",
   borderRadius: "4px",
   boxSizing: "border-box",
-  color: "#e8e4dd",
+  color: "var(--fm-ink)",
   cursor: "pointer",
-  fontFamily: "monospace",
+  fontFamily: "var(--fm-mono)",
   fontSize: "0.82rem",
   outline: "none",
   padding: "0.5rem 2rem 0.5rem 0.75rem",
@@ -87,23 +87,23 @@ const selectStyle = {
 };
 
 const subheadStyle = {
-  color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.62rem",
+  color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem",
   letterSpacing: "0.12em", marginBottom: "0.5rem", textTransform: "uppercase",
 };
 
 const bodyTextStyle = {
-  color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem",
+  color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem",
   lineHeight: 1.55, margin: "0 0 0.9rem",
 };
 
 function inputStyle(focused) {
   return {
-    background: "#1a1f2e",
-    border: `1px solid ${focused ? "#c9a96e" : "#a8a29c"}`,
+    background: "var(--fm-bg-panel)",
+    border: `1px solid ${focused ? "var(--fm-brass)" : "var(--fm-ink-dim)"}`,
     borderRadius: "4px",
     boxSizing: "border-box",
-    color: "#e8e4dd",
-    fontFamily: "monospace",
+    color: "var(--fm-ink)",
+    fontFamily: "var(--fm-mono)",
     fontSize: "0.82rem",
     outline: "none",
     padding: "0.5rem 0.75rem",
@@ -251,8 +251,8 @@ function ProfileSettings() {
 
   return (
     <div style={{ maxWidth: "560px" }}>
-      <h2 style={{ color: "#e8e4dd", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.25rem", fontWeight: "normal", margin: "0 0 0.3rem" }}>Profile</h2>
-      <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.75rem", margin: "0 0 2rem" }}>
+      <h2 style={{ color: "var(--fm-ink)", borderBottom: "var(--fm-border)", fontFamily: "var(--fm-serif)", fontSize: "1.25rem", fontWeight: 400, margin: "0 0 1.25rem", paddingBottom: "0.6rem" }}>Profile</h2>
+      <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", margin: "0 0 2rem" }}>
         Switch between profiles to use different data sets. Each profile's data is saved independently — switching away and back restores it exactly as you left it.
       </p>
 
@@ -269,7 +269,7 @@ function ProfileSettings() {
       </div>
 
       {/* Profile description card */}
-      <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "4px", marginBottom: "1.5rem", padding: "0.9rem 1rem" }}>
+      <div style={{ background: "var(--fm-bg-raised)", border: "1px solid var(--fm-hairline)", borderRadius: "4px", marginBottom: "1.5rem", padding: "0.9rem 1rem" }}>
         {renamingKey === selected ? (
           <input
             autoFocus
@@ -284,33 +284,33 @@ function ProfileSettings() {
             style={{ ...inputStyle(renameFocused), marginBottom: "0.35rem" }}
           />
         ) : (
-          <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.12em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
+          <div style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.12em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
             {selectedMeta?.label}
           </div>
         )}
-        <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.78rem", lineHeight: 1.55, margin: 0 }}>
+        <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.78rem", lineHeight: 1.55, margin: 0 }}>
           {selectedMeta?.description}
         </p>
         <div style={{ alignItems: "center", display: "flex", gap: "0.75rem", marginTop: "0.6rem" }}>
           {selected === activeProfile && (
             <div style={{ alignItems: "center", display: "flex", gap: "0.4rem" }}>
-              <span style={{ background: "#c9a96e", borderRadius: "50%", display: "inline-block", height: "6px", width: "6px" }} />
-              <span style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.65rem", letterSpacing: "0.08em" }}>Currently active</span>
+              <span style={{ background: "var(--fm-brass)", borderRadius: "50%", display: "inline-block", height: "6px", width: "6px" }} />
+              <span style={{ color: "var(--fm-brass)", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", letterSpacing: "0.08em" }}>Currently active</span>
             </div>
           )}
           {isUserProfile && (
             <>
               <button
                 onClick={handleStartRename}
-                style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.65rem", letterSpacing: "0.05em", padding: 0, transition: "color 0.12s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
-                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", letterSpacing: "0.05em", padding: 0, transition: "color 0.12s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--fm-brass)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
               >Rename</button>
               <button
                 onClick={() => setConfirmDelete(true)}
-                style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.65rem", letterSpacing: "0.05em", padding: 0, transition: "color 0.12s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", letterSpacing: "0.05em", padding: 0, transition: "color 0.12s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
               >Delete</button>
             </>
           )}
@@ -319,11 +319,11 @@ function ProfileSettings() {
 
       {/* Delete confirmation */}
       {confirmDelete && (
-        <div style={{ background: "#1a1f2e", border: "1px solid #f8717140", borderRadius: "4px", marginBottom: "1.5rem", padding: "1rem 1.1rem" }}>
-          <div style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.78rem", marginBottom: "0.4rem" }}>
+        <div style={{ background: "var(--fm-bg-panel)", border: "1px solid #f8717140", borderRadius: "4px", marginBottom: "1.5rem", padding: "1rem 1.1rem" }}>
+          <div style={{ color: "var(--fm-red)", fontFamily: "var(--fm-mono)", fontSize: "0.78rem", marginBottom: "0.4rem" }}>
             Delete "{selectedMeta?.label}"?
           </div>
-          <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.5, margin: "0 0 0.9rem" }}>
+          <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", lineHeight: 1.5, margin: "0 0 0.9rem" }}>
             {selected === activeProfile
               ? "This will delete the profile and switch you to Foreman. This cannot be undone."
               : "All saved data for this profile will be permanently removed. This cannot be undone."}
@@ -331,15 +331,15 @@ function ProfileSettings() {
           <div style={{ display: "flex", gap: "0.6rem" }}>
             <button
               onClick={handleDeleteProfile}
-              style={{ background: "#f8717118", border: "1px solid #f8717140", borderRadius: "3px", color: "#f87171", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#f8717130"; e.currentTarget.style.borderColor = "#f87171"; }}
+              style={{ background: "#f8717118", border: "1px solid #f8717140", borderRadius: "3px", color: "var(--fm-red)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#f8717130"; e.currentTarget.style.borderColor = "var(--fm-red)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "#f8717118"; e.currentTarget.style.borderColor = "#f8717140"; }}
             >Delete</button>
             <button
               onClick={() => setConfirmDelete(false)}
-              style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#a8a29c"; }}
+              style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "3px", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
             >Cancel</button>
           </div>
         </div>
@@ -347,17 +347,17 @@ function ProfileSettings() {
 
       {/* Inline switch confirmation */}
       {isDirty && !confirmDelete && (
-        <div style={{ background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "4px", marginBottom: "1.5rem", padding: "1rem 1.1rem" }}>
-          <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.78rem", marginBottom: "0.4rem" }}>
-            Switch to <strong style={{ color: "#c9a96e" }}>{selectedMeta?.label}</strong>?
+        <div style={{ background: "var(--fm-bg-panel)", border: "1px solid var(--fm-hairline2)", borderRadius: "4px", marginBottom: "1.5rem", padding: "1rem 1.1rem" }}>
+          <div style={{ color: "var(--fm-ink)", fontFamily: "var(--fm-mono)", fontSize: "0.78rem", marginBottom: "0.4rem" }}>
+            Switch to <strong style={{ color: "var(--fm-brass)" }}>{selectedMeta?.label}</strong>?
           </div>
-          <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.5, margin: "0 0 0.9rem" }}>
-            Your current <strong style={{ color: "#8b7d6b" }}>{activeMeta?.label}</strong> data will be saved automatically. The page will reload with {selectedMeta?.label} data.
+          <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", lineHeight: 1.5, margin: "0 0 0.9rem" }}>
+            Your current <strong style={{ color: "var(--fm-brass-dim)" }}>{activeMeta?.label}</strong> data will be saved automatically. The page will reload with {selectedMeta?.label} data.
           </p>
           <div style={{ display: "flex", gap: "0.6rem" }}>
             <button
               onClick={handleSwitch} disabled={switching}
-              style={{ background: switching ? "transparent" : "#c9a96e22", border: `1px solid ${switching ? "#a8a29c" : "#c9a96e"}`, borderRadius: "3px", color: switching ? "#a8a29c" : "#c9a96e", cursor: switching ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
+              style={{ background: switching ? "transparent" : "#c9a96e22", border: `1px solid ${switching ? "var(--fm-ink-dim)" : "var(--fm-brass)"}`, borderRadius: "3px", color: switching ? "var(--fm-ink-dim)" : "var(--fm-brass)", cursor: switching ? "default" : "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
               onMouseEnter={e => { if (!switching) e.currentTarget.style.background = "#c9a96e35"; }}
               onMouseLeave={e => { if (!switching) e.currentTarget.style.background = "#c9a96e22"; }}
             >
@@ -365,9 +365,9 @@ function ProfileSettings() {
             </button>
             <button
               onClick={handleCancelSwitch} disabled={switching}
-              style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#a8a29c", cursor: switching ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
-              onMouseEnter={e => { if (!switching) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; } }}
-              onMouseLeave={e => { if (!switching) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#a8a29c"; } }}
+              style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "3px", color: "var(--fm-ink-dim)", cursor: switching ? "default" : "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+              onMouseEnter={e => { if (!switching) { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; } }}
+              onMouseLeave={e => { if (!switching) { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; } }}
             >Cancel</button>
           </div>
         </div>
@@ -377,13 +377,13 @@ function ProfileSettings() {
       {!showCreate ? (
         <button
           onClick={() => setShowCreate(true)}
-          style={{ background: "transparent", border: "1px solid #1e2330", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.05em", marginBottom: "2rem", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "#1e2330"; e.currentTarget.style.color = "#8b7d6b"; }}
+          style={{ background: "transparent", border: "1px solid var(--fm-hairline)", borderRadius: "3px", color: "var(--fm-brass-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", letterSpacing: "0.05em", marginBottom: "2rem", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-brass)"; e.currentTarget.style.color = "var(--fm-brass)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-hairline)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
         >+ New Profile</button>
       ) : (
-        <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "4px", marginBottom: "2rem", padding: "1rem 1.1rem" }}>
-          <div style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.12em", marginBottom: "0.85rem", textTransform: "uppercase" }}>New Profile</div>
+        <div style={{ background: "var(--fm-bg-raised)", border: "1px solid var(--fm-hairline)", borderRadius: "4px", marginBottom: "2rem", padding: "1rem 1.1rem" }}>
+          <div style={{ color: "var(--fm-brass)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.12em", marginBottom: "0.85rem", textTransform: "uppercase" }}>New Profile</div>
 
           <div style={{ marginBottom: "0.85rem" }}>
             <label style={labelStyle}>Profile Name</label>
@@ -404,7 +404,7 @@ function ProfileSettings() {
 
           <div style={{ marginBottom: "1rem" }}>
             <label style={labelStyle}>Starting Content</label>
-            <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", lineHeight: 1.5, margin: "0 0 0.65rem" }}>
+            <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.68rem", lineHeight: 1.5, margin: "0 0 0.65rem" }}>
               New profiles always start with no chores, to dos, or projects. Choose whether to include default maintenance content.
             </p>
             <label style={{ alignItems: "flex-start", cursor: "pointer", display: "flex", gap: "0.6rem", marginBottom: "0.5rem" }}>
@@ -412,11 +412,11 @@ function ProfileSettings() {
                 type="checkbox"
                 checked={seedInventory}
                 onChange={e => { setSeedInventory(e.target.checked); if (!e.target.checked) setSeedTasks(false); }}
-                style={{ accentColor: "#c9a96e", flexShrink: 0, marginTop: "0.15rem" }}
+                style={{ accentColor: "var(--fm-brass)", flexShrink: 0, marginTop: "0.15rem" }}
               />
               <div>
-                <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.72rem" }}>Default categories & items</div>
-                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem", marginTop: "0.1rem" }}>Include the default inventory structure (HVAC, Plumbing, Exterior, etc.)</div>
+                <div style={{ color: "var(--fm-ink)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem" }}>Default categories & items</div>
+                <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", marginTop: "0.1rem" }}>Include the default inventory structure (HVAC, Plumbing, Exterior, etc.)</div>
               </div>
             </label>
             <label style={{ alignItems: "flex-start", cursor: seedInventory ? "pointer" : "default", display: "flex", gap: "0.6rem", opacity: seedInventory ? 1 : 0.4 }}>
@@ -425,11 +425,11 @@ function ProfileSettings() {
                 checked={seedTasks && seedInventory}
                 disabled={!seedInventory}
                 onChange={e => setSeedTasks(e.target.checked)}
-                style={{ accentColor: "#c9a96e", flexShrink: 0, marginTop: "0.15rem" }}
+                style={{ accentColor: "var(--fm-brass)", flexShrink: 0, marginTop: "0.15rem" }}
               />
               <div>
-                <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.72rem" }}>Default maintenance tasks</div>
-                <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem", marginTop: "0.1rem" }}>Include pre-built task schedules for each item (requires categories & items)</div>
+                <div style={{ color: "var(--fm-ink)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem" }}>Default maintenance tasks</div>
+                <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", marginTop: "0.1rem" }}>Include pre-built task schedules for each item (requires categories & items)</div>
               </div>
             </label>
           </div>
@@ -438,23 +438,23 @@ function ProfileSettings() {
             <button
               onClick={handleCreate}
               disabled={!newName.trim() || creating}
-              style={{ background: newName.trim() && !creating ? "#c9a96e22" : "transparent", border: `1px solid ${newName.trim() && !creating ? "#c9a96e" : "#a8a29c"}`, borderRadius: "3px", color: newName.trim() && !creating ? "#c9a96e" : "#a8a29c", cursor: newName.trim() && !creating ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
+              style={{ background: newName.trim() && !creating ? "#c9a96e22" : "transparent", border: `1px solid ${newName.trim() && !creating ? "var(--fm-brass)" : "var(--fm-ink-dim)"}`, borderRadius: "3px", color: newName.trim() && !creating ? "var(--fm-brass)" : "var(--fm-ink-dim)", cursor: newName.trim() && !creating ? "pointer" : "default", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
               onMouseEnter={e => { if (newName.trim() && !creating) e.currentTarget.style.background = "#c9a96e35"; }}
               onMouseLeave={e => { if (newName.trim() && !creating) e.currentTarget.style.background = "#c9a96e22"; }}
             >{creating ? "Creating…" : "Create Profile"}</button>
             <button
               onClick={handleCancelCreate}
               disabled={creating}
-              style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#a8a29c", cursor: creating ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
-              onMouseEnter={e => { if (!creating) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; } }}
-              onMouseLeave={e => { if (!creating) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#a8a29c"; } }}
+              style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "3px", color: "var(--fm-ink-dim)", cursor: creating ? "default" : "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+              onMouseEnter={e => { if (!creating) { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; } }}
+              onMouseLeave={e => { if (!creating) { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; } }}
             >Cancel</button>
           </div>
         </div>
       )}
 
       {/* ── Divider ── */}
-      <div style={{ borderTop: "1px solid #1e2330", margin: "0 0 1.75rem" }} />
+      <div style={{ borderTop: "1px solid var(--fm-hairline)", margin: "0 0 1.75rem" }} />
 
       {/* ── Export ── */}
       <div style={{ marginBottom: "2rem" }}>
@@ -473,22 +473,22 @@ function ProfileSettings() {
             onClick={() => exportProfile(exportTarget)}
             disabled={!exportHasData}
             style={{
-              background: exportHasData ? "#1a1f2e" : "transparent",
-              border: `1px solid ${exportHasData ? "#a8a29c" : "#1e2330"}`,
+              background: exportHasData ? "var(--fm-bg-panel)" : "transparent",
+              border: `1px solid ${exportHasData ? "var(--fm-ink-dim)" : "var(--fm-hairline)"}`,
               borderRadius: "3px",
-              color: exportHasData ? "#8b7d6b" : "#a8a29c",
+              color: exportHasData ? "var(--fm-brass-dim)" : "var(--fm-ink-dim)",
               cursor: exportHasData ? "pointer" : "default",
-              fontFamily: "monospace", fontSize: "0.75rem",
+              fontFamily: "var(--fm-mono)", fontSize: "0.75rem",
               letterSpacing: "0.05em", padding: "0.5rem 1.1rem", transition: "all 0.15s",
             }}
-            onMouseEnter={e => { if (exportHasData) { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; } }}
-            onMouseLeave={e => { if (exportHasData) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; } }}
+            onMouseEnter={e => { if (exportHasData) { e.currentTarget.style.borderColor = "var(--fm-brass)"; e.currentTarget.style.color = "var(--fm-brass)"; } }}
+            onMouseLeave={e => { if (exportHasData) { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; } }}
           >
             Download
           </button>
         </div>
         {!exportHasData && (
-          <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.67rem", margin: "0.5rem 0 0" }}>
+          <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.67rem", margin: "0.5rem 0 0" }}>
             No data saved for this profile yet. Switch to it first to generate data.
           </p>
         )}
@@ -503,41 +503,41 @@ function ProfileSettings() {
 
         {importSuccess && (
           <div style={{ alignItems: "center", background: "#4ade8010", border: "1px solid #4ade8030", borderRadius: "4px", display: "flex", gap: "0.5rem", marginBottom: "0.9rem", padding: "0.6rem 0.85rem" }}>
-            <span style={{ color: "#4ade80", fontFamily: "monospace", fontSize: "0.72rem" }}>Import complete — data saved to {importTargetMeta?.label}.</span>
-            <button onClick={() => setImportSuccess(false)} style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.65rem", marginLeft: "auto", padding: 0 }}>×</button>
+            <span style={{ color: "var(--fm-green)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem" }}>Import complete — data saved to {importTargetMeta?.label}.</span>
+            <button onClick={() => setImportSuccess(false)} style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", marginLeft: "auto", padding: 0 }}>×</button>
           </div>
         )}
 
         {!importFile ? (
           <button
             onClick={() => fileInputRef.current?.click()}
-            style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.5rem 1.1rem", transition: "all 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
+            style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "3px", color: "var(--fm-brass-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.5rem 1.1rem", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-brass)"; e.currentTarget.style.color = "var(--fm-brass)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
           >
             Choose File…
           </button>
         ) : importFile === "error" ? (
           <div style={{ background: "#f8717110", border: "1px solid #f8717130", borderRadius: "4px", padding: "0.75rem 1rem" }}>
-            <div style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.72rem", marginBottom: "0.5rem" }}>
+            <div style={{ color: "var(--fm-red)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", marginBottom: "0.5rem" }}>
               Invalid file — make sure you're importing a Foreman backup.
             </div>
             <button
               onClick={() => { setImportFile(null); fileInputRef.current?.click(); }}
-              style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.67rem", padding: 0 }}
-              onMouseEnter={e => e.currentTarget.style.color = "#8b7d6b"}
-              onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+              style={{ background: "transparent", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.67rem", padding: 0 }}
+              onMouseEnter={e => e.currentTarget.style.color = "var(--fm-brass-dim)"}
+              onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
             >
               Try again
             </button>
           </div>
         ) : (
-          <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "4px", padding: "0.9rem 1rem" }}>
+          <div style={{ background: "var(--fm-bg-raised)", border: "1px solid var(--fm-hairline)", borderRadius: "4px", padding: "0.9rem 1rem" }}>
             <div style={{ alignItems: "baseline", display: "flex", gap: "0.5rem", marginBottom: "0.9rem" }}>
-              <span style={{ color: "#4ade80", fontFamily: "monospace", fontSize: "0.65rem" }}>✓</span>
-              <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem" }}>{importFile.name}</span>
+              <span style={{ color: "var(--fm-green)", fontFamily: "var(--fm-mono)", fontSize: "0.65rem" }}>✓</span>
+              <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem" }}>{importFile.name}</span>
               {importFile.data.label && (
-                <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.65rem" }}>· from {importFile.data.label}</span>
+                <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.65rem" }}>· from {importFile.data.label}</span>
               )}
             </div>
             <div style={{ marginBottom: "0.75rem" }}>
@@ -546,7 +546,7 @@ function ProfileSettings() {
                 {allProfiles.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
               </select>
             </div>
-            <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", lineHeight: 1.5, margin: "0 0 0.85rem" }}>
+            <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.68rem", lineHeight: 1.5, margin: "0 0 0.85rem" }}>
               {importTarget === activeProfile
                 ? `This will replace all current ${activeMeta?.label} data. The page will reload.`
                 : `This will replace the saved ${importTargetMeta?.label} snapshot. No reload needed.`
@@ -555,7 +555,7 @@ function ProfileSettings() {
             <div style={{ display: "flex", gap: "0.6rem" }}>
               <button
                 onClick={handleImport} disabled={importing}
-                style={{ background: importing ? "transparent" : "#c9a96e22", border: `1px solid ${importing ? "#a8a29c" : "#c9a96e"}`, borderRadius: "3px", color: importing ? "#a8a29c" : "#c9a96e", cursor: importing ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
+                style={{ background: importing ? "transparent" : "#c9a96e22", border: `1px solid ${importing ? "var(--fm-ink-dim)" : "var(--fm-brass)"}`, borderRadius: "3px", color: importing ? "var(--fm-ink-dim)" : "var(--fm-brass)", cursor: importing ? "default" : "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
                 onMouseEnter={e => { if (!importing) e.currentTarget.style.background = "#c9a96e35"; }}
                 onMouseLeave={e => { if (!importing) e.currentTarget.style.background = "#c9a96e22"; }}
               >
@@ -563,9 +563,9 @@ function ProfileSettings() {
               </button>
               <button
                 onClick={handleCancelImport} disabled={importing}
-                style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#a8a29c", cursor: importing ? "default" : "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
-                onMouseEnter={e => { if (!importing) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; } }}
-                onMouseLeave={e => { if (!importing) { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#a8a29c"; } }}
+                style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "3px", color: "var(--fm-ink-dim)", cursor: importing ? "default" : "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+                onMouseEnter={e => { if (!importing) { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; } }}
+                onMouseLeave={e => { if (!importing) { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; } }}
               >
                 Cancel
               </button>
@@ -617,47 +617,47 @@ function NotificationsSettings() {
 
   return (
     <div style={{ maxWidth: "560px" }}>
-      <h2 style={{ color: "#e8e4dd", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.25rem", fontWeight: "normal", margin: "0 0 0.3rem" }}>Notifications</h2>
-      <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.75rem", margin: "0 0 2rem" }}>
+      <h2 style={{ color: "var(--fm-ink)", borderBottom: "var(--fm-border)", fontFamily: "var(--fm-serif)", fontSize: "1.25rem", fontWeight: 400, margin: "0 0 1.25rem", paddingBottom: "0.6rem" }}>Notifications</h2>
+      <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", margin: "0 0 2rem" }}>
         Get reminders about upcoming and overdue maintenance tasks delivered to your Discord server.
       </p>
 
       {/* Discord card */}
-      <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", padding: "1.1rem 1.25rem" }}>
+      <div style={{ background: "var(--fm-bg-raised)", border: "1px solid var(--fm-hairline)", borderRadius: "6px", padding: "1.1rem 1.25rem" }}>
         <div style={{ alignItems: "center", display: "flex", gap: "0.6rem", marginBottom: "0.4rem" }}>
           <svg width="18" height="18" viewBox="0 0 71 55" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0, opacity: 0.7 }}>
             <path d="M60.1 4.9A58.5 58.5 0 0 0 45.8.7a.2.2 0 0 0-.2.1 40.7 40.7 0 0 0-1.8 3.7 54 54 0 0 0-16.2 0A38.3 38.3 0 0 0 25.8.8a.2.2 0 0 0-.2-.1A58.4 58.4 0 0 0 11.3 5a.2.2 0 0 0-.1.1C1.6 19.1-1 32.8.3 46.4a.2.2 0 0 0 .1.2 58.8 58.8 0 0 0 17.7 9 .2.2 0 0 0 .2-.1 42 42 0 0 0 3.6-5.9.2.2 0 0 0-.1-.3 38.7 38.7 0 0 1-5.5-2.6.2.2 0 0 1 0-.4c.4-.3.7-.6 1.1-.9a.2.2 0 0 1 .2 0c11.5 5.3 24 5.3 35.4 0a.2.2 0 0 1 .2 0c.4.3.8.6 1.1.9a.2.2 0 0 1 0 .4 36 36 0 0 1-5.5 2.6.2.2 0 0 0-.1.3 47.2 47.2 0 0 0 3.6 5.9.2.2 0 0 0 .2.1 58.7 58.7 0 0 0 17.8-9 .2.2 0 0 0 .1-.2C73.5 30.6 69.2 17 60.2 5a.2.2 0 0 0-.1-.1ZM23.7 38.3c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.3 6.4 7.2c0 4-2.9 7.2-6.4 7.2Zm23.7 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2 6.5 3.3 6.4 7.2c0 4-2.9 7.2-6.4 7.2Z" fill="#5865F2"/>
           </svg>
-          <span style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.82rem" }}>Discord</span>
+          <span style={{ color: "var(--fm-ink)", fontFamily: "var(--fm-mono)", fontSize: "0.82rem" }}>Discord</span>
           {isConnected && (
             <div style={{ alignItems: "center", display: "flex", gap: "0.35rem", marginLeft: "auto" }}>
-              <span style={{ background: "#4ade80", borderRadius: "50%", display: "inline-block", height: "6px", width: "6px" }} />
-              <span style={{ color: "#4ade80", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.08em" }}>Connected</span>
+              <span style={{ background: "var(--fm-green)", borderRadius: "50%", display: "inline-block", height: "6px", width: "6px" }} />
+              <span style={{ color: "var(--fm-green)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", letterSpacing: "0.08em" }}>Connected</span>
             </div>
           )}
         </div>
-        <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.5, margin: "0 0 0.85rem" }}>
+        <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", lineHeight: 1.5, margin: "0 0 0.85rem" }}>
           {isConnected
             ? "Discord webhook is configured. Reminders will be posted to your channel on the schedule below."
             : "Connect a Discord webhook to receive daily maintenance reminders in your server."}
         </p>
         {isConnected && (
-          <div style={{ background: "#0f1117", border: "1px solid #1e2330", borderRadius: "4px", fontFamily: "monospace", fontSize: "0.68rem", marginBottom: "0.85rem", padding: "0.6rem 0.75rem" }}>
+          <div style={{ background: "var(--fm-bg)", border: "1px solid var(--fm-hairline)", borderRadius: "4px", fontFamily: "var(--fm-mono)", fontSize: "0.68rem", marginBottom: "0.85rem", padding: "0.6rem 0.75rem" }}>
             <div style={{ alignItems: "center", display: "flex", gap: "0.5rem", marginBottom: "0.25rem" }}>
-              <span style={{ color: "#8b7d6b", minWidth: "70px" }}>Send time</span>
-              <span style={{ color: "#a8a29c" }}>{formatHour12(getSendHourLocal())}</span>
+              <span style={{ color: "var(--fm-brass-dim)", minWidth: "70px" }}>Send time</span>
+              <span style={{ color: "var(--fm-ink-dim)" }}>{formatHour12(getSendHourLocal())}</span>
             </div>
             <div style={{ alignItems: "center", display: "flex", gap: "0.5rem" }}>
-              <span style={{ color: "#8b7d6b", minWidth: "70px" }}>Lead days</span>
-              <span style={{ color: "#a8a29c" }}>{getLeadDays()} {getLeadDays() === 1 ? "day" : "days"} before due</span>
+              <span style={{ color: "var(--fm-brass-dim)", minWidth: "70px" }}>Lead days</span>
+              <span style={{ color: "var(--fm-ink-dim)" }}>{getLeadDays()} {getLeadDays() === 1 ? "day" : "days"} before due</span>
             </div>
           </div>
         )}
         <button
           onClick={openModal}
-          style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.05em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
+          style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "3px", color: "var(--fm-brass-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", letterSpacing: "0.05em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-brass)"; e.currentTarget.style.color = "var(--fm-brass)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
         >
           {isConnected ? "Edit" : "Set up Discord"}
         </button>
@@ -669,14 +669,14 @@ function NotificationsSettings() {
           onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}
           style={{ alignItems: "center", background: "rgba(0,0,0,0.75)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 1000 }}
         >
-          <div style={{ background: "#0f1117", border: "1px solid #a8a29c", borderRadius: "8px", maxWidth: "480px", padding: "1.75rem", width: "90vw" }}>
+          <div style={{ background: "var(--fm-bg)", border: "1px solid var(--fm-hairline2)", borderRadius: "8px", maxWidth: "480px", padding: "1.75rem", width: "90vw" }}>
             <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-              <span style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>Discord Notifications</span>
+              <span style={{ color: "var(--fm-brass)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase" }}>Discord Notifications</span>
               <button
                 onClick={() => setShowModal(false)}
-                style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "1rem", lineHeight: 1, padding: "0.1rem 0.3rem", transition: "color 0.12s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "1rem", lineHeight: 1, padding: "0.1rem 0.3rem", transition: "color 0.12s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
               >×</button>
             </div>
 
@@ -691,7 +691,7 @@ function NotificationsSettings() {
                 placeholder="https://discord.com/api/webhooks/…"
                 style={inputStyle(webhookFocused)}
               />
-              <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem", lineHeight: 1.5, margin: "0.4rem 0 0" }}>
+              <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", lineHeight: 1.5, margin: "0.4rem 0 0" }}>
                 Server Settings → Integrations → Webhooks → New Webhook → Copy Webhook URL
               </p>
             </div>
@@ -708,7 +708,7 @@ function NotificationsSettings() {
                   <option key={h} value={h}>{formatHour12(h)}</option>
                 ))}
               </select>
-              <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem", margin: "0.4rem 0 0" }}>
+              <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", margin: "0.4rem 0 0" }}>
                 Time in your local timezone. Reminders are sent once daily.
               </p>
             </div>
@@ -725,9 +725,9 @@ function NotificationsSettings() {
                   onChange={e => setDraftLeadDays(Math.max(0, Math.min(30, Number(e.target.value))))}
                   style={{ ...inputStyle(false), width: "72px" }}
                 />
-                <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem" }}>days before a task is due</span>
+                <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem" }}>days before a task is due</span>
               </div>
-              <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem", margin: "0.4rem 0 0" }}>
+              <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", margin: "0.4rem 0 0" }}>
                 Set to 0 to only be notified on the due date itself.
               </p>
             </div>
@@ -737,23 +737,23 @@ function NotificationsSettings() {
                 {isConnected && (
                   <button
                     onClick={handleDisconnect}
-                    style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.67rem", padding: 0, transition: "color 0.12s" }}
-                    onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                    style={{ background: "transparent", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.67rem", padding: 0, transition: "color 0.12s" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"}
+                    onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
                   >Disconnect</button>
                 )}
               </div>
               <div style={{ display: "flex", gap: "0.6rem" }}>
                 <button
                   onClick={() => setShowModal(false)}
-                  style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#a8a29c"; }}
+                  style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "3px", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
                 >Cancel</button>
                 <button
                   onClick={handleSave}
                   disabled={!draftWebhook.trim()}
-                  style={{ background: draftWebhook.trim() ? "#c9a96e22" : "transparent", border: `1px solid ${draftWebhook.trim() ? "#c9a96e" : "#a8a29c"}`, borderRadius: "3px", color: draftWebhook.trim() ? "#c9a96e" : "#a8a29c", cursor: draftWebhook.trim() ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
+                  style={{ background: draftWebhook.trim() ? "#c9a96e22" : "transparent", border: `1px solid ${draftWebhook.trim() ? "var(--fm-brass)" : "var(--fm-ink-dim)"}`, borderRadius: "3px", color: draftWebhook.trim() ? "var(--fm-brass)" : "var(--fm-ink-dim)", cursor: draftWebhook.trim() ? "pointer" : "default", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.45rem 1.1rem", transition: "all 0.15s" }}
                   onMouseEnter={e => { if (draftWebhook.trim()) e.currentTarget.style.background = "#c9a96e35"; }}
                   onMouseLeave={e => { if (draftWebhook.trim()) e.currentTarget.style.background = "#c9a96e22"; }}
                 >Save</button>
@@ -772,28 +772,28 @@ function NotificationsSettings() {
 function IntegrationsSettings() {
   return (
     <div style={{ maxWidth: "560px" }}>
-      <h2 style={{ color: "#e8e4dd", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.25rem", fontWeight: "normal", margin: "0 0 0.3rem" }}>Integrations</h2>
-      <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.75rem", margin: "0 0 2rem" }}>
+      <h2 style={{ color: "var(--fm-ink)", borderBottom: "var(--fm-border)", fontFamily: "var(--fm-serif)", fontSize: "1.25rem", fontWeight: 400, margin: "0 0 1.25rem", paddingBottom: "0.6rem" }}>Integrations</h2>
+      <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", margin: "0 0 2rem" }}>
         Connect Foreman with external tools to get your data where it needs to go.
       </p>
 
       {/* ICS Export card */}
-      <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", padding: "1.1rem 1.25rem" }}>
+      <div style={{ background: "var(--fm-bg-raised)", border: "1px solid var(--fm-hairline)", borderRadius: "6px", padding: "1.1rem 1.25rem" }}>
         <div style={{ alignItems: "center", display: "flex", gap: "0.75rem", marginBottom: "0.4rem" }}>
-          <span style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.82rem" }}>ICS Export</span>
+          <span style={{ color: "var(--fm-ink)", fontFamily: "var(--fm-mono)", fontSize: "0.82rem" }}>ICS Export</span>
           <span style={{
-            background: "#1e2330",
-            border: "1px solid #2a3040",
+            background: "var(--fm-hairline)",
+            border: "1px solid var(--fm-hairline2)",
             borderRadius: "3px",
-            color: "#a8a29c",
-            fontFamily: "monospace",
+            color: "var(--fm-ink-dim)",
+            fontFamily: "var(--fm-mono)",
             fontSize: "0.58rem",
             letterSpacing: "0.1em",
             padding: "0.15rem 0.5rem",
             textTransform: "uppercase",
           }}>Coming Soon</span>
         </div>
-        <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.55, margin: 0 }}>
+        <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", lineHeight: 1.55, margin: 0 }}>
           Export your maintenance schedule and chore due dates as a .ics file for import into Google Calendar, Apple Calendar, Outlook, or any other calendar application.
         </p>
       </div>
@@ -887,8 +887,8 @@ function HouseholdSettings() {
 
   return (
     <div style={{ maxWidth: "560px" }}>
-      <h2 style={{ color: "#e8e4dd", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.25rem", fontWeight: "normal", margin: "0 0 0.3rem" }}>Household</h2>
-      <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.75rem", margin: "0 0 2.25rem" }}>
+      <h2 style={{ color: "var(--fm-ink)", borderBottom: "var(--fm-border)", fontFamily: "var(--fm-serif)", fontSize: "1.25rem", fontWeight: 400, margin: "0 0 1.25rem", paddingBottom: "0.6rem" }}>Household</h2>
+      <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", margin: "0 0 2.25rem" }}>
         Basic information about your home and the people who live in it.
       </p>
 
@@ -897,7 +897,7 @@ function HouseholdSettings() {
         <div style={subheadStyle}>Address</div>
 
         {editingAddress ? (
-          <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", padding: "1.1rem 1.25rem" }}>
+          <div style={{ background: "var(--fm-bg-raised)", border: "1px solid var(--fm-hairline)", borderRadius: "6px", padding: "1.1rem 1.25rem" }}>
             <div style={{ marginBottom: "0.7rem" }}>
               {field("street", "Street address", { style: { width: "100%" } })}
             </div>
@@ -914,22 +914,22 @@ function HouseholdSettings() {
                 {hasAddress && (
                   <button
                     onClick={handleClearAddress}
-                    style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.67rem", padding: 0, transition: "color 0.12s" }}
-                    onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                    style={{ background: "transparent", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.67rem", padding: 0, transition: "color 0.12s" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"}
+                    onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
                   >Clear address</button>
                 )}
               </div>
               <div style={{ display: "flex", gap: "0.6rem" }}>
                 <button
                   onClick={() => setEditingAddress(false)}
-                  style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#a8a29c"; }}
+                  style={{ background: "transparent", border: "1px solid var(--fm-hairline2)", borderRadius: "3px", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-ink-dim)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
                 >Cancel</button>
                 <button
                   onClick={handleSaveAddress}
-                  style={{ background: "#c9a96e22", border: "1px solid #c9a96e", borderRadius: "3px", color: "#c9a96e", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
+                  style={{ background: "#c9a96e22", border: "1px solid #c9a96e", borderRadius: "3px", color: "var(--fm-brass)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", letterSpacing: "0.05em", padding: "0.4rem 0.9rem", transition: "all 0.15s" }}
                   onMouseEnter={e => e.currentTarget.style.background = "#c9a96e35"}
                   onMouseLeave={e => e.currentTarget.style.background = "#c9a96e22"}
                 >Save</button>
@@ -937,27 +937,27 @@ function HouseholdSettings() {
             </div>
           </div>
         ) : hasAddress ? (
-          <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", padding: "1.1rem 1.25rem" }}>
+          <div style={{ background: "var(--fm-bg-raised)", border: "1px solid var(--fm-hairline)", borderRadius: "6px", padding: "1.1rem 1.25rem" }}>
             <div style={{ alignItems: "flex-start", display: "flex", gap: "1rem", justifyContent: "space-between" }}>
-              <address style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.78rem", fontStyle: "normal", lineHeight: 1.65 }}>
-                <div style={{ color: "#e8e4dd" }}>{address.street}</div>
+              <address style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.78rem", fontStyle: "normal", lineHeight: 1.65 }}>
+                <div style={{ color: "var(--fm-ink)" }}>{address.street}</div>
                 {address.street2 && <div>{address.street2}</div>}
                 <div>{[address.city, address.state].filter(Boolean).join(", ")}{address.zip ? ` ${address.zip}` : ""}</div>
               </address>
               <button
                 onClick={startEditAddress}
-                style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", flexShrink: 0, fontFamily: "monospace", fontSize: "0.67rem", letterSpacing: "0.05em", padding: 0, transition: "color 0.12s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
-                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                style={{ background: "transparent", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.67rem", letterSpacing: "0.05em", padding: 0, transition: "color 0.12s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--fm-brass)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
               >Edit</button>
             </div>
           </div>
         ) : (
           <button
             onClick={startEditAddress}
-            style={{ alignItems: "center", background: "#13161f", border: "1px dashed #2a3040", borderRadius: "6px", color: "#4a4458", cursor: "pointer", display: "flex", fontFamily: "monospace", fontSize: "0.72rem", gap: "0.5rem", letterSpacing: "0.05em", padding: "1rem 1.25rem", textAlign: "left", transition: "all 0.15s", width: "100%" }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e50"; e.currentTarget.style.color = "#8b7d6b"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2a3040"; e.currentTarget.style.color = "#4a4458"; }}
+            style={{ alignItems: "center", background: "var(--fm-bg-raised)", border: "1px dashed #2a3040", borderRadius: "6px", color: "#4a4458", cursor: "pointer", display: "flex", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", gap: "0.5rem", letterSpacing: "0.05em", padding: "1rem 1.25rem", textAlign: "left", transition: "all 0.15s", width: "100%" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e50"; e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-hairline2)"; e.currentTarget.style.color = "#4a4458"; }}
           >
             + Add address
           </button>
@@ -967,13 +967,13 @@ function HouseholdSettings() {
       {/* ── Members ── */}
       <div>
         <div style={subheadStyle}>Household Members</div>
-        <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.72rem", lineHeight: 1.5, margin: "0 0 0.85rem" }}>
+        <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", lineHeight: 1.5, margin: "0 0 0.85rem" }}>
           People who live in this home. Double-click a name to edit it.
         </p>
 
-        <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", overflow: "hidden" }}>
+        <div style={{ background: "var(--fm-bg-raised)", border: "1px solid var(--fm-hairline)", borderRadius: "6px", overflow: "hidden" }}>
           {members.length === 0 && !addingMember && (
-            <div style={{ color: "#4a4458", fontFamily: "monospace", fontSize: "0.72rem", padding: "1.25rem 1rem", textAlign: "center" }}>
+            <div style={{ color: "#4a4458", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", padding: "1.25rem 1rem", textAlign: "center" }}>
               No members added yet
             </div>
           )}
@@ -982,25 +982,25 @@ function HouseholdSettings() {
             <div key={member.id}>
               {/* Delete confirmation inline */}
               {confirmDeleteId === member.id ? (
-                <div style={{ alignItems: "center", background: "#1a1218", borderBottom: idx < members.length - 1 || addingMember ? "1px solid #1e2330" : "none", display: "flex", gap: "0.75rem", padding: "0.6rem 1rem" }}>
-                  <span style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.68rem", flex: 1 }}>
+                <div style={{ alignItems: "center", background: "#1a1218", borderBottom: idx < members.length - 1 || addingMember ? "1px solid var(--fm-hairline)" : "none", display: "flex", gap: "0.75rem", padding: "0.6rem 1rem" }}>
+                  <span style={{ color: "var(--fm-red)", fontFamily: "var(--fm-mono)", fontSize: "0.68rem", flex: 1 }}>
                     Remove {member.name}?
                   </span>
                   <button
                     onClick={() => handleDeleteMember(member.id)}
-                    style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontFamily: "monospace", fontSize: "0.68rem", padding: "0.15rem 0.3rem", transition: "color 0.12s" }}
+                    style={{ background: "transparent", border: "none", color: "var(--fm-red)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.68rem", padding: "0.15rem 0.3rem", transition: "color 0.12s" }}
                     onMouseEnter={e => e.currentTarget.style.color = "#fca5a5"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#f87171"}
+                    onMouseLeave={e => e.currentTarget.style.color = "var(--fm-red)"}
                   >Remove</button>
                   <button
                     onClick={() => setConfirmDeleteId(null)}
-                    style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.68rem", padding: "0.15rem 0.3rem", transition: "color 0.12s" }}
-                    onMouseEnter={e => e.currentTarget.style.color = "#e8e4dd"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                    style={{ background: "transparent", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.68rem", padding: "0.15rem 0.3rem", transition: "color 0.12s" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--fm-ink)"}
+                    onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
                   >Cancel</button>
                 </div>
               ) : editingMemberId === member.id ? (
-                <div style={{ alignItems: "center", background: "#161920", borderBottom: idx < members.length - 1 || addingMember ? "1px solid #1e2330" : "none", display: "flex", gap: "0.5rem", padding: "0.45rem 1rem" }}>
+                <div style={{ alignItems: "center", background: "#161920", borderBottom: idx < members.length - 1 || addingMember ? "1px solid var(--fm-hairline)" : "none", display: "flex", gap: "0.5rem", padding: "0.45rem 1rem" }}>
                   <input
                     autoFocus
                     value={editingMemberValue}
@@ -1019,20 +1019,20 @@ function HouseholdSettings() {
                   onMouseEnter={() => setHoveredMemberId(member.id)}
                   onMouseLeave={() => setHoveredMemberId(null)}
                   onDoubleClick={() => { setEditingMemberId(member.id); setEditingMemberValue(member.name); }}
-                  style={{ alignItems: "center", background: idx % 2 === 0 ? "#13161f" : "#161920", borderBottom: idx < members.length - 1 || addingMember ? "1px solid #1e2330" : "none", cursor: "default", display: "flex", gap: "0.75rem", padding: "0.6rem 1rem", userSelect: "none" }}
+                  style={{ alignItems: "center", background: idx % 2 === 0 ? "var(--fm-bg-raised)" : "#161920", borderBottom: idx < members.length - 1 || addingMember ? "1px solid var(--fm-hairline)" : "none", cursor: "default", display: "flex", gap: "0.75rem", padding: "0.6rem 1rem", userSelect: "none" }}
                 >
-                  <div style={{ alignItems: "center", background: "#1e2330", borderRadius: "50%", color: "#a8a29c", display: "flex", flexShrink: 0, fontFamily: "monospace", fontSize: "0.62rem", height: "24px", justifyContent: "center", width: "24px" }}>
+                  <div style={{ alignItems: "center", background: "var(--fm-hairline)", borderRadius: "50%", color: "var(--fm-ink-dim)", display: "flex", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.62rem", height: "24px", justifyContent: "center", width: "24px" }}>
                     {member.name.slice(0, 1).toUpperCase()}
                   </div>
-                  <span style={{ color: "#e8e4dd", flex: 1, fontFamily: "monospace", fontSize: "0.78rem" }}>
+                  <span style={{ color: "var(--fm-ink)", flex: 1, fontFamily: "var(--fm-mono)", fontSize: "0.78rem" }}>
                     {member.name}
                   </span>
                   {hoveredMemberId === member.id && (
                     <button
                       onClick={() => setConfirmDeleteId(member.id)}
-                      style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.12s" }}
-                      onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                      onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                      style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.12s" }}
+                      onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"}
+                      onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
                     >×</button>
                   )}
                 </div>
@@ -1042,7 +1042,7 @@ function HouseholdSettings() {
 
           {/* Add member row */}
           {addingMember ? (
-            <div style={{ alignItems: "center", borderTop: members.length > 0 ? "1px solid #1e2330" : "none", display: "flex", gap: "0.5rem", padding: "0.45rem 1rem" }}>
+            <div style={{ alignItems: "center", borderTop: members.length > 0 ? "1px solid var(--fm-hairline)" : "none", display: "flex", gap: "0.5rem", padding: "0.45rem 1rem" }}>
               <input
                 autoFocus
                 value={newMemberName}
@@ -1059,22 +1059,22 @@ function HouseholdSettings() {
               <button
                 onClick={handleAddMember}
                 disabled={!newMemberName.trim()}
-                style={{ background: newMemberName.trim() ? "#c9a96e22" : "transparent", border: `1px solid ${newMemberName.trim() ? "#c9a96e" : "#a8a29c"}`, borderRadius: "3px", color: newMemberName.trim() ? "#c9a96e" : "#a8a29c", cursor: newMemberName.trim() ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.72rem", padding: "0.3rem 0.65rem", transition: "all 0.15s", whiteSpace: "nowrap" }}
+                style={{ background: newMemberName.trim() ? "#c9a96e22" : "transparent", border: `1px solid ${newMemberName.trim() ? "var(--fm-brass)" : "var(--fm-ink-dim)"}`, borderRadius: "3px", color: newMemberName.trim() ? "var(--fm-brass)" : "var(--fm-ink-dim)", cursor: newMemberName.trim() ? "pointer" : "default", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", padding: "0.3rem 0.65rem", transition: "all 0.15s", whiteSpace: "nowrap" }}
               >Add</button>
               <button
                 onClick={() => { setAddingMember(false); setNewMemberName(""); }}
-                style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.12s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#e8e4dd"}
-                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                style={{ background: "transparent", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.12s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--fm-ink)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
               >×</button>
             </div>
           ) : (
-            <div style={{ borderTop: members.length > 0 ? "1px solid #1e2330" : "none", padding: "0.45rem 1rem" }}>
+            <div style={{ borderTop: members.length > 0 ? "1px solid var(--fm-hairline)" : "none", padding: "0.45rem 1rem" }}>
               <button
                 onClick={() => setAddingMember(true)}
-                style={{ background: "none", border: "none", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.05em", padding: "0.2rem 0", transition: "color 0.15s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
-                onMouseLeave={e => e.currentTarget.style.color = "#8b7d6b"}
+                style={{ background: "none", border: "none", color: "var(--fm-brass-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", letterSpacing: "0.05em", padding: "0.2rem 0", transition: "color 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--fm-brass)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--fm-brass-dim)"}
               >+ Add Member</button>
             </div>
           )}
@@ -1312,27 +1312,27 @@ function UploadInspectionSettings() {
         document.body
       )}
 
-      <h2 style={{ color: "#e8e4dd", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.25rem", fontWeight: "normal", margin: "0 0 0.3rem" }}>Upload Inspection</h2>
-      <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.75rem", margin: "0 0 2rem" }}>
+      <h2 style={{ color: "var(--fm-ink)", borderBottom: "var(--fm-border)", fontFamily: "var(--fm-serif)", fontSize: "1.25rem", fontWeight: 400, margin: "0 0 1.25rem", paddingBottom: "0.6rem" }}>Upload Inspection</h2>
+      <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.75rem", margin: "0 0 2rem" }}>
         Upload a PDF copy of your home inspection report. Foreman will extract appliances, to dos, and projects for your review before adding anything to your profile.
       </p>
 
       {hasFile ? (
         /* ── File loaded ── */
-        <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", padding: "1.25rem" }}>
+        <div style={{ background: "var(--fm-bg-raised)", border: "1px solid var(--fm-hairline)", borderRadius: "6px", padding: "1.25rem" }}>
           <div style={{ alignItems: "flex-start", display: "flex", gap: "0.75rem" }}>
-            <div style={{ background: "#1a1f2e", border: "1px solid #2a3040", borderRadius: "4px", flexShrink: 0, padding: "0.5rem 0.6rem" }}>
+            <div style={{ background: "var(--fm-bg-panel)", border: "1px solid var(--fm-hairline2)", borderRadius: "4px", flexShrink: 0, padding: "0.5rem 0.6rem" }}>
               <svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 1H3a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8l-7-7Z" stroke="#a8a29c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 1v7h7" stroke="#a8a29c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <text x="3.5" y="19" fill="#c9a96e" fontFamily="monospace" fontSize="5.5" fontWeight="600" letterSpacing="0.05em">PDF</text>
+                <path d="M12 1H3a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8l-7-7Z" stroke="var(--fm-ink-dim)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 1v7h7" stroke="var(--fm-ink-dim)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <text x="3.5" y="19" fill="var(--fm-brass)" fontFamily="monospace" fontSize="5.5" fontWeight="600" letterSpacing="0.05em">PDF</text>
               </svg>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.78rem", marginBottom: "0.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ color: "var(--fm-ink)", fontFamily: "var(--fm-mono)", fontSize: "0.78rem", marginBottom: "0.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {meta.name}
               </div>
-              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.62rem" }}>
+              <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.62rem" }}>
                 {meta.sizeMb} MB · Uploaded {formatDate(meta.uploadedAt)}
               </div>
             </div>
@@ -1340,9 +1340,9 @@ function UploadInspectionSettings() {
               <button
                 onClick={handleRemove}
                 title="Remove"
-                style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", flexShrink: 0, fontFamily: "monospace", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.12s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.85rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.12s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
               >×</button>
             ) : null}
           </div>
@@ -1351,13 +1351,13 @@ function UploadInspectionSettings() {
           {phase === "idle" && (
             <div style={{ marginTop: "1rem" }}>
               {processError && (
-                <div style={{ background: "#f8717118", border: "1px solid #f8717140", borderRadius: "4px", color: "#f87171", fontFamily: "monospace", fontSize: "0.68rem", marginBottom: "0.75rem", padding: "0.6rem 0.85rem" }}>
+                <div style={{ background: "#f8717118", border: "1px solid #f8717140", borderRadius: "4px", color: "var(--fm-red)", fontFamily: "var(--fm-mono)", fontSize: "0.68rem", marginBottom: "0.75rem", padding: "0.6rem 0.85rem" }}>
                   {processError}
                 </div>
               )}
               <button
                 onClick={handleProcess}
-                style={{ background: "#c9a96e18", border: "1px solid #c9a96e", borderRadius: "3px", color: "#c9a96e", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.1em", padding: "0.55rem 1.5rem", textTransform: "uppercase", transition: "all 0.15s", width: "100%" }}
+                style={{ background: "#c9a96e18", border: "1px solid #c9a96e", borderRadius: "3px", color: "var(--fm-brass)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", letterSpacing: "0.1em", padding: "0.55rem 1.5rem", textTransform: "uppercase", transition: "all 0.15s", width: "100%" }}
                 onMouseEnter={e => e.currentTarget.style.background = "#c9a96e28"}
                 onMouseLeave={e => e.currentTarget.style.background = "#c9a96e18"}
               >
@@ -1367,8 +1367,8 @@ function UploadInspectionSettings() {
           )}
 
           {(phase === "extracting" || phase === "calling") && (
-            <div style={{ alignItems: "center", background: "#0f1117", border: "1px solid #1e2330", borderRadius: "4px", display: "flex", gap: "0.5rem", marginTop: "1rem", padding: "0.65rem 0.85rem" }}>
-              <span style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.68rem" }}>
+            <div style={{ alignItems: "center", background: "var(--fm-bg)", border: "1px solid var(--fm-hairline)", borderRadius: "4px", display: "flex", gap: "0.5rem", marginTop: "1rem", padding: "0.65rem 0.85rem" }}>
+              <span style={{ color: "var(--fm-brass)", fontFamily: "var(--fm-mono)", fontSize: "0.68rem" }}>
                 {phase === "extracting"
                   ? "Reading PDF…"
                   : `Analyzing with AI… (chunk ${progress.chunk} of ${progress.total})`}
@@ -1378,17 +1378,17 @@ function UploadInspectionSettings() {
 
           {phase === "success" && importSummary && (
             <div style={{ background: "#4ade8012", border: "1px solid #4ade8030", borderRadius: "4px", marginTop: "1rem", padding: "0.75rem 1rem" }}>
-              <div style={{ color: "#4ade80", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.06em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
+              <div style={{ color: "var(--fm-green)", fontFamily: "var(--fm-mono)", fontSize: "0.68rem", letterSpacing: "0.06em", marginBottom: "0.35rem", textTransform: "uppercase" }}>
                 Import complete
               </div>
-              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem" }}>
+              <div style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.68rem" }}>
                 Added {importSummary.appliances} {importSummary.appliances === 1 ? "appliance" : "appliances"}, {importSummary.todos} {importSummary.todos === 1 ? "to do" : "to dos"}, and {importSummary.projects} {importSummary.projects === 1 ? "project" : "projects"} to your profile.
               </div>
               <button
                 onClick={() => { setPhase("idle"); setImportSummary(null); }}
-                style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.65rem", marginTop: "0.5rem", padding: 0, transition: "color 0.15s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
-                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.65rem", marginTop: "0.5rem", padding: 0, transition: "color 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--fm-brass)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
               >
                 Process another report
               </button>
@@ -1399,15 +1399,15 @@ function UploadInspectionSettings() {
         /* ── Upload area ── */
         <>
           {needsReupload && (
-            <div style={{ alignItems: "center", background: "#1a1f2e", border: "1px solid #2a3040", borderRadius: "4px", display: "flex", gap: "0.5rem", marginBottom: "1rem", padding: "0.65rem 0.85rem" }}>
-              <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem" }}>
-                Previously uploaded: <strong style={{ color: "#e8e4dd" }}>{meta.name}</strong> on {formatDate(meta.uploadedAt)} · Re-upload to continue.
+            <div style={{ alignItems: "center", background: "var(--fm-bg-panel)", border: "1px solid var(--fm-hairline2)", borderRadius: "4px", display: "flex", gap: "0.5rem", marginBottom: "1rem", padding: "0.65rem 0.85rem" }}>
+              <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.68rem" }}>
+                Previously uploaded: <strong style={{ color: "var(--fm-ink)" }}>{meta.name}</strong> on {formatDate(meta.uploadedAt)} · Re-upload to continue.
               </span>
               <button
                 onClick={handleRemove}
-                style={{ background: "none", border: "none", color: "#a8a29c", cursor: "pointer", flexShrink: 0, fontFamily: "monospace", fontSize: "0.72rem", marginLeft: "auto", padding: 0, transition: "color 0.12s" }}
-                onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
+                style={{ background: "none", border: "none", color: "var(--fm-ink-dim)", cursor: "pointer", flexShrink: 0, fontFamily: "var(--fm-mono)", fontSize: "0.72rem", marginLeft: "auto", padding: 0, transition: "color 0.12s" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
               >Clear</button>
             </div>
           )}
@@ -1419,8 +1419,8 @@ function UploadInspectionSettings() {
             onDrop={handleDrop}
             style={{
               alignItems: "center",
-              background: dragOver ? "#1a2035" : "#13161f",
-              border: `2px dashed ${dragOver ? "#c9a96e" : "#2a3040"}`,
+              background: dragOver ? "#1a2035" : "var(--fm-bg-raised)",
+              border: `2px dashed ${dragOver ? "var(--fm-brass)" : "var(--fm-hairline2)"}`,
               borderRadius: "6px",
               cursor: "pointer",
               display: "flex",
@@ -1431,16 +1431,16 @@ function UploadInspectionSettings() {
               transition: "all 0.15s",
             }}
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={dragOver ? "#c9a96e" : "#4a4458"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "stroke 0.15s" }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={dragOver ? "var(--fm-brass)" : "#4a4458"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "stroke 0.15s" }}>
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
             <div>
-              <div style={{ color: dragOver ? "#c9a96e" : "#a8a29c", fontFamily: "monospace", fontSize: "0.78rem", marginBottom: "0.3rem", transition: "color 0.15s" }}>
+              <div style={{ color: dragOver ? "var(--fm-brass)" : "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.78rem", marginBottom: "0.3rem", transition: "color 0.15s" }}>
                 Drop your inspection PDF here
               </div>
-              <div style={{ color: "#4a4458", fontFamily: "monospace", fontSize: "0.65rem" }}>
+              <div style={{ color: "#4a4458", fontFamily: "var(--fm-mono)", fontSize: "0.65rem" }}>
                 or click to browse
               </div>
             </div>
@@ -1465,7 +1465,7 @@ export default function PreferencesPage({ navigate }) {
   const [activeSection, setActiveSection] = useState("profile");
 
   return (
-    <div style={{ background: "#0f1117", color: "#e8e4dd", display: "flex", flexDirection: "column", fontFamily: "'Georgia','Times New Roman',serif", height: "100vh", overflow: "hidden" }}>
+    <div style={{ background: "var(--fm-bg)", color: "var(--fm-ink)", display: "flex", flexDirection: "column", fontFamily: "var(--fm-sans)", height: "100vh", overflow: "hidden" }}>
 
       {/* Header */}
       <FmHeader active="Preferences" tagline="Preferences" />
@@ -1475,7 +1475,7 @@ export default function PreferencesPage({ navigate }) {
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
         {/* Settings nav sidebar */}
-        <div style={{ borderRight: "1px solid #1e2330", flexShrink: 0, overflowY: "auto", padding: "2rem 0", width: "200px" }}>
+        <div style={{ borderRight: "1px solid var(--fm-hairline)", flexShrink: 0, overflowY: "auto", padding: "2rem 0", width: "200px" }}>
           {NAV_ITEMS.map(item => {
             const isActive = activeSection === item.key;
             return (
@@ -1485,11 +1485,11 @@ export default function PreferencesPage({ navigate }) {
                 style={{
                   background: isActive ? "#c9a96e12" : "transparent",
                   border: "none",
-                  borderLeft: `2px solid ${isActive ? "#c9a96e" : "transparent"}`,
-                  color: isActive ? "#c9a96e" : item.available ? "#8b7d6b" : "#a8a29c",
+                  borderLeft: `2px solid ${isActive ? "var(--fm-brass)" : "transparent"}`,
+                  color: isActive ? "var(--fm-brass)" : item.available ? "var(--fm-brass-dim)" : "var(--fm-ink-dim)",
                   cursor: item.available ? "pointer" : "default",
                   display: "block",
-                  fontFamily: "monospace",
+                  fontFamily: "var(--fm-mono)",
                   fontSize: "0.78rem",
                   letterSpacing: "0.05em",
                   padding: "0.5rem 1.25rem",
@@ -1497,12 +1497,12 @@ export default function PreferencesPage({ navigate }) {
                   transition: "all 0.15s",
                   width: "100%",
                 }}
-                onMouseEnter={e => { if (item.available && !isActive) e.currentTarget.style.color = "#a8a29c"; }}
-                onMouseLeave={e => { if (item.available && !isActive) e.currentTarget.style.color = "#8b7d6b"; }}
+                onMouseEnter={e => { if (item.available && !isActive) e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
+                onMouseLeave={e => { if (item.available && !isActive) e.currentTarget.style.color = "var(--fm-brass-dim)"; }}
               >
                 {item.label}
                 {!item.available && (
-                  <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.58rem", marginLeft: "0.5rem" }}>soon</span>
+                  <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", marginLeft: "0.5rem" }}>soon</span>
                 )}
               </button>
             );

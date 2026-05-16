@@ -1,10 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import FmHeader from "./src/components/FmHeader.jsx";
 import FmSubnav from "./src/components/FmSubnav.jsx";
-import AssigneeInput, { AssigneeCellInput } from "./components/AssigneeInput.jsx";
-import CategoryTabs from "./components/CategoryTabs.jsx";
+import AssigneeInput from "./components/AssigneeInput.jsx";
 import SelectCell from "./components/SelectCell.jsx";
-import NoteCell from "./components/NoteCell.jsx";
 import SchedulePicker from "./components/SchedulePicker.jsx";
 import ReminderButton from "./components/ReminderButton.jsx";
 import ReminderSettings from "./components/ReminderSettings.jsx";
@@ -30,10 +28,8 @@ import {
   loadReminderModes, REMINDER_MODES, syncReminders,
 } from "./lib/reminders.js";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-// Preferred display order for rooms — used for tab sorting and dropdown ordering.
-// Rooms from inventory that aren't listed here appear at the end alphabetically.
 const ROOM_ORDER = [
   "Whole House", "Kitchen", "Bathrooms", "Bedroom", "Living Room",
   "Dining Room", "Office", "Laundry", "Garage", "Basement",
@@ -112,111 +108,21 @@ const FREQ_ITEMS = [
   { label: "As needed",         color: "#a8a29c" },
 ];
 
-const COLUMNS = [
-  { label: "Room",     width: "9%",  sortKey: "room"      },
-  { label: "Item",     width: "10%", sortKey: "item"      },
-  { label: "Chore",    width: "18%", sortKey: "title"     },
-  { label: "Schedule", width: "11%", sortKey: "schedule"  },
-  { label: "Day",      width: "6%",  sortKey: "dayOfWeek" },
-  { label: "Time",     width: "7%",  sortKey: "timeOfDay" },
-  { label: "",         width: "4%",  sortKey: null        },  // bell
-  { label: "Notes",    width: "18%", sortKey: "notes"     },
-  { label: "Assignee", width: "9%",  sortKey: "assignee"  },
-  { label: "",         width: "4%",  sortKey: null        },  // delete
+const MODAL_SCHEDULE_OPTIONS = [
+  { value: "every 1 days",    label: "Daily"           },
+  { value: "every 1 weeks",   label: "Every week"      },
+  { value: "every 2 weeks",   label: "Every 2 weeks"   },
+  { value: "every 3 weeks",   label: "Every 3 weeks"   },
+  { value: "every 1 months",  label: "Every month"     },
+  { value: "every 2 months",  label: "Every 2 months"  },
+  { value: "every 3 months",  label: "Every 3 months"  },
+  { value: "every 6 months",  label: "Every 6 months"  },
+  { value: "every 1 years",   label: "Every year"      },
 ];
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+const STRIP_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function TitleCell({ value, onChange, placeholder = "Chore name", suggestions = [] }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
-
-  function startEdit() { setDraft(value || ""); setEditing(true); setShowSuggestions(true); }
-  function commit() { setEditing(false); setShowSuggestions(false); if (draft !== value) onChange(draft); }
-
-  const filtered = suggestions.filter(s => s.toLowerCase().includes(draft.toLowerCase()) && s !== draft);
-
-  if (!editing) {
-    return (
-      <span
-        onClick={startEdit}
-        style={{ color: "#a8a29c", cursor: "text", display: "block", fontFamily: "inherit", fontSize: "inherit", minHeight: "1.2em" }}
-      >
-        {value || <span style={{ color: "#3a3548" }}>{placeholder}</span>}
-      </span>
-    );
-  }
-  return (
-    <div style={{ position: "relative" }}>
-      <input
-        autoFocus
-        value={draft}
-        onChange={e => { setDraft(e.target.value); setShowSuggestions(true); }}
-        onBlur={() => setTimeout(commit, 120)}
-        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); commit(); } if (e.key === "Escape") { setEditing(false); setShowSuggestions(false); } }}
-        style={{ background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "2px", color: "#e8e4dd", fontFamily: "inherit", fontSize: "inherit", outline: "none", padding: "0.1rem 0.3rem", width: "100%" }}
-      />
-      {showSuggestions && filtered.length > 0 && (
-        <div style={{ background: "#13161f", border: "1px solid #a8a29c", borderRadius: "2px", left: 0, maxHeight: "120px", overflowY: "auto", position: "absolute", right: 0, top: "calc(100% + 2px)", zIndex: 50 }}>
-          {filtered.map(s => (
-            <div
-              key={s}
-              onMouseDown={e => { e.preventDefault(); setDraft(s); onChange(s); setEditing(false); setShowSuggestions(false); }}
-              style={{ color: "#e8e4dd", cursor: "pointer", fontFamily: "monospace", fontSize: "0.75rem", padding: "0.25rem 0.4rem" }}
-              onMouseEnter={e => e.currentTarget.style.background = "#1a1f2e"}
-              onMouseLeave={e => e.currentTarget.style.background = ""}
-            >{s}</div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DeleteConfirmModal({ chore, onConfirm, onClose }) {
-  return (
-    <div
-      style={{ alignItems: "center", background: "rgba(0,0,0,0.6)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 1000 }}
-      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div style={{ background: "#0f1117", border: "1px solid #a8a29c", borderRadius: "6px", maxWidth: 420, padding: "1.75rem 2rem", width: "90%" }}>
-        <div style={{ color: "#f87171", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: "1rem", textTransform: "uppercase" }}>
-          Permanently Delete Chore
-        </div>
-        <p style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.82rem", margin: "0 0 0.5rem" }}>
-          <strong>{chore.title || "Unnamed chore"}</strong>
-        </p>
-        <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.78rem", margin: "0 0 1.5rem" }}>
-          This will permanently delete this chore and its history. This cannot be undone.
-        </p>
-        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-          <button
-            onClick={onClose}
-            style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#8b7d6b"; e.currentTarget.style.borderColor = "#a8a29c"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "#a8a29c"; e.currentTarget.style.borderColor = "#a8a29c"; }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            style={{ background: "#f8717118", border: "1px solid #f87171", borderRadius: "3px", color: "#f87171", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "background 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.background = "#f8717130"}
-            onMouseLeave={e => e.currentTarget.style.background = "#f8717118"}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const CAL_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const CAL_MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const CAL_DOWS   = ["Su","Mo","Tu","We","Th","Fr","Sa"];
-const CAL_DOWS_LONG = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatTimeOfDay(t) {
   if (!t) return "";
@@ -224,8 +130,6 @@ function formatTimeOfDay(t) {
   return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
 }
 
-// Returns a Set of day-of-month numbers where the chore recurs in the given month,
-// anchored to startDate and following the schedule + dayOfWeek snap.
 function getMonthOccurrences(startDate, schedule, dayOfWeek, viewYear, viewMonth) {
   if (!startDate || !schedule) return new Set();
 
@@ -269,33 +173,112 @@ function getMonthOccurrences(startDate, schedule, dayOfWeek, viewYear, viewMonth
   return result;
 }
 
-// Returns the next n upcoming occurrences starting from today.
-function getUpcomingOccurrences(chore, n = 4) {
-  if (!chore.startDate || !chore.schedule) return [];
-  const results = [];
-  let cur = computeNextOccurrenceFromStart(
-    new Date(chore.startDate), chore.schedule, chore.dayOfWeek, chore.timeOfDay
-  );
-  for (let i = 0; results.length < n && i < n + 100; i++) {
-    results.push(new Date(cur));
-    cur = computeChoreNextDate(cur, chore.schedule, chore.dayOfWeek, chore.timeOfDay);
-  }
-  return results;
+function isChoreOnDate(chore, date) {
+  if (!chore.startDate || !chore.schedule) return false;
+  return getMonthOccurrences(
+    chore.startDate, chore.schedule, chore.dayOfWeek,
+    date.getFullYear(), date.getMonth()
+  ).has(date.getDate());
 }
 
-const MAX_VISIBLE_CHORES = 3;
+function choreStatus(nextDateStr) {
+  if (!nextDateStr) return { dot: "var(--fm-ink-mute)", text: "—" };
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const nd = new Date(nextDateStr); nd.setHours(0, 0, 0, 0);
+  const diff = Math.round((nd - today) / 86400000);
+  if (diff < 0)  return { dot: "var(--fm-red)",   text: `${Math.abs(diff)}d late` };
+  if (diff === 0) return { dot: "var(--fm-amber)", text: "today" };
+  if (diff <= 7)  return { dot: "var(--fm-amber)", text: `in ${diff}d` };
+  return { dot: "var(--fm-green)", text: `in ${diff}d` };
+}
 
-const MODAL_SCHEDULE_OPTIONS = [
-  { value: "every 1 days",    label: "Daily"           },
-  { value: "every 1 weeks",   label: "Every week"      },
-  { value: "every 2 weeks",   label: "Every 2 weeks"   },
-  { value: "every 3 weeks",   label: "Every 3 weeks"   },
-  { value: "every 1 months",  label: "Every month"     },
-  { value: "every 2 months",  label: "Every 2 months"  },
-  { value: "every 3 months",  label: "Every 3 months"  },
-  { value: "every 6 months",  label: "Every 6 months"  },
-  { value: "every 1 years",   label: "Every year"      },
-];
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function TitleCell({ value, onChange, placeholder = "Chore name", suggestions = [] }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  function startEdit() { setDraft(value || ""); setEditing(true); setShowSuggestions(true); }
+  function commit() { setEditing(false); setShowSuggestions(false); if (draft !== value) onChange(draft); }
+
+  const filtered = suggestions.filter(s => s.toLowerCase().includes(draft.toLowerCase()) && s !== draft);
+
+  if (!editing) {
+    return (
+      <span
+        onClick={startEdit}
+        style={{ color: "var(--fm-ink-dim)", cursor: "text", display: "block", fontFamily: "var(--fm-sans)", fontSize: "0.82rem", minHeight: "1.2em" }}
+      >
+        {value || <span style={{ color: "var(--fm-ink-mute)" }}>{placeholder}</span>}
+      </span>
+    );
+  }
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        autoFocus
+        value={draft}
+        onChange={e => { setDraft(e.target.value); setShowSuggestions(true); }}
+        onBlur={() => setTimeout(commit, 120)}
+        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); commit(); } if (e.key === "Escape") { setEditing(false); setShowSuggestions(false); } }}
+        style={{ background: "var(--fm-bg-sunk)", border: "1px solid var(--fm-brass)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink)", fontFamily: "var(--fm-sans)", fontSize: "0.82rem", outline: "none", padding: "0.1rem 0.3rem", width: "100%" }}
+      />
+      {showSuggestions && filtered.length > 0 && (
+        <div style={{ background: "var(--fm-bg-panel)", border: "var(--fm-border)", borderRadius: "var(--fm-radius)", left: 0, maxHeight: "120px", overflowY: "auto", position: "absolute", right: 0, top: "calc(100% + 2px)", zIndex: 50 }}>
+          {filtered.map(s => (
+            <div
+              key={s}
+              onMouseDown={e => { e.preventDefault(); setDraft(s); onChange(s); setEditing(false); setShowSuggestions(false); }}
+              style={{ color: "var(--fm-ink)", cursor: "pointer", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", padding: "0.25rem 0.4rem" }}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--fm-bg-raised)"}
+              onMouseLeave={e => e.currentTarget.style.background = ""}
+            >{s}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DeleteConfirmModal({ chore, onConfirm, onClose }) {
+  return (
+    <div
+      style={{ alignItems: "center", background: "rgba(0,0,0,0.65)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 1000 }}
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{ background: "var(--fm-bg-panel)", border: "var(--fm-border)", borderRadius: "var(--fm-radius-lg)", maxWidth: 420, padding: "1.75rem 2rem", width: "90%" }}>
+        <div style={{ color: "var(--fm-red)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: "1rem", textTransform: "uppercase" }}>
+          Permanently Delete Chore
+        </div>
+        <p style={{ color: "var(--fm-ink)", fontFamily: "var(--fm-sans)", fontSize: "0.82rem", margin: "0 0 0.5rem" }}>
+          <strong>{chore.title || "Unnamed chore"}</strong>
+        </p>
+        <p style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", margin: "0 0 1.5rem" }}>
+          This will permanently delete this chore and its history. This cannot be undone.
+        </p>
+        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+          <button
+            onClick={onClose}
+            style={{ background: "transparent", border: "var(--fm-border-2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 1rem", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--fm-ink)"; e.currentTarget.style.borderColor = "var(--fm-brass)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--fm-ink-dim)"; e.currentTarget.style.borderColor = "var(--fm-hairline2)"; }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{ background: "rgba(224,123,106,0.1)", border: "1px solid var(--fm-red)", borderRadius: "var(--fm-radius)", color: "var(--fm-red)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 1rem", transition: "background 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(224,123,106,0.2)"}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(224,123,106,0.1)"}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInventory, onSave, onClose }) {
   const [form, setForm] = useState({
@@ -308,9 +291,9 @@ function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInv
     assignee:  "",
     notes:     "",
   });
-  const [itemInput, setItemInput]           = useState("");
+  const [itemInput, setItemInput]               = useState("");
   const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
-  const [addToInventoryPrompt, setAddToInventoryPrompt] = useState(null); // { room, item }
+  const [addToInventoryPrompt, setAddToInventoryPrompt] = useState(null);
 
   function set(field, val) { setForm(prev => ({ ...prev, [field]: val })); }
 
@@ -344,17 +327,17 @@ function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInv
   const canSave = form.title.trim().length > 0;
 
   const inputStyle = {
-    background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "2px",
-    boxSizing: "border-box", color: "#e8e4dd", fontFamily: "monospace",
-    fontSize: "0.8rem", outline: "none", padding: "0.35rem 0.5rem", width: "100%",
+    background: "var(--fm-bg-sunk)", border: "var(--fm-border-2)", borderRadius: "var(--fm-radius)",
+    boxSizing: "border-box", color: "var(--fm-ink)", fontFamily: "var(--fm-sans)",
+    fontSize: "0.82rem", outline: "none", padding: "0.35rem 0.5rem", width: "100%",
   };
   const labelStyle = {
-    color: "#a8a29c", display: "block", fontFamily: "monospace", fontSize: "0.62rem",
-    letterSpacing: "0.1em", marginBottom: "0.25rem", textTransform: "uppercase",
+    color: "var(--fm-brass-dim)", display: "block", fontFamily: "var(--fm-mono)", fontSize: "0.6rem",
+    letterSpacing: "0.12em", marginBottom: "0.25rem", textTransform: "uppercase",
   };
   const selectStyle = {
     ...inputStyle, appearance: "none", cursor: "pointer",
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5460'/%3E%3C/svg%3E")`,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235e6068'/%3E%3C/svg%3E")`,
     backgroundRepeat: "no-repeat", backgroundPosition: "right 0.5rem center", paddingRight: "1.5rem",
   };
 
@@ -363,12 +346,12 @@ function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInv
       style={{ alignItems: "center", background: "rgba(0,0,0,0.7)", bottom: 0, display: "flex", justifyContent: "center", left: 0, position: "fixed", right: 0, top: 0, zIndex: 200 }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: "#0f1117", border: "1px solid #a8a29c", borderRadius: "6px", maxWidth: 480, padding: "1.75rem 2rem", width: "90%" }}>
-        <div style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: dateLabel ? "0.2rem" : "1.5rem", textTransform: "uppercase" }}>
+      <div style={{ background: "var(--fm-bg-panel)", border: "var(--fm-border)", borderRadius: "var(--fm-radius-lg)", maxWidth: 480, padding: "1.75rem 2rem", width: "90%" }}>
+        <div style={{ color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.15em", marginBottom: dateLabel ? "0.2rem" : "1.5rem", textTransform: "uppercase" }}>
           New Chore
         </div>
         {dateLabel && (
-          <div style={{ color: "#c9a96e", fontFamily: "'Georgia','Times New Roman',serif", fontSize: "1.05rem", marginBottom: "1.5rem" }}>
+          <div style={{ color: "var(--fm-brass)", fontFamily: "var(--fm-serif)", fontSize: "1.05rem", marginBottom: "1.5rem" }}>
             {dateLabel}
           </div>
         )}
@@ -382,6 +365,8 @@ function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInv
             onKeyDown={e => { if (e.key === "Enter" && canSave) onSave(form, date); if (e.key === "Escape") onClose(); }}
             placeholder="e.g. Clean the toilet"
             style={inputStyle}
+            onFocus={e => e.currentTarget.style.borderColor = "var(--fm-brass)"}
+            onBlur={e => e.currentTarget.style.borderColor = "var(--fm-hairline2)"}
           />
         </div>
 
@@ -393,7 +378,7 @@ function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInv
             </select>
           </div>
           <div style={{ position: "relative" }}>
-            <label style={labelStyle}>Item <span style={{ color: "#5a5468", textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+            <label style={labelStyle}>Item <span style={{ color: "var(--fm-ink-mute)", textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
             <input
               value={itemInput}
               onChange={e => { setItemInput(e.target.value); set("item", e.target.value.trim()); setItemDropdownOpen(true); setAddToInventoryPrompt(null); }}
@@ -401,16 +386,16 @@ function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInv
               onBlur={() => { setTimeout(() => { commitItem(itemInput); setItemDropdownOpen(false); }, 120); }}
               placeholder={form.room !== "Whole House" ? "e.g. Toilet" : "Select a room first"}
               disabled={form.room === "Whole House"}
-              style={{ ...inputStyle, color: form.room === "Whole House" ? "#3a3548" : "#e8e4dd" }}
+              style={{ ...inputStyle, color: form.room === "Whole House" ? "var(--fm-ink-mute)" : "var(--fm-ink)" }}
             />
             {itemDropdownOpen && itemSuggestions.length > 0 && (
-              <div style={{ background: "#13161f", border: "1px solid #a8a29c", borderRadius: "2px", left: 0, maxHeight: "140px", overflowY: "auto", position: "absolute", right: 0, top: "calc(100% + 2px)", zIndex: 10 }}>
+              <div style={{ background: "var(--fm-bg-panel)", border: "var(--fm-border)", borderRadius: "var(--fm-radius)", left: 0, maxHeight: "140px", overflowY: "auto", position: "absolute", right: 0, top: "calc(100% + 2px)", zIndex: 10 }}>
                 {itemSuggestions.map(s => (
                   <div
                     key={s}
                     onMouseDown={e => { e.preventDefault(); commitItem(s); }}
-                    style={{ color: "#e8e4dd", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#1a1f2e"}
+                    style={{ color: "var(--fm-ink)", cursor: "pointer", fontFamily: "var(--fm-sans)", fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--fm-bg-raised)"}
                     onMouseLeave={e => e.currentTarget.style.background = ""}
                   >{s}</div>
                 ))}
@@ -420,18 +405,18 @@ function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInv
         </div>
 
         {addToInventoryPrompt && (
-          <div style={{ alignItems: "flex-start", background: "#1a1f2e", border: "1px solid #c9a96e40", borderRadius: "3px", display: "flex", gap: "0.75rem", justifyContent: "space-between", marginBottom: "1rem", padding: "0.6rem 0.75rem" }}>
-            <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.7rem", lineHeight: 1.4 }}>
-              <span style={{ color: "#c9a96e" }}>{addToInventoryPrompt.item}</span> isn&apos;t in your {addToInventoryPrompt.room} inventory. Add it?
+          <div style={{ alignItems: "flex-start", background: "var(--fm-bg-sunk)", border: "1px solid rgba(201,169,110,0.25)", borderRadius: "var(--fm-radius)", display: "flex", gap: "0.75rem", justifyContent: "space-between", marginBottom: "1rem", padding: "0.6rem 0.75rem" }}>
+            <span style={{ color: "var(--fm-ink-dim)", fontFamily: "var(--fm-sans)", fontSize: "0.72rem", lineHeight: 1.4 }}>
+              <span style={{ color: "var(--fm-brass)" }}>{addToInventoryPrompt.item}</span> isn&apos;t in your {addToInventoryPrompt.room} inventory. Add it?
             </span>
             <div style={{ display: "flex", flexShrink: 0, gap: "0.4rem" }}>
               <button
                 onMouseDown={e => { e.preventDefault(); onAddItemToInventory?.(addToInventoryPrompt.room, addToInventoryPrompt.item); setAddToInventoryPrompt(null); }}
-                style={{ background: "#c9a96e22", border: "1px solid #c9a96e", borderRadius: "2px", color: "#c9a96e", cursor: "pointer", fontFamily: "monospace", fontSize: "0.65rem", padding: "0.2rem 0.5rem" }}
+                style={{ background: "var(--fm-brass-bg)", border: "1px solid var(--fm-brass)", borderRadius: "var(--fm-radius)", color: "var(--fm-brass)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", letterSpacing: "0.06em", padding: "0.2rem 0.5rem" }}
               >Add</button>
               <button
                 onMouseDown={e => { e.preventDefault(); setAddToInventoryPrompt(null); }}
-                style={{ background: "transparent", border: "1px solid #3a3548", borderRadius: "2px", color: "#5a5468", cursor: "pointer", fontFamily: "monospace", fontSize: "0.65rem", padding: "0.2rem 0.5rem" }}
+                style={{ background: "transparent", border: "var(--fm-border)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-mute)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.62rem", letterSpacing: "0.06em", padding: "0.2rem 0.5rem" }}
               >Skip</button>
             </div>
           </div>
@@ -468,20 +453,24 @@ function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInv
 
         <div style={{ marginBottom: "1.5rem" }}>
           <label style={labelStyle}>Notes</label>
-          <textarea value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Any notes…" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
+          <textarea value={form.notes} onChange={e => set("notes", e.target.value)} placeholder="Any notes…" rows={2}
+            style={{ ...inputStyle, resize: "vertical" }}
+            onFocus={e => e.currentTarget.style.borderColor = "var(--fm-brass)"}
+            onBlur={e => e.currentTarget.style.borderColor = "var(--fm-hairline2)"}
+          />
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
           <button
             onClick={onClose}
-            style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#a8a29c"; }}
+            style={{ background: "transparent", border: "var(--fm-border-2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink-dim)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 1rem", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--fm-brass)"; e.currentTarget.style.color = "var(--fm-brass)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-hairline2)"; e.currentTarget.style.color = "var(--fm-ink-dim)"; }}
           >Cancel</button>
           <button
             onClick={() => canSave && onSave(form, date)}
             disabled={!canSave}
-            style={{ background: canSave ? "#c9a96e22" : "transparent", border: `1px solid ${canSave ? "#c9a96e" : "#a8a29c"}`, borderRadius: "3px", color: canSave ? "#c9a96e" : "#a8a29c", cursor: canSave ? "pointer" : "default", fontFamily: "monospace", fontSize: "0.78rem", padding: "0.45rem 1rem", transition: "all 0.15s" }}
+            style={{ background: canSave ? "var(--fm-brass-bg)" : "transparent", border: `1px solid ${canSave ? "var(--fm-brass)" : "var(--fm-hairline2)"}`, borderRadius: "var(--fm-radius)", color: canSave ? "var(--fm-brass)" : "var(--fm-ink-mute)", cursor: canSave ? "pointer" : "default", fontFamily: "var(--fm-mono)", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 1rem", transition: "all 0.15s" }}
           >Add Chore</button>
         </div>
       </div>
@@ -489,489 +478,77 @@ function CreateChoreModal({ date, roomOptions, roomItemsMap = {}, onAddItemToInv
   );
 }
 
-function CalendarWidget({ chores, roomOptions, roomItemsMap, onAddItemToInventory, selectedChoreId, onCreateChore, onSetStartDate, onClearDate, choreCompletions = {}, onToggleCompletion }) {
-  const todayRaw   = new Date();
-  const todayYear  = todayRaw.getFullYear();
-  const todayMonth = todayRaw.getMonth();
-  const todayDay   = todayRaw.getDate();
-
-  const selectedChore = chores.find(c => c.id === selectedChoreId) ?? null;
-  const selectedNeedsDate = !!(selectedChore && !selectedChore.startDate);
-  const [view, setView] = useState({ y: todayYear, m: todayMonth });
-  const [createDate, setCreateDate] = useState(null);
-  const [selectedDay, setSelectedDay] = useState(null);
-  const [detailEvent, setDetailEvent] = useState(null); // { chore, date } | null
-
-  useEffect(() => {
-    if (selectedChore?.startDate) {
-      const d = new Date(selectedChore.startDate);
-      setView({ y: d.getFullYear(), m: d.getMonth() });
-    }
-  }, [selectedChoreId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function prevMonth() { setSelectedDay(null); setView(v => v.m === 0 ? { y: v.y - 1, m: 11 } : { y: v.y, m: v.m - 1 }); }
-  function nextMonth() { setSelectedDay(null); setView(v => v.m === 11 ? { y: v.y + 1, m: 0 } : { y: v.y, m: v.m + 1 }); }
-
-  const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
-  const firstDow    = new Date(view.y, view.m, 1).getDay();
-
-  // All chore occurrences in the viewed month: { day -> [chore, ...] }
-  const choresByDay = {};
-  for (const chore of chores) {
-    if (!chore.startDate || !chore.schedule) continue;
-    const days = getMonthOccurrences(chore.startDate, chore.schedule, chore.dayOfWeek, view.y, view.m);
-    for (const day of days) {
-      if (!choresByDay[day]) choresByDay[day] = [];
-      choresByDay[day].push(chore);
-    }
-  }
-
-  // Selected chore's recurrence days (for the amber ring highlight).
-  const selectedOccDays = selectedChore
-    ? getMonthOccurrences(selectedChore.startDate, selectedChore.schedule, selectedChore.dayOfWeek, view.y, view.m)
-    : new Set();
-
-  const upcoming     = selectedChore ? getUpcomingOccurrences(selectedChore, 5) : [];
-  const hasStartDate = !!selectedChore?.startDate;
-
-  const navBtnStyle = {
-    background: "transparent", border: "none", color: "#8b7d6b",
-    cursor: "pointer", fontFamily: "monospace", fontSize: "1.1rem",
-    lineHeight: 1, padding: "0.1rem 0.5rem", transition: "color 0.15s",
-  };
+function WeekStrip({ chores, choreCompletions, onLogChore }) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
 
   return (
-    <>
-      {createDate && (
-        <CreateChoreModal
-          date={createDate}
-          roomOptions={roomOptions}
-          roomItemsMap={roomItemsMap}
-          onAddItemToInventory={onAddItemToInventory}
-          onSave={(form, date) => { onCreateChore(form, date); setCreateDate(null); }}
-          onClose={() => setCreateDate(null)}
-        />
-      )}
-
-      {detailEvent && (
-        <ChoreDetailModal
-          chore={detailEvent.chore}
-          date={detailEvent.date}
-          isDone={isChoreCompleted(choreCompletions, detailEvent.chore.id, detailEvent.date)}
-          onToggleDone={() => onToggleCompletion(detailEvent.chore.id, detailEvent.date)}
-          onClose={() => setDetailEvent(null)}
-        />
-      )}
-
-      <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", padding: "1.25rem", position: "sticky", top: 0 }}>
-
-        {/* Header */}
-        <div style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.65rem", letterSpacing: "0.15em", marginBottom: "0.75rem", textTransform: "uppercase" }}>
-          Chore Calendar
-        </div>
-
-        {/* Month navigator */}
-        <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
-          <button style={navBtnStyle} onClick={prevMonth}
-            onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
-            onMouseLeave={e => e.currentTarget.style.color = "#8b7d6b"}
-          >‹</button>
-          <span style={{ color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.8rem", letterSpacing: "0.04em" }}>
-            {CAL_MONTHS[view.m]} {view.y}
-          </span>
-          <button style={navBtnStyle} onClick={nextMonth}
-            onMouseEnter={e => e.currentTarget.style.color = "#c9a96e"}
-            onMouseLeave={e => e.currentTarget.style.color = "#8b7d6b"}
-          >›</button>
-        </div>
-
-        {/* Day-of-week headers */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "1px", marginBottom: "2px" }}>
-          {CAL_DOWS.map(d => (
-            <div key={d} style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.58rem", padding: "0.15rem 0", textAlign: "center" }}>
-              {d}
+    <div style={{ display: "grid", gap: "6px", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: "1.25rem" }}>
+      {days.map((date, i) => {
+        const isToday = i === 0;
+        const dayChores = chores.filter(c => isChoreOnDate(c, date));
+        return (
+          <div
+            key={i}
+            style={{
+              background: isToday ? "var(--fm-brass-bg)" : "var(--fm-bg-raised)",
+              border: isToday ? "1px solid rgba(201,169,110,0.3)" : "var(--fm-border)",
+              borderRadius: "var(--fm-radius)",
+              minHeight: "80px",
+              padding: "0.5rem 0.45rem",
+            }}
+          >
+            <div style={{ color: isToday ? "var(--fm-brass)" : "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.52rem", letterSpacing: "0.1em", marginBottom: "2px", textTransform: "uppercase" }}>
+              {STRIP_DAYS[date.getDay()]}
             </div>
-          ))}
-        </div>
-
-        {/* Day grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gridAutoRows: "minmax(5rem, auto)", gap: "1px" }}>
-          {Array.from({ length: firstDow }, (_, i) => (
-            <div key={`e${i}`} style={{ border: "1px solid transparent" }} />
-          ))}
-          {Array.from({ length: daysInMonth }, (_, i) => {
-            const day           = i + 1;
-            const isToday       = view.y === todayYear && view.m === todayMonth && day === todayDay;
-            const isSelectedOcc = selectedOccDays.has(day);
-            const isDaySelected = day === selectedDay;
-            const dayChores    = choresByDay[day] ?? [];
-            const visible      = dayChores.slice(0, MAX_VISIBLE_CHORES);
-            const overflow     = dayChores.length - visible.length;
-
-            const borderColor = isSelectedOcc ? "#c9a96e30" : selectedNeedsDate ? "#c9a96e18" : "#1e2330";
-            return (
-              <div
-                key={day}
-                onClick={() => {
-                  const date = new Date(view.y, view.m, day);
-                  if (selectedNeedsDate) onSetStartDate(selectedChoreId, date);
-                  else setCreateDate(date);
-                }}
-                style={{
-                  border: `1px solid ${borderColor}`,
-                  borderRadius: "3px",
-                  cursor: "pointer",
-                  padding: "3px 3px 2px",
-                  transition: "background 0.1s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = selectedNeedsDate ? "#c9a96e0a" : "#1a1f2e"}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-              >
-                {/* Date number — clickable; today = filled amber circle; selected day = amber outline */}
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: "2px" }}>
-                  <div
-                    onClick={e => { e.stopPropagation(); setSelectedDay(prev => prev === day ? null : day); }}
-                    style={{
-                      alignItems: "center",
-                      background: isToday ? "#c9a96e" : "transparent",
-                      border: !isToday && isDaySelected ? "1px solid #c9a96e" : "1px solid transparent",
-                      borderRadius: "50%",
-                      color: isToday ? "#0f1117" : isDaySelected ? "#c9a96e" : "#8b7d6b",
-                      cursor: "pointer",
-                      display: "flex",
-                      fontFamily: "monospace",
-                      fontSize: "0.68rem",
-                      height: "18px",
-                      justifyContent: "center",
-                      width: "18px",
-                    }}
-                  >
-                    {day}
-                  </div>
-                </div>
-
-                {/* Chore chips */}
-                {visible.map(chore => {
-                  const color = getScheduleColor(chore.schedule);
-                  const chipDate = new Date(view.y, view.m, day);
-                  const done = isChoreCompleted(choreCompletions, chore.id, chipDate);
-                  return (
-                    <div
-                      key={chore.id}
-                      onClick={e => { e.stopPropagation(); setDetailEvent({ chore, date: chipDate }); }}
-                      style={{
-                        alignItems: "baseline",
-                        cursor: "pointer",
-                        display: "flex",
-                        gap: "4px",
-                        marginBottom: "2px",
-                        opacity: done ? 0.55 : 1,
-                        overflow: "hidden",
-                        padding: "0 2px",
-                      }}
-                    >
-                      <span style={{
-                        background: color,
-                        borderRadius: "50%",
-                        display: "inline-block",
-                        flexShrink: 0,
-                        height: "6px",
-                        width: "6px",
-                      }} />
-                      <span style={{
-                        color: "#a8a29c",
-                        fontFamily: "monospace",
-                        fontSize: "0.58rem",
-                        overflow: "hidden",
-                        textDecoration: done ? "line-through" : "none",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}>
-                        {chore.timeOfDay && (
-                          <span style={{ color: "#a8a29c" }}>{formatTimeOfDay(chore.timeOfDay)} </span>
-                        )}
-                        {chore.title}
-                      </span>
-                    </div>
-                  );
-                })}
-
-                {/* Overflow badge */}
-                {overflow > 0 && (
-                  <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.54rem", padding: "1px 3px" }}>
-                    +{overflow} more
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Bottom panel: two columns — Upcoming (left) | Selected day (right) */}
-        {(() => {
-          const selectedDayChores = selectedDay ? (choresByDay[selectedDay] ?? []) : [];
-          const selectedDayLabel  = selectedDay
-            ? new Date(view.y, view.m, selectedDay).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
-            : null;
-
-          const upcomingCol = (
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.12em", marginBottom: "0.5rem", textTransform: "uppercase" }}>
-                Upcoming
-              </div>
-              {!selectedChore ? (
-                <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.7rem", margin: 0 }}>
-                  Select a chore to see its schedule.
-                </p>
-              ) : !hasStartDate ? (
-                <p style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.7rem", margin: 0 }}>
-                  Click a date to set the start date for <strong style={{ color: "#c9a96e" }}>{selectedChore.title || "this chore"}</strong>.
-                </p>
-              ) : (
-                <>
-                  <div style={{ color: "#c9a96e", fontFamily: "monospace", fontSize: "0.63rem", letterSpacing: "0.06em", marginBottom: "0.4rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {selectedChore.title || "Unnamed chore"}
-                  </div>
-                  {upcoming.map((date, idx) => (
-                    <div key={idx} style={{ alignItems: "baseline", display: "flex", gap: "0.4rem", marginBottom: "0.3rem" }}>
-                      <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.63rem", minWidth: "2rem" }}>
-                        {CAL_DOWS_LONG[date.getDay()]}
-                      </span>
-                      <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem" }}>
-                        {CAL_MONTHS_SHORT[date.getMonth()]} {date.getDate()}
-                      </span>
-                      {selectedChore.timeOfDay && (
-                        <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.63rem" }}>
-                          {formatTimeOfDay(selectedChore.timeOfDay)}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => onClearDate(selectedChoreId)}
-                    style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.63rem", marginTop: "0.35rem", padding: 0, transition: "color 0.15s" }}
-                    onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
-                  >
-                    × clear start date
-                  </button>
-                </>
-              )}
+            <div style={{ color: isToday ? "var(--fm-brass)" : "var(--fm-ink-dim)", fontFamily: "var(--fm-serif)", fontSize: "1rem", lineHeight: 1, marginBottom: "0.35rem" }}>
+              {date.getDate()}
             </div>
-          );
-
-          const dayCol = selectedDay ? (
-            <div style={{ borderLeft: "1px solid #a8a29c", flex: 1, minWidth: 0, paddingLeft: "1rem" }}>
-              <div style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.6rem", letterSpacing: "0.12em", marginBottom: "0.5rem", textTransform: "uppercase" }}>
-                {selectedDayLabel}
-              </div>
-              {selectedDayChores.length === 0 ? (
-                <p style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.7rem", margin: 0 }}>No chores scheduled.</p>
-              ) : selectedDayChores.map(chore => {
-                const color = getScheduleColor(chore.schedule);
-                return (
-                  <div key={chore.id} style={{ alignItems: "baseline", display: "flex", gap: "0.4rem", marginBottom: "0.35rem" }}>
-                    <span style={{ background: color, borderRadius: "50%", display: "inline-block", flexShrink: 0, height: "6px", marginTop: "2px", width: "6px" }} />
-                    <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {chore.timeOfDay && <span style={{ color: "#a8a29c" }}>{formatTimeOfDay(chore.timeOfDay)} </span>}
-                      {chore.title}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : null;
-
-          return (
-            <div style={{ borderTop: "1px solid #a8a29c", display: "flex", gap: "1rem", marginTop: "0.85rem", paddingTop: "0.75rem" }}>
-              {upcomingCol}
-              {dayCol}
-            </div>
-          );
-        })()}
-      </div>
-    </>
-  );
-}
-
-function ChoresTable({ rows, notes, roomOptions, roomItemsMap = {}, reminderModes, selectedChoreId, onChoreEdit, onNoteChange, onCycleReminderMode, onDelete, onChoreSelect, sortCols, onHeaderClick }) {
-  return (
-    <div style={{ background: "#13161f", border: "1px solid #1e2330", borderRadius: "6px", overflowX: "auto" }}>
-      <table style={{ borderCollapse: "collapse", fontSize: "0.82rem", width: "100%" }}>
-        <thead>
-          <tr>
-            {COLUMNS.map(({ label, width, sortKey }, i) => {
-              const sort = sortCols.find(s => s.col === sortKey);
-              const isPrimary = sort && sortCols[0]?.col === sortKey;
+            {dayChores.map(chore => {
+              const done = isChoreCompleted(choreCompletions, chore.id, date);
               return (
-                <th
-                  key={label || `__col${i}`}
-                  onClick={e => sortKey && onHeaderClick(sortKey, e.shiftKey)}
+                <div
+                  key={chore.id}
+                  onClick={() => onLogChore(chore.id, date)}
+                  title={`${done ? "Unmark" : "Mark done"}: ${chore.title}`}
                   style={{
-                    background: "#1a1f2e",
-                    borderBottom: "2px solid #a8a29c",
-                    color: sort ? (isPrimary ? "#c9a96e" : "#a8a29c") : "#c9a96e",
-                    cursor: sortKey ? "pointer" : "default",
-                    fontFamily: "monospace",
-                    fontSize: "0.68rem",
-                    fontWeight: "normal",
-                    letterSpacing: "0.12em",
-                    padding: "0.75rem 0.6rem",
-                    position: "sticky",
-                    textAlign: "left",
-                    textTransform: "uppercase",
-                    top: 0,
-                    userSelect: "none",
-                    whiteSpace: "nowrap",
-                    width,
-                    zIndex: 10,
+                    background: "var(--fm-bg-sunk)",
+                    borderLeft: `3px solid ${done ? "var(--fm-ink-mute)" : "var(--fm-cyan)"}`,
+                    borderRadius: "var(--fm-radius)",
+                    cursor: "pointer",
+                    marginBottom: "3px",
+                    opacity: done ? 0.5 : 1,
+                    padding: "0.15rem 0.3rem",
+                    transition: "opacity 0.12s",
                   }}
                 >
-                  {label}{sort ? (sort.dir === "asc" ? " ↑" : " ↓") : ""}
-                </th>
+                  <span style={{ color: done ? "var(--fm-ink-mute)" : "var(--fm-ink-dim)", display: "block", fontFamily: "var(--fm-sans)", fontSize: "0.6rem", overflow: "hidden", textDecoration: done ? "line-through" : "none", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {chore.title}
+                  </span>
+                </div>
               );
             })}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 && (
-            <tr>
-              <td colSpan={COLUMNS.length} style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.82rem", padding: "3rem", textAlign: "center" }}>
-                No results found.
-              </td>
-            </tr>
-          )}
-          {rows.map((chore, i) => {
-            const note       = notes[chore.id] || "";
-            const isSelected = chore.id === selectedChoreId;
-            const baseBg     = isSelected ? "#1e2035" : i % 2 === 0 ? "#13161f" : "#161920";
-            const hoverBg    = isSelected ? "#232545" : "#1e2430";
-
-            return (
-              <tr
-                key={chore.id}
-                onClick={() => onChoreSelect(chore.id)}
-                style={{
-                  background: baseBg,
-                  borderBottom: `1px solid ${isSelected ? "#c9a96e30" : "#1e2330"}`,
-                  cursor: "pointer",
-                  outline: isSelected ? "1px solid #c9a96e30" : "none",
-                  outlineOffset: "-1px",
-                  transition: "background 0.1s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = hoverBg}
-                onMouseLeave={e => e.currentTarget.style.background = baseBg}
-              >
-                {/* Room */}
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <SelectCell
-                    value={chore.room}
-                    options={roomOptions}
-                    placeholder="Room"
-                    onChange={v => onChoreEdit(chore.id, "room", v)}
-                  />
-                </td>
-
-                {/* Item */}
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <TitleCell
-                    value={chore.item || ""}
-                    onChange={v => onChoreEdit(chore.id, "item", v)}
-                    placeholder="—"
-                    suggestions={chore.room && chore.room !== "Whole House" ? (roomItemsMap[chore.room] ?? []) : []}
-                  />
-                </td>
-
-                {/* Chore title */}
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <TitleCell
-                    value={chore.title}
-                    onChange={v => onChoreEdit(chore.id, "title", v)}
-                  />
-                </td>
-
-                {/* Schedule */}
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <SchedulePicker
-                    value={chore.schedule || null}
-                    onChange={v => onChoreEdit(chore.id, "schedule", v || "")}
-                  />
-                </td>
-
-                {/* Day of week */}
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <SelectCell
-                    value={chore.dayOfWeek ?? null}
-                    options={DAY_OPTIONS}
-                    placeholder="Any"
-                    onChange={v => onChoreEdit(chore.id, "dayOfWeek", v)}
-                  />
-                </td>
-
-                {/* Time of day */}
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <SelectCell
-                    value={chore.timeOfDay ?? null}
-                    options={TIME_OPTIONS}
-                    placeholder="Any time"
-                    onChange={v => onChoreEdit(chore.id, "timeOfDay", v)}
-                  />
-                </td>
-
-                {/* Bell */}
-                <td style={{ padding: "0.5rem 0.4rem", textAlign: "center", verticalAlign: "middle" }}>
-                  <ReminderButton
-                    schedule={chore.schedule}
-                    mode={reminderModes?.[chore.id] ?? "off"}
-                    onCycle={() => onCycleReminderMode(chore.id)}
-                  />
-                </td>
-
-                {/* Notes */}
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <NoteCell
-                    value={note}
-                    onChange={v => onNoteChange(chore.id, v)}
-                  />
-                </td>
-
-                {/* Assignee */}
-                <td style={{ padding: "0.5rem 0.6rem", verticalAlign: "middle" }}>
-                  <AssigneeCellInput
-                    value={chore.assignee || ""}
-                    placeholder="—"
-                    onChange={v => onChoreEdit(chore.id, "assignee", v)}
-                  />
-                </td>
-
-                {/* Delete */}
-                <td style={{ padding: "0.5rem 0.4rem", textAlign: "center", verticalAlign: "middle" }}>
-                  <button
-                    onClick={() => onDelete(chore)}
-                    style={{ background: "transparent", border: "none", color: "#a8a29c", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", padding: "0.1rem 0.3rem", transition: "color 0.15s" }}
-                    onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#a8a29c"}
-                  >
-                    ×
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+const TH = { color: "var(--fm-brass-dim)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", fontWeight: "normal", letterSpacing: "0.12em", padding: "0.65rem 0.6rem", position: "sticky", textAlign: "left", textTransform: "uppercase", top: 0, userSelect: "none", whiteSpace: "nowrap" };
+const TD = { padding: "0.45rem 0.6rem", verticalAlign: "middle" };
+
 export default function ChoresPage({ navigate, navState }) {
   const [chores, setChores]               = useState(() => loadChores());
   const [notes, setNotes]                 = useState(() => loadChoreNotes());
   const [reminderModes, setReminderModes] = useState(() => loadChoreReminderModes());
   const [remindersOpen, setRemindersOpen] = useState(false);
-  const [selectedChoreId, setSelectedChoreId] = useState(null);
   const [roomOptions]                     = useState(() => buildRoomOptions());
   const [roomItemsMap, setRoomItemsMap]   = useState(() => buildRoomItemsMap());
   const [activeRoom, setActiveRoom]       = useState("All");
@@ -980,25 +557,22 @@ export default function ChoresPage({ navigate, navState }) {
   const [sortCols, setSortCols]           = useState([]);
   const [confirmChore, setConfirmChore]   = useState(null);
   const [addChoreModalOpen, setAddChoreModalOpen] = useState(false);
-  const [addHovered, setAddHovered]       = useState(false);
   const [choreCompletions, setChoreCompletions] = useState(() => loadChoreCompletions());
+  const [choreNextDates, setChoreNextDates] = useState(() => loadChoreNextDates());
+  const [detailEvent, setDetailEvent]     = useState(null); // { chore, date }
 
   useEffect(() => {
     if (!navState) return;
-    if (navState.choreId) setSelectedChoreId(navState.choreId);
     if (navState.search != null) setSearch(navState.search);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Room tabs derived from inventory rooms (so they appear even before any chores exist)
   const rooms = useMemo(() => {
     const fromInventory = new Set(roomOptions.map(o => o.value));
     fromInventory.delete("Whole House");
-    // Also include any rooms used on existing chores that aren't in inventory
     chores.forEach(c => { if (c.room && c.room !== "Whole House") fromInventory.add(c.room); });
     return [...fromInventory].sort((a, b) => a.localeCompare(b));
   }, [chores, roomOptions]);
 
-  // Map category key → display label for room tabs (derived from roomOptions which already formats labels)
   const roomLabels = useMemo(() =>
     Object.fromEntries(roomOptions.filter(o => o.label !== o.value).map(o => [o.value, o.label])),
     [roomOptions]
@@ -1019,26 +593,22 @@ export default function ChoresPage({ navigate, navState }) {
 
   function getSortValue(chore, col) {
     switch (col) {
-      case "room":      return (chore.room  || "").toLowerCase();
-      case "item":      return (chore.item  || "").toLowerCase();
-      case "title":     return (chore.title || "").toLowerCase();
-      case "schedule":  return parseMonths(chore.schedule) ?? 999;
-      case "dayOfWeek": return chore.dayOfWeek ?? 7;
-      case "timeOfDay": return chore.timeOfDay ?? "99:99";
-      case "assignee":  return (chore.assignee || "").toLowerCase();
-      case "notes":     return (notes[chore.id] || "").toLowerCase();
-      default:          return "";
+      case "room":     return (chore.room  || "").toLowerCase();
+      case "title":    return (chore.title || "").toLowerCase();
+      case "schedule": return parseMonths(chore.schedule) ?? 999;
+      case "next":     return choreNextDates[chore.id] || "9999-99-99";
+      default:         return "";
     }
   }
 
   function compareSortValues(av, bv, col, dir) {
-    const aEmpty = av === null || av === undefined || av === "" || av === "99:99";
-    const bEmpty = bv === null || bv === undefined || bv === "" || bv === "99:99";
+    const aEmpty = av === null || av === undefined || av === "" || av === "9999-99-99";
+    const bEmpty = bv === null || bv === undefined || bv === "" || bv === "9999-99-99";
     if (aEmpty && bEmpty) return 0;
     if (aEmpty) return 1;
     if (bEmpty) return -1;
     let raw;
-    if (col === "schedule" || col === "dayOfWeek") raw = av - bv;
+    if (col === "schedule") raw = av - bv;
     else raw = String(av).localeCompare(String(bv));
     return dir === "asc" ? raw : -raw;
   }
@@ -1052,7 +622,6 @@ export default function ChoresPage({ navigate, navState }) {
         const q = search.toLowerCase();
         if (
           !(chore.room     || "").toLowerCase().includes(q) &&
-          !(chore.item     || "").toLowerCase().includes(q) &&
           !(chore.title    || "").toLowerCase().includes(q) &&
           !(chore.schedule || "").toLowerCase().includes(q)
         ) return false;
@@ -1070,29 +639,27 @@ export default function ChoresPage({ navigate, navState }) {
       });
     }
 
-    // Default sort: ROOM_ORDER, then by title
     return base.sort((a, b) => {
       const aRank = ROOM_ORDER.indexOf(a.room);
       const bRank = ROOM_ORDER.indexOf(b.room);
       if (aRank !== bRank) return (aRank === -1 ? 999 : aRank) - (bRank === -1 ? 999 : bRank);
       return (a.title || "").localeCompare(b.title || "");
     });
-  }, [chores, activeRoom, activeFrequencies, search, sortCols, notes]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [chores, activeRoom, activeFrequencies, search, sortCols, choreNextDates]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const choreStats = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const in7Days = new Date(today); in7Days.setDate(in7Days.getDate() + 7);
-    const nextDates = loadChoreNextDates();
     let overdue = 0, thisWeek = 0;
     chores.forEach(c => {
-      const nd = nextDates[c.id] ? new Date(nextDates[c.id]) : null;
+      const nd = choreNextDates[c.id] ? new Date(choreNextDates[c.id]) : null;
       if (!nd) return;
       nd.setHours(0, 0, 0, 0);
       if (nd < today) overdue++;
       else if (nd <= in7Days) thisWeek++;
     });
     return { overdue, thisWeek };
-  }, [chores]);
+  }, [chores, choreNextDates]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   function handleChoreEdit(id, field, value) {
@@ -1101,22 +668,18 @@ export default function ChoresPage({ navigate, navState }) {
     saveChores(updated);
   }
 
-  function handleNoteChange(id, text) {
-    const newNotes = { ...notes, [id]: text };
-    setNotes(newNotes);
-    saveChoreNotes(newNotes);
-  }
-
-  function handleAddChore() {
-    setAddChoreModalOpen(true);
-  }
-
   function handleAddChoreModalSave(form) {
     const newChore = createChore({ ...form });
     const updated = [newChore, ...chores];
     setChores(updated);
     saveChores(updated);
-    setSelectedChoreId(newChore.id);
+    if (form.dayOfWeek != null && newChore.schedule) {
+      const start = new Date(); start.setHours(0,0,0,0);
+      const next = computeNextOccurrenceFromStart(start, newChore.schedule, newChore.dayOfWeek, newChore.timeOfDay);
+      const updatedNext = { ...choreNextDates, [newChore.id]: next.toISOString() };
+      saveChoreNextDates(updatedNext);
+      setChoreNextDates(updatedNext);
+    }
     setAddChoreModalOpen(false);
   }
 
@@ -1131,10 +694,9 @@ export default function ChoresPage({ navigate, navState }) {
     const updated = chores.filter(c => c.id !== chore.id);
     setChores(updated);
     saveChores(updated);
-    // Clean up orphaned entries from localStorage
     const completed = loadChoreCompletedDates(); delete completed[chore.id]; saveChoreCompletedDates(completed);
-    const next = loadChoreNextDates();           delete next[chore.id];      saveChoreNextDates(next);
-    const n = { ...notes };                      delete n[chore.id];         saveChoreNotes(n); setNotes(n);
+    const next = { ...choreNextDates };           delete next[chore.id];     saveChoreNextDates(next); setChoreNextDates(next);
+    const n = { ...notes };                       delete n[chore.id];        saveChoreNotes(n); setNotes(n);
     setConfirmChore(null);
   }
 
@@ -1156,45 +718,22 @@ export default function ChoresPage({ navigate, navState }) {
     });
   }
 
-  function handleSetStartDate(choreId, date) {
-    const dow = date.getDay();
-    const updated = chores.map(c => c.id === choreId ? { ...c, startDate: date.toISOString(), dayOfWeek: dow } : c);
-    setChores(updated);
-    saveChores(updated);
-    const chore = updated.find(c => c.id === choreId);
-    if (chore) {
-      const next = computeNextOccurrenceFromStart(date, chore.schedule, dow, chore.timeOfDay);
-      const nextDates = { ...loadChoreNextDates(), [choreId]: next.toISOString() };
-      saveChoreNextDates(nextDates);
+  function handleLogChore(choreId, date = new Date()) {
+    const d = new Date(date); d.setHours(0, 0, 0, 0);
+    const wasDone = isChoreCompleted(choreCompletions, choreId, d);
+    const updatedCompletions = toggleChoreCompletion(choreCompletions, choreId, d);
+    saveChoreCompletions(updatedCompletions);
+    setChoreCompletions(updatedCompletions);
+
+    if (!wasDone) {
+      const chore = chores.find(c => c.id === choreId);
+      if (chore) {
+        const nextOcc = computeChoreNextDate(d, chore.schedule, chore.dayOfWeek, chore.timeOfDay);
+        const updated = { ...choreNextDates, [choreId]: nextOcc.toISOString() };
+        saveChoreNextDates(updated);
+        setChoreNextDates(updated);
+      }
     }
-  }
-
-  function handleCreateChoreFromCalendar(form, date) {
-    const newChore = createChore({ ...form, startDate: date?.toISOString() ?? null });
-    const updated = [newChore, ...chores];
-    setChores(updated);
-    saveChores(updated);
-    if (date && newChore.schedule) {
-      const next = computeNextOccurrenceFromStart(date, newChore.schedule, newChore.dayOfWeek, newChore.timeOfDay);
-      const nextDates = { ...loadChoreNextDates(), [newChore.id]: next.toISOString() };
-      saveChoreNextDates(nextDates);
-    }
-    setSelectedChoreId(newChore.id);
-  }
-
-  function handleToggleChoreCompletion(choreId, date) {
-    const next = toggleChoreCompletion(choreCompletions, choreId, date);
-    saveChoreCompletions(next);
-    setChoreCompletions(next);
-  }
-
-  function handleClearStartDate(choreId) {
-    const updated = chores.map(c => c.id === choreId ? { ...c, startDate: null } : c);
-    setChores(updated);
-    saveChores(updated);
-    const nextDates = { ...loadChoreNextDates() };
-    delete nextDates[choreId];
-    saveChoreNextDates(nextDates);
   }
 
   async function handleSyncReminders() {
@@ -1205,8 +744,26 @@ export default function ChoresPage({ navigate, navState }) {
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
+  const pillBase = {
+    borderRadius: "var(--fm-radius)",
+    cursor: "pointer",
+    fontFamily: "var(--fm-mono)",
+    fontSize: "0.6rem",
+    letterSpacing: "0.08em",
+    padding: "0.22rem 0.6rem",
+    textTransform: "uppercase",
+    transition: "all 0.12s",
+  };
+
+  const SORT_COLS = [
+    { key: "title",    label: "Chore"   },
+    { key: "room",     label: "Room"    },
+    { key: "schedule", label: "Cadence" },
+    { key: "next",     label: "Next"    },
+  ];
+
   return (
-    <div style={{ background: "#0f1117", color: "#e8e4dd", display: "flex", flexDirection: "column", fontFamily: "'Georgia', 'Times New Roman', serif", height: "100vh", overflow: "hidden" }}>
+    <div style={{ background: "var(--fm-bg)", color: "var(--fm-ink)", display: "flex", flexDirection: "column", fontFamily: "var(--fm-sans)", height: "100vh", overflow: "hidden" }}>
 
       {confirmChore && (
         <DeleteConfirmModal
@@ -1227,7 +784,16 @@ export default function ChoresPage({ navigate, navState }) {
         />
       )}
 
-      {/* Header */}
+      {detailEvent && (
+        <ChoreDetailModal
+          chore={detailEvent.chore}
+          date={detailEvent.date}
+          isDone={isChoreCompleted(choreCompletions, detailEvent.chore.id, detailEvent.date)}
+          onToggleDone={() => handleLogChore(detailEvent.chore.id, detailEvent.date)}
+          onClose={() => setDetailEvent(null)}
+        />
+      )}
+
       <FmHeader active="Chores" tagline="Chores" />
       <FmSubnav
         tabs={["This week", "All chores", "By room", "Templates"]}
@@ -1239,104 +805,221 @@ export default function ChoresPage({ navigate, navState }) {
         ]}
       />
 
-      {/* Body */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "2rem 2rem 4rem" }}>
-      <div style={{ alignItems: "flex-start", display: "flex", gap: "2rem" }}>
-      <div style={{ flex: "0 0 58%", minWidth: 0 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem 2rem 4rem" }}>
 
-        {/* Stats / search / add */}
-        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1.25rem" }}>
-          <p style={{ color: "#8b7d6b", fontFamily: "monospace", fontSize: "0.85rem", margin: 0 }}>
-            {chores.length} chore{chores.length !== 1 ? "s" : ""} across {rooms.length} room{rooms.length !== 1 ? "s" : ""}
-          </p>
+        {/* 7-day strip */}
+        <WeekStrip
+          chores={chores}
+          choreCompletions={choreCompletions}
+          onLogChore={handleLogChore}
+        />
+
+        {/* Filter bar */}
+        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.85rem" }}>
+
+          {/* Room pills */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+            {["All", ...rooms].map(room => {
+              const isActive = activeRoom === room;
+              const label = room === "All" ? "ALL" : (roomLabels[room] || room);
+              return (
+                <button
+                  key={room}
+                  onClick={() => setActiveRoom(room)}
+                  style={{
+                    ...pillBase,
+                    background: isActive ? "var(--fm-brass-bg)" : "transparent",
+                    border: isActive ? "1px solid rgba(201,169,110,0.5)" : "var(--fm-border-2)",
+                    color: isActive ? "var(--fm-brass)" : "var(--fm-ink-mute)",
+                  }}
+                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.color = "var(--fm-ink-dim)"; e.currentTarget.style.borderColor = "var(--fm-ink-mute)"; } }}
+                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = "var(--fm-ink-mute)"; e.currentTarget.style.borderColor = "var(--fm-hairline2)"; } }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Search */}
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search chores, rooms, schedules…"
-            style={{ background: "#1a1f2e", border: "1px solid #a8a29c", borderRadius: "4px", color: "#e8e4dd", fontFamily: "monospace", fontSize: "0.82rem", marginLeft: "auto", outline: "none", padding: "0.5rem 0.85rem", width: "260px" }}
+            placeholder="Search…"
+            style={{ background: "var(--fm-bg-sunk)", border: "var(--fm-border-2)", borderRadius: "var(--fm-radius)", color: "var(--fm-ink)", fontFamily: "var(--fm-sans)", fontSize: "0.8rem", outline: "none", padding: "0.35rem 0.7rem", transition: "border-color 0.12s", width: "200px" }}
+            onFocus={e => e.currentTarget.style.borderColor = "var(--fm-brass)"}
+            onBlur={e => e.currentTarget.style.borderColor = "var(--fm-hairline2)"}
           />
-          {search.trim() && (
-            <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.78rem" }}>{filtered.length} results</span>
-          )}
+
           <button
-            onClick={handleAddChore}
-            onMouseEnter={() => setAddHovered(true)}
-            onMouseLeave={() => setAddHovered(false)}
-            style={{ background: "transparent", border: `1px solid ${addHovered ? "#c9a96e" : "#a8a29c"}`, borderRadius: "3px", color: addHovered ? "#c9a96e" : "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s", whiteSpace: "nowrap" }}
+            onClick={() => setAddChoreModalOpen(true)}
+            style={{ ...pillBase, background: "var(--fm-brass-bg)", border: "1px solid rgba(201,169,110,0.4)", color: "var(--fm-brass)" }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = "var(--fm-brass)"}
+            onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(201,169,110,0.4)"}
           >
-            + ADD CHORE
+            + Add Chore
           </button>
+
           <button
             onClick={() => setRemindersOpen(true)}
-            className="foreman-reminders-header-btn"
-            style={{ background: "transparent", border: "1px solid #a8a29c", borderRadius: "3px", color: "#8b7d6b", cursor: "pointer", fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "0.08em", padding: "0.4rem 0.9rem", transition: "all 0.15s", whiteSpace: "nowrap" }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#c9a96e"; e.currentTarget.style.color = "#c9a96e"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#a8a29c"; e.currentTarget.style.color = "#8b7d6b"; }}
+            style={{ ...pillBase, background: "transparent", border: "var(--fm-border-2)", color: "var(--fm-ink-mute)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--fm-ink-dim)"; e.currentTarget.style.borderColor = "var(--fm-ink-mute)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--fm-ink-mute)"; e.currentTarget.style.borderColor = "var(--fm-hairline2)"; }}
           >
-            REMINDERS
+            Reminders
           </button>
         </div>
 
-        {/* Room tabs */}
-        <CategoryTabs
-          special={["All"]}
-          groups={[{ type: "room", label: "Rooms", tabs: rooms }]}
-          active={activeRoom}
-          onSelect={setActiveRoom}
-        />
-
         {/* Frequency filter */}
-        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: "1.25rem" }}>
-          <span style={{ color: "#a8a29c", fontFamily: "monospace", fontSize: "0.68rem", letterSpacing: "0.1em", marginRight: "0.25rem", textTransform: "uppercase" }}>Frequency:</span>
+        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "1rem" }}>
+          <span style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.58rem", letterSpacing: "0.1em", marginRight: "0.15rem", textTransform: "uppercase" }}>Freq:</span>
           {FREQ_ITEMS.map(({ label, color }) => {
             const active = activeFrequencies.has(color);
             return (
               <div
                 key={label}
                 onClick={() => handleToggleFrequency(color)}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#1a1f2e"; }}
+                style={{ alignItems: "center", background: active ? `${color}18` : "transparent", border: `1px solid ${active ? `${color}40` : "transparent"}`, borderRadius: "var(--fm-radius)", cursor: "pointer", display: "flex", gap: "0.3rem", padding: "0.15rem 0.45rem", transition: "all 0.12s" }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "var(--fm-bg-raised)"; }}
                 onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
-                style={{ alignItems: "center", background: active ? `${color}18` : "transparent", border: `1px solid ${active ? `${color}40` : "transparent"}`, borderRadius: "3px", cursor: "pointer", display: "flex", gap: "0.35rem", padding: "0.2rem 0.5rem", transition: "background 0.15s, border-color 0.15s" }}
               >
-                <div style={{ background: color, borderRadius: "50%", flexShrink: 0, height: 8, width: 8 }} />
-                <span style={{ color: active ? color : "#6a6070", fontFamily: "monospace", fontSize: "0.68rem", transition: "color 0.15s" }}>{label}</span>
+                <div style={{ background: color, borderRadius: "50%", flexShrink: 0, height: 7, width: 7 }} />
+                <span style={{ color: active ? color : "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", transition: "color 0.12s" }}>{label}</span>
               </div>
             );
           })}
+          {search.trim() && (
+            <span style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", marginLeft: "0.5rem" }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""}</span>
+          )}
         </div>
 
-        {/* Table */}
-        <ChoresTable
-          rows={filtered}
-          notes={notes}
-          roomOptions={roomOptions}
-          roomItemsMap={roomItemsMap}
-          reminderModes={reminderModes}
-          selectedChoreId={selectedChoreId}
-          onChoreEdit={handleChoreEdit}
-          onNoteChange={handleNoteChange}
-          onCycleReminderMode={handleCycleReminderMode}
-          onDelete={chore => setConfirmChore(chore)}
-          onChoreSelect={id => setSelectedChoreId(prev => prev === id ? null : id)}
-          sortCols={sortCols}
-          onHeaderClick={handleHeaderClick}
-        />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <CalendarWidget
-          chores={chores}
-          roomOptions={roomOptions}
-          roomItemsMap={roomItemsMap}
-          onAddItemToInventory={handleAddItemToInventory}
-          selectedChoreId={selectedChoreId}
-          onCreateChore={handleCreateChoreFromCalendar}
-          onSetStartDate={handleSetStartDate}
-          onClearDate={handleClearStartDate}
-          choreCompletions={choreCompletions}
-          onToggleCompletion={handleToggleChoreCompletion}
-        />
-      </div>
-      </div>
+        {/* All chores table */}
+        <div style={{ background: "var(--fm-bg-panel)", border: "var(--fm-border)", borderRadius: "var(--fm-radius)", overflowX: "auto" }}>
+          <table style={{ borderCollapse: "collapse", fontSize: "0.82rem", width: "100%" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--fm-hairline2)" }}>
+                <th style={{ ...TH, width: "20px" }} />
+                {SORT_COLS.map(({ key, label }) => {
+                  const sort = sortCols.find(s => s.col === key);
+                  const isPrimary = sort && sortCols[0]?.col === key;
+                  return (
+                    <th
+                      key={key}
+                      onClick={e => handleHeaderClick(key, e.shiftKey)}
+                      style={{ ...TH, color: sort ? (isPrimary ? "var(--fm-brass)" : "var(--fm-ink-dim)") : "var(--fm-brass-dim)", cursor: "pointer" }}
+                    >
+                      {label}{sort ? (sort.dir === "asc" ? " ↑" : " ↓") : ""}
+                    </th>
+                  );
+                })}
+                <th style={{ ...TH, width: "80px" }}>Status</th>
+                <th style={{ ...TH, width: "120px" }} />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-sans)", fontSize: "0.82rem", padding: "3rem", textAlign: "center" }}>
+                    No chores found.
+                  </td>
+                </tr>
+              )}
+              {filtered.map((chore, i) => {
+                const status = choreStatus(choreNextDates[chore.id]);
+                const nd = choreNextDates[chore.id];
+                const ndStr = nd
+                  ? new Date(nd).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                  : "—";
+                const rowBg = i % 2 === 0 ? "var(--fm-bg-panel)" : "var(--fm-bg-raised)";
+
+                return (
+                  <tr
+                    key={chore.id}
+                    style={{ background: rowBg, borderBottom: "1px solid var(--fm-hairline)", transition: "background 0.1s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--fm-bg-sunk)"}
+                    onMouseLeave={e => e.currentTarget.style.background = rowBg}
+                  >
+                    {/* Status dot */}
+                    <td style={{ ...TD, textAlign: "center", width: "20px" }}>
+                      <div style={{ background: status.dot, borderRadius: "50%", display: "inline-block", height: "7px", width: "7px" }} />
+                    </td>
+
+                    {/* Chore name */}
+                    <td style={TD}>
+                      <TitleCell value={chore.title} onChange={v => handleChoreEdit(chore.id, "title", v)} />
+                    </td>
+
+                    {/* Room */}
+                    <td style={{ ...TD, width: "120px" }}>
+                      <SelectCell
+                        value={chore.room}
+                        options={roomOptions}
+                        placeholder="Room"
+                        onChange={v => handleChoreEdit(chore.id, "room", v)}
+                      />
+                    </td>
+
+                    {/* Cadence */}
+                    <td style={{ ...TD, width: "140px" }}>
+                      <SchedulePicker
+                        value={chore.schedule || null}
+                        onChange={v => handleChoreEdit(chore.id, "schedule", v || "")}
+                      />
+                    </td>
+
+                    {/* Next date */}
+                    <td style={{ ...TD, width: "80px" }}>
+                      <span style={{ color: "var(--fm-ink-mute)", fontFamily: "var(--fm-mono)", fontSize: "0.72rem" }}>{ndStr}</span>
+                    </td>
+
+                    {/* Status text */}
+                    <td style={{ ...TD, width: "80px" }}>
+                      <span style={{ color: status.dot, fontFamily: "var(--fm-mono)", fontSize: "0.68rem" }}>{status.text}</span>
+                    </td>
+
+                    {/* Actions */}
+                    <td style={{ ...TD, width: "120px" }}>
+                      <div style={{ alignItems: "center", display: "flex", gap: "0.35rem" }}>
+                        <ReminderButton
+                          schedule={chore.schedule}
+                          mode={reminderModes?.[chore.id] ?? "off"}
+                          onCycle={() => handleCycleReminderMode(chore.id)}
+                        />
+                        <button
+                          onClick={() => handleLogChore(chore.id)}
+                          style={{ background: "var(--fm-brass-bg)", border: "1px solid rgba(201,169,110,0.3)", borderRadius: "var(--fm-radius)", color: "var(--fm-brass)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.6rem", letterSpacing: "0.06em", padding: "0.2rem 0.5rem", transition: "all 0.12s" }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = "var(--fm-brass)"}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(201,169,110,0.3)"}
+                        >
+                          Log it
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); setDetailEvent({ chore, date: new Date() }); }}
+                          style={{ background: "transparent", border: "none", color: "var(--fm-ink-mute)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.7rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.12s" }}
+                          onMouseEnter={e => e.currentTarget.style.color = "var(--fm-ink-dim)"}
+                          onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-mute)"}
+                          title="View details"
+                        >
+                          ···
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); setConfirmChore(chore); }}
+                          style={{ background: "transparent", border: "none", color: "var(--fm-ink-mute)", cursor: "pointer", fontFamily: "var(--fm-mono)", fontSize: "0.9rem", lineHeight: 1, padding: "0.1rem 0.2rem", transition: "color 0.12s" }}
+                          onMouseEnter={e => e.currentTarget.style.color = "var(--fm-red)"}
+                          onMouseLeave={e => e.currentTarget.style.color = "var(--fm-ink-mute)"}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <ReminderSettings
